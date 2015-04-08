@@ -1,10 +1,12 @@
 include_directories ("${PROJECT_SOURCE_DIR}")
 
+add_subdirectory(utils)
+
 set(LIB_NAME "PyUtils")
 set(PYTHON_LIBS ${PYTHON_LIBS} ${LIB_NAME})
 add_library(${LIB_NAME} SHARED function_traits.h numpy_utils.h numpy_eigen.h wrap.h utils.cpp)
 set_property(TARGET ${LIB_NAME} PROPERTY FOLDER python)
-target_link_libraries(${LIB_NAME} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
+target_link_libraries(${LIB_NAME} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} utils)
 
 if (CUDA_ENABLED)
 	set(LIB_NAME "PyCuda")

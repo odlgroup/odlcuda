@@ -50,3 +50,8 @@ class strided_range {
     Iterator last;
     difference_type stride;
 };
+
+template <typename Iterator>
+strided_range<Iterator> make_strided_range(const Iterator& begin, const Iterator& end, const strided_range<Iterator>::difference_type step) {
+    return {begin, end, step};
+}

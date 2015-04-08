@@ -16,99 +16,132 @@ using namespace boost::python;
 
 template <typename EigenArray>
 void verifySize(const EigenSize& size) {
-    static const int rowsAtCompile = internal::traits<EigenArray>::RowsAtCompileTime;
-    static const int colsAtCompile = internal::traits<EigenArray>::ColsAtCompileTime;
+	static const int rowsAtCompile = internal::traits<EigenArray>::RowsAtCompileTime;
+	static const int colsAtCompile = internal::traits<EigenArray>::ColsAtCompileTime;
 
-    if (size.dimension == 1 &&
-        ((rowsAtCompile != Eigen::Dynamic && rowsAtCompile != 1) &&
-         (colsAtCompile != Eigen::Dynamic && colsAtCompile != 1))) {
-        throw std::exception(("Dimensions not equal expected 2, got " + std::to_string(size.dataCols) + "x" + std::to_string(size.dataRows)).c_str());
-    }
-    if (size.dimension == 2 &&
-        ((rowsAtCompile == 1) ||
-         (colsAtCompile == 1))) {
+	if (size.dimension == 1 &&
+		((rowsAtCompile != Eigen::Dynamic && rowsAtCompile != 1) &&
+		(colsAtCompile != Eigen::Dynamic && colsAtCompile != 1))) {
+		throw std::exception(("Dimensions not equal expected 2, got " + std::to_string(size.dataCols) + "x" + std::to_string(size.dataRows)).c_str());
+	}
+	if (size.dimension == 2 &&
+		((rowsAtCompile == 1) ||
+		(colsAtCompile == 1))) {
 
-        throw std::exception((std::to_string(size.dataRows) + " " + std::to_string(size.dataCols)).c_str());
-        throw std::exception(("Dimensions not equal expected 1, got " + std::to_string(size.dataCols) + "x" + std::to_string(size.dataRows)).c_str());
-    }
+		throw std::exception((std::to_string(size.dataRows) + " " + std::to_string(size.dataCols)).c_str());
+		throw std::exception(("Dimensions not equal expected 1, got " + std::to_string(size.dataCols) + "x" + std::to_string(size.dataRows)).c_str());
+	}
 
-    if ((rowsAtCompile != Eigen::Dynamic && rowsAtCompile != size.dataRows) ||
-        (colsAtCompile != Eigen::Dynamic && colsAtCompile != size.dataCols)) {
-        throw std::exception(("Sizes not equal, expected " + std::to_string(rowsAtCompile) + "x" + std::to_string(colsAtCompile) +
-                              " got " + std::to_string(size.dataRows) + "x" + std::to_string(size.dataCols)).c_str());
-    }
+	if ((rowsAtCompile != Eigen::Dynamic && rowsAtCompile != size.dataRows) ||
+		(colsAtCompile != Eigen::Dynamic && colsAtCompile != size.dataCols)) {
+		throw std::exception(("Sizes not equal, expected " + std::to_string(rowsAtCompile) + "x" + std::to_string(colsAtCompile) +
+			" got " + std::to_string(size.dataRows) + "x" + std::to_string(size.dataCols)).c_str());
+	}
+}
+
+bool iscontiguous(const numeric::array& arr){
+	return PyArray_ISCONTIGUOUS(reinterpret_cast<PyArrayObject*>(arr.ptr()));
 }
 
 template <typename EigenArray>
-EigenArray copyInputNP(const numeric::array& data) {
-    typedef internal::traits<EigenArray>::Scalar Scalar;
+bool isPtrCompatible(const numeric::array& numpyArray) {
+	typedef internal::traits<EigenArray>::Scalar Scalar;
 
-    EigenSize size = getSize(data);
-    verifySize<EigenArray>(size);
+	if (!isType<Scalar>(numpyArray))
+		return false;
 
-    //TODO verify size
-    EigenArray out(size.dataRows, size.dataCols);
-    if (size.datadimension == 1) {
-        for (size_t i = 0; i < size.dataRows; i++)
-            out(i) = extract<Scalar>(data[i]);
-    } else {
-        for (size_t i = 0; i < size.dataRows; i++)
-            for (size_t j = 0; j < size.dataCols; j++)
-                out(i, j) = extract<Scalar>(data[i][j]);
-    }
+	if (!iscontiguous(numpyArray))
+		return false;
 
-    return out;
+	//TODO: use actual order of numpyArray
+	if (!EigenArray::IsRowMajor)
+		return false;
+
+	return true;
+}
+
+template <typename EigenArray>
+void copyElements(const EigenSize& size, const object& in, EigenArray& out) {
+	typedef internal::traits<EigenArray>::Scalar Scalar;
+
+	if (size.datadimension == 1) {
+		for (size_t i = 0; i < size.dataRows; i++)
+			out(i) = extract<Scalar>(in[i]);
+	}
+	else {
+		for (size_t i = 0; i < size.dataRows; i++) {
+			for (size_t j = 0; j < size.dataCols; j++)
+				out(i, j) = extract<Scalar>(in[i][j]);
+		}
+	}
 }
 
 template <typename EigenArray>
 EigenArray copyInput(const object& data) {
-    typedef internal::traits<EigenArray>::Scalar Scalar;
+	typedef internal::traits<EigenArray>::Scalar Scalar;
+	typedef typename Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMajorDoubleArray;
 
-    EigenSize size;
+	extract<numeric::array> asNumeric(data);
+	if (asNumeric.check()) {
+		//If data is an array, attempt some efficient methods first
 
-    extract<numeric::array> asNumeric(data);
-    if (asNumeric.check())
-        size = getSize(asNumeric());
-    else
-        size = getSizeGeneral(data);
+		numeric::array dataArray = asNumeric();
 
-    verifySize<EigenArray>(size);
+		EigenSize size = getSize(dataArray);
+		verifySize<EigenArray>(size);
 
-    EigenArray out(size.dataRows, size.dataCols);
-    if (size.datadimension == 1) {
-        for (size_t i = 0; i < size.dataRows; i++)
-            out(i) = extract<Scalar>(data[i]);
-    } else {
-        for (size_t i = 0; i < size.dataRows; i++)
-            for (size_t j = 0; j < size.dataCols; j++)
-                out(i, j) = extract<Scalar>(data[i][j]);
-    }
+		EigenArray out(size.dataRows, size.dataCols);
 
-    return out;
+		if (isPtrCompatible<EigenArray>(dataArray)) {
+			//Use raw buffers if possible
+			auto mapped = mapInput<EigenArray>(dataArray);
+			out = mapped;
+		}
+		else if (isPtrCompatible<RowMajorDoubleArray>(dataArray)) {
+			//Default implementation for double numpy array
+			auto mapped = mapInput<RowMajorDoubleArray>(dataArray);
+			out = mapped.cast<Scalar>(); //If out type does not equal in type, perform a cast. If equal this is assignment.
+		}
+		else {
+			//Slow method if raw buffers unavailable.
+			copyElements(size, data, out);
+		}
+
+		return out;
+	}
+	else {
+		EigenSize size = getSizeGeneral(data);
+		verifySize<EigenArray>(size);
+
+		EigenArray out(size.dataRows, size.dataCols);
+
+		copyElements(size, data, out);
+
+		return out;
+	}
 }
 
 template <typename EigenArray>
 Eigen::Map<EigenArray> mapInput(numeric::array data) {
-    typedef internal::traits<EigenArray>::Scalar Scalar;
+	typedef internal::traits<EigenArray>::Scalar Scalar;
 
-    EigenSize size = getSize(data);
-    verifySize<EigenArray>(size);
+	EigenSize size = getSize(data);
+	verifySize<EigenArray>(size);
 
-    Scalar* p = getDataPtr<Scalar>(data);
-    return Map<EigenArray>(p, size.dataRows, size.dataCols);
+	return Map<EigenArray>(getDataPtr<Scalar>(data), size.dataRows, size.dataCols);
 }
 
 template <typename EigenArray>
 numeric::array copyOutput(const EigenArray& data) {
-    typedef internal::traits<EigenArray>::Scalar Scalar;
+	typedef internal::traits<EigenArray>::Scalar Scalar;
 
-    npy_intp dims[2] = {(npy_intp)data.rows(), (npy_intp)data.cols()};
+	npy_intp dims[2] = { (npy_intp)data.rows(), (npy_intp)data.cols() };
 
-    object obj(handle<>(PyArray_SimpleNew(2, dims, getEnum<Scalar>())));
-    numeric::array arr = extract<numeric::array>(obj);
+	object obj(handle<>(PyArray_SimpleNew(2, dims, getEnum<Scalar>())));
+	numeric::array arr = extract<numeric::array>(obj);
 
-    auto mapped = mapInput<ArrayXXd>(arr);
-    mapped = data;
+	auto mapped = mapInput<Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, RowMajor>>(arr); //Numpy uses Row Major storage
+	mapped = data;
 
-    return arr;
+	return extract<numeric::array>(arr.copy()); //Copy to pass ownership
 }

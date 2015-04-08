@@ -8,50 +8,21 @@
 #include <Eigen/Dense>
 #include <RLcpp/numpy_eigen.h>
 #include <RLcpp/wrap.h>
+#include <RLcpp/utils/StandardPhantoms.h>
+#include <RLcpp/utils/Phantom.h>
 
 using namespace boost::python;
 using namespace Eigen;
 
-class EigenVector {
-  public:
-    EigenVector(size_t size)
-        : impl(size) {
-    }
+numeric::array phantom(const boost::python::object& size,
+                       RLCpp::PhantomType type = RLCpp::PhantomType::modifiedSheppLogan,
+                       double edgeWidth = 0.0) {
+    return copyOutput(phantom(copyInput<Vector2i>(size),
+                              type,
+                              edgeWidth));
+}
 
-    EigenVector(VectorXd&& other)
-        : impl(std::forward<VectorXd>(other)) {
-    }
-
-    EigenVector(const numeric::array& data)
-        : impl(copyInput<VectorXd>(data)) {
-    }
-
-    EigenVector(const list& data)
-        : impl(len(data)) {
-        for (auto i = 0; i < len(data); ++i) {
-            impl[i] = extract<double>(data[i]);
-        }
-    }
-
-    friend EigenVector operator+(const EigenVector& v1, const EigenVector& v2) {
-        return EigenVector(v1.impl + v2.impl);
-    }
-
-    friend EigenVector operator*(const double& a, const EigenVector& v) {
-        return EigenVector(a * v.impl);
-    }
-
-    friend EigenVector operator*(const EigenVector& v, const double& a) {
-        return EigenVector(a * v.impl);
-    }
-
-    friend std::ostream& operator<<(std::ostream& ss, const EigenVector& v) {
-        return ss << v.impl;
-    }
-
-  private:
-    VectorXd impl;
-};
+BOOST_PYTHON_FUNCTION_OVERLOADS(phantom_overloads, phantom, 1, 3)
 
 char const* greet() {
     return "hello, world";
@@ -65,12 +36,11 @@ BOOST_PYTHON_MODULE(PyUtils) {
 
     def("greet", &greet);
 
-    //typedef ClassWrapper<VectorXd, id<size_t>> EigenVector1;
-    class_<EigenVector>("EigenVector", "Documentation",
-                        init<size_t>())
-        .def(init<numeric::array>())
-        .def(init<list>())
-        .def(self + self)
-        .def(self * double())
-        .def(self_ns::str(self_ns::self));
+    def("phantom", &phantom, phantom_overloads());
+
+    enum_<RLCpp::PhantomType>("PhantomType", "Enumeration of available phantoms")
+		.value("sheppLogan", RLCpp::PhantomType::sheppLogan)
+		.value("modifiedSheppLogan", RLCpp::PhantomType::modifiedSheppLogan)
+		.value("twoEllipses", RLCpp::PhantomType::twoEllipses)
+		.value("circle", RLCpp::PhantomType::circle);
 }
