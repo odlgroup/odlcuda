@@ -36,7 +36,7 @@ extern float sumImpl(const device_vector_ptr& v);
 //Copy methods
 extern void copyHostToDevice(double* source, device_vector_ptr& target);
 extern void copyDeviceToHost(const device_vector_ptr& source, double* target);
-extern void printData(const device_vector_ptr& v1, std::ostream_iterator<float>& out);
+extern void printData(const device_vector_ptr& v1, std::ostream_iterator<float>& out, int numel);
 
 //Getters and setters
 extern float getItemImpl(const device_vector_ptr& v1, int index);
@@ -53,55 +53,74 @@ extern void forwardDifferenceAdjointImpl(const device_vector_ptr& source, device
 extern void forwardDifference2DImpl(const device_vector_ptr& source, device_vector_ptr& dx, device_vector_ptr& dy, int cols, int rows);
 extern void forwardDifference2DAdjointImpl(const device_vector_ptr& dx, const device_vector_ptr& dy, device_vector_ptr& target, int cols, int rows);
 
-extern void maxVectorVectorImpl(const device_vector_ptr& v1, device_vector_ptr& v2);
+extern void maxVectorVectorImpl(const device_vector_ptr& v1, const device_vector_ptr& v2, device_vector_ptr& target);
 extern void maxVectorScalarImpl(const device_vector_ptr& v1, float scalar, device_vector_ptr& target);
+extern void divideVectorVectorImpl(const device_vector_ptr& dividend, const device_vector_ptr& divisor, device_vector_ptr& quotient);
+
 extern void addScalarImpl(const device_vector_ptr& v1, float scalar, device_vector_ptr& target);
 extern void signImpl(const device_vector_ptr& v1, device_vector_ptr& target);
+extern void sqrtImpl(const device_vector_ptr& v1, device_vector_ptr& target);
 
 struct sliceHelper {
-    //TODO move to python?
-    sliceHelper(const slice& index, int n) {
-        extract<int> startIn(index.start());
-        if (startIn.check())
-            start = startIn();
-        else
-            start = 0;
-
-        extract<int> stopIn(index.stop());
-        if (stopIn.check())
-            stop = stopIn();
-        else
-            stop = n;
-
+    sliceHelper(const slice& index, int n) : arraySize(n) {
         extract<int> stepIn(index.step());
         if (stepIn.check())
             step = stepIn();
         else
             step = 1;
 
-        if (step > 0) {
-            numel = 1 + (stop - start - 1) / step;
-        } else //Handle negative steps
-        {
-            if (!startIn.check())
-                start = n - 1;
+        if (step == 0)
+            throw std::invalid_argument("step = 0 is not valid");
 
-            if (!stopIn.check())
-                stop = -1;
+        extract<int> startIn(index.start());
+        if (startIn.check()) {
+            if (step > 0) {
+                start = startIn();
+                if (start < 0) start += n;
+            } else {
+                start = startIn() + 1;
+                if (start <= 0) start += n;
+            }
+        } else if (step > 0)
+            start = 0;
+        else
+            start = n;
 
-            numel = 1 + std::abs(start - stop - 1) / std::abs(step);
+        extract<int> stopIn(index.stop());
+        if (stopIn.check()) {
+            if (step > 0) {
+                stop = stopIn();
+                if (stop < 0) stop += n;
+            } else {
+                stop = stopIn() + 1;
+                if (stop <= 0) stop += n;
+            }
+        } else if (step > 0)
+            stop = n;
+        else
+            stop = 0;
 
-            stop += 2; //Document (something to do with iterators checking while start != end)
-        }
+        if (start == stop)
+            numel = 0;
+        else if (step > 0)
+            numel = std::max(0, 1 + (stop - start - 1) / step);
+        else
+            numel = std::max(0, 1 + (start - stop - 1) / std::abs(step));
+    }
+
+    void validate() {
+        if (start < 0 || stop > arraySize)
+            throw std::out_of_range("Slice index out of range");
     }
 
     friend std::ostream& operator<<(std::ostream& ss, const sliceHelper& sh) {
         return ss << sh.start << " " << sh.stop << " " << sh.step << " " << sh.numel;
     }
-    int start, stop, step, numel;
+    int start, stop, step, numel, arraySize;
 };
 
 class CudaRNVectorImpl {
+
   public:
     CudaRNVectorImpl(size_t size)
         : _size(size),
@@ -120,22 +139,25 @@ class CudaRNVectorImpl {
         copyHostToDevice(getDataPtr<double>(data), this->_impl);
     }
 
-    numeric::array copyToHost() const {
-        numeric::array arr = makeArray<double>(this->_size);
-        copyDeviceToHost(_impl, getDataPtr<double>(arr));
-        return arr;
+    void validateIndex(int index) const {
+        if (index < 0 || index >= _size)
+            throw std::out_of_range("index out of range");
     }
 
     float getItem(int index) const {
+        if (index < 0) index += _size; //Handle negative indexes like python
+        validateIndex(index);
         return getItemImpl(_impl, index);
     }
 
     void setItem(int index, float value) {
+        validateIndex(index);
         setItemImpl(_impl, index, value);
     }
 
     numeric::array getSlice(const slice index) const {
         sliceHelper sh(index, _size);
+        sh.validate();
 
         if (sh.numel > 0) {
             numeric::array arr = makeArray<double>(sh.numel);
@@ -148,13 +170,15 @@ class CudaRNVectorImpl {
 
     void setSlice(const slice index, const numeric::array& arr) {
         sliceHelper sh(index, _size);
+        sh.validate();
         assert(sh.numel == len(arr));
         if (sh.numel > 0)
             setSliceImpl(_impl, sh.start, sh.stop, sh.step, getDataPtr<double>(arr), sh.numel);
     }
 
     friend std::ostream& operator<<(std::ostream& ss, const CudaRNVectorImpl& v) {
-        printData(v._impl, std::ostream_iterator<float>(ss, " "));
+        ss << "CudaRNVectorImpl: ";
+        printData(v._impl, std::ostream_iterator<float>(ss, " "), std::min<int>(100, v._size));
         return ss;
     }
 
@@ -207,47 +231,55 @@ class CudaRNImpl {
 };
 
 void convolution(const CudaRNVectorImpl& source, const CudaRNVectorImpl& kernel, CudaRNVectorImpl& target) {
-    convImpl(source._impl, kernel._impl, target._impl);
+    convImpl(source, kernel, target);
 }
 
 void forwardDifference(const CudaRNVectorImpl& source, CudaRNVectorImpl& target) {
-    forwardDifferenceImpl(source._impl, target._impl);
+    forwardDifferenceImpl(source, target);
 }
 
 void forwardDifferenceAdjoint(const CudaRNVectorImpl& source, CudaRNVectorImpl& target) {
-    forwardDifferenceAdjointImpl(source._impl, target._impl);
+    forwardDifferenceAdjointImpl(source, target);
 }
 
 void forwardDifference2D(const CudaRNVectorImpl& source, CudaRNVectorImpl& dx, CudaRNVectorImpl& dy, int cols, int rows) {
-	forwardDifference2DImpl(source._impl, dx._impl, dy._impl, cols, rows);
+    forwardDifference2DImpl(source, dx, dy, cols, rows);
 }
 
 void forwardDifference2DAdjoint(const CudaRNVectorImpl& dx, const CudaRNVectorImpl& dy, CudaRNVectorImpl& target, int cols, int rows) {
-	forwardDifference2DAdjointImpl(dx._impl, dy._impl, target._impl, cols, rows);
+    forwardDifference2DAdjointImpl(dx, dy, target, cols, rows);
 }
 
-void maxVectorVector(const CudaRNVectorImpl& source, CudaRNVectorImpl& target) {
-    maxVectorVectorImpl(source._impl, target._impl);
+void maxVectorVector(const CudaRNVectorImpl& v1, const CudaRNVectorImpl& v2, CudaRNVectorImpl& target) {
+    maxVectorVectorImpl(v1, v2, target);
 }
 
 void maxVectorScalar(CudaRNVectorImpl& source, float scalar, CudaRNVectorImpl& target) {
-    maxVectorScalarImpl(source._impl, scalar, target._impl);
+    maxVectorScalarImpl(source, scalar, target);
+}
+
+void divideVectorVector(const CudaRNVectorImpl& dividend, const CudaRNVectorImpl& divisor, CudaRNVectorImpl& quotient) {
+    divideVectorVectorImpl(dividend, divisor, quotient);
 }
 
 void addScalar(const CudaRNVectorImpl& source, float scalar, CudaRNVectorImpl& target) {
-    addScalarImpl(source._impl, scalar, target._impl);
+    addScalarImpl(source, scalar, target);
 }
 
-void sign(const CudaRNVectorImpl& source, CudaRNVectorImpl& target) {
-    signImpl(source._impl, target._impl);
+void signVector(const CudaRNVectorImpl& source, CudaRNVectorImpl& target) {
+    signImpl(source, target);
+}
+
+void sqrtVector(const CudaRNVectorImpl& source, CudaRNVectorImpl& target) {
+    sqrtImpl(source, target);
 }
 
 void absVector(CudaRNVectorImpl& source, CudaRNVectorImpl& target) {
-    absImpl(source._impl, target._impl);
+    absImpl(source, target);
 }
 
 float sumVector(const CudaRNVectorImpl& source) {
-    return sumImpl(source._impl);
+    return sumImpl(source);
 }
 
 // Expose classes and methods to Python
@@ -256,17 +288,17 @@ BOOST_PYTHON_MODULE(PyCuda) {
 
     boost::python::numeric::array::set_module_and_type("numpy", "ndarray");
 
-	//CudaRNVectorImpl_converter().from_python(); todo
-
-    def("conv", convolution);
+	def("conv", convolution);
     def("forwardDiff", forwardDifference);
     def("forwardDiffAdj", forwardDifferenceAdjoint);
-	def("forwardDiff2D", forwardDifference2D);
-	def("forwardDiff2DAdj", forwardDifference2DAdjoint);
+    def("forwardDiff2D", forwardDifference2D);
+    def("forwardDiff2DAdj", forwardDifference2DAdjoint);
     def("maxVectorVector", maxVectorVector);
     def("maxVectorScalar", maxVectorScalar);
+    def("divideVectorVector", divideVectorVector);
     def("addScalar", addScalar);
-    def("sign", sign);
+    def("sign", signVector);
+    def("sqrt", sqrtVector);
     def("abs", absVector);
     def("sum", sumVector);
 

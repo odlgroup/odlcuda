@@ -116,8 +116,8 @@ void copyDeviceToHost(const device_vector_ptr& source, double* target) {
     thrust::copy(source->begin(), source->end(), target);
 }
 
-void printData(const device_vector_ptr& v1, std::ostream_iterator<float>& out) {
-    thrust::copy(v1->begin(), v1->end(), out);
+void printData(const device_vector_ptr& v1, std::ostream_iterator<float>& out, int numel) {
+    thrust::copy(v1->begin(), v1->begin() + numel, out);
 }
 
 float getItemImpl(const device_vector_ptr& v1, int index) {
@@ -128,22 +128,48 @@ void setItemImpl(device_vector_ptr& v1, int index, float value) {
     v1->operator[](index) = value;
 }
 
-void getSliceImpl(const device_vector_ptr& v1, int start, int stop, int step, double* target) {
-    if (step != 1) {
-		auto iter = make_strided_range(v1->begin() + start, v1->begin() + stop, step);
-        thrust::copy(iter.begin(), iter.end(), target);
+template <typename I1, typename I2>
+void stridedGetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, int step) {
+    if (step == 1) {
+		thrust::copy(fromBegin, fromEnd, toBegin);
     } else {
-        thrust::copy(v1->begin() + start, v1->begin() + stop, target);
+		auto iter = make_strided_range(fromBegin, fromEnd, step);
+        thrust::copy(iter.begin(), iter.end(), toBegin);
     }
 }
 
-void setSliceImpl(const device_vector_ptr& v1, int start, int stop, int step, double* source, int num) {
-    if (step != 1) {
-        auto iter = make_strided_range(v1->begin() + start, v1->begin() + stop, step);
-        thrust::copy(source, source + num, iter.begin());
+void getSliceImpl(const device_vector_ptr& v1, int start, int stop, int step, double* target) {
+    if (step > 0) {
+		stridedGetImpl(v1->begin() + start, v1->begin() + stop, target, step);
     } else {
-        thrust::copy(source, source + num, v1->begin() + start);
+        auto reversedBegin = thrust::make_reverse_iterator(v1->begin() + start);
+        auto reversedEnd = thrust::make_reverse_iterator(v1->begin() + stop);
+
+		stridedGetImpl(reversedBegin, reversedEnd, target, -step);
     }
+}
+
+template <typename I1, typename I2>
+void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, int step) {
+	if (step == 1) {
+		thrust::copy(fromBegin, fromEnd, toBegin);
+	}
+	else {
+		auto iter = make_strided_range(toBegin, toEnd, step);
+		thrust::copy(fromBegin, fromEnd, iter.begin());
+	}
+}
+
+void setSliceImpl(const device_vector_ptr& v1, int start, int stop, int step, double* source, int num) {
+	if (step > 0) {
+		stridedSetImpl(source, source+num, v1->begin() + start, v1->begin() + stop, step);
+	}
+	else {
+		auto reversedBegin = thrust::make_reverse_iterator(v1->begin() + start);
+		auto reversedEnd = thrust::make_reverse_iterator(v1->begin() + stop);
+
+		stridedSetImpl(source, source + num, reversedBegin, reversedEnd, -step);
+	}
 }
 
 __global__ void convKernel(const float* source,
@@ -176,11 +202,11 @@ void convImpl(const device_vector_ptr& source, const device_vector_ptr& kernel, 
 }
 
 // Functions
-struct AbsoluteValue {
+struct AbsoluteValueFunctor {
     __host__ __device__ float operator()(const float& f) { return fabs(f); }
 };
 void absImpl(const device_vector_ptr& source, device_vector_ptr& target) {
-    thrust::transform(source->begin(), source->end(), target->begin(), AbsoluteValue{});
+    thrust::transform(source->begin(), source->end(), target->begin(), AbsoluteValueFunctor{});
 }
 
 __global__ void forwardDifferenceKernel(const int len, const float* source, float* target) {
@@ -213,34 +239,47 @@ void forwardDifferenceAdjointImpl(const device_vector_ptr& source, device_vector
                                                           thrust::raw_pointer_cast(target->data()));
 }
 
-void maxVectorVectorImpl(const device_vector_ptr& source, device_vector_ptr& target) {
-    thrust::transform(source->begin(), source->end(), target->begin(), target->begin(), thrust::maximum<float>());
+void maxVectorVectorImpl(const device_vector_ptr& v1, const device_vector_ptr& v2, device_vector_ptr& target) {
+    thrust::transform(v1->begin(), v1->end(), v2->begin(), target->begin(), thrust::maximum<float>{});
 }
 
 void maxVectorScalarImpl(const device_vector_ptr& source, float scalar, device_vector_ptr& target) {
     auto scalarIter = thrust::make_constant_iterator(scalar);
-    thrust::transform(source->begin(), source->end(), scalarIter, target->begin(), thrust::maximum<float>());
+    thrust::transform(source->begin(), source->end(), scalarIter, target->begin(), thrust::maximum<float>{});
+}
+
+struct DivideFunctor {
+    __host__ __device__ float operator()(const float& dividend, const float& divisor) { return divisor != 0.0f ? dividend / divisor : 0.0f; }
+};
+void divideVectorVectorImpl(const device_vector_ptr& dividend, const device_vector_ptr& divisor, device_vector_ptr& quotient) {
+    thrust::transform(dividend->begin(), dividend->end(), divisor->begin(), quotient->begin(), DivideFunctor{});
 }
 
 void addScalarImpl(const device_vector_ptr& source, float scalar, device_vector_ptr& target) {
-    using namespace thrust::placeholders;
-    thrust::transform(source->begin(), source->end(), target->begin(), _1 + scalar);
+    auto scalarIter = thrust::make_constant_iterator(scalar);
+    thrust::transform(source->begin(), source->end(), scalarIter, target->begin(), thrust::plus<float>{});
 }
 
 struct SignFunctor {
     __host__ __device__ float operator()(const float& f) { return (0.0f < f) - (f < 0.0f); }
 };
 void signImpl(const device_vector_ptr& source, device_vector_ptr& target) {
-    thrust::transform(source->begin(), source->end(), target->begin(), SignFunctor());
+    thrust::transform(source->begin(), source->end(), target->begin(), SignFunctor{});
+}
+struct SqrtFunctor {
+    __host__ __device__ float operator()(const float& f) { return f > 0.0f ? sqrtf(f) : 0.0f; }
+};
+void sqrtImpl(const device_vector_ptr& source, device_vector_ptr& target) {
+    thrust::transform(source->begin(), source->end(), target->begin(), SqrtFunctor{});
 }
 
 __global__ void forwardDifference2DKernel(const int cols, const int rows, const float* data, float* dx, float* dy) {
-    for (auto idy = blockIdx.y * blockDim.y + threadIdx.y + 1; idy < rows - 1; idy += blockDim.y * gridDim.y) {
-        for (auto idx = blockIdx.x * blockDim.x + threadIdx.x + 1; idx < cols - 1; idx += blockDim.x * gridDim.x) {
-            const auto index = idx + cols * idy;
+    for (auto idy = blockIdx.y * blockDim.y + threadIdx.y + 1; idy < cols - 1; idy += blockDim.y * gridDim.y) {
+        for (auto idx = blockIdx.x * blockDim.x + threadIdx.x + 1; idx < rows - 1; idx += blockDim.x * gridDim.x) {
+            const auto index = idx + rows * idy;
 
             dx[index] = data[index + 1] - data[index];
-            dy[index] = data[index + cols] - data[index];
+            dy[index] = data[index + rows] - data[index];
         }
     }
 }
@@ -255,11 +294,11 @@ void forwardDifference2DImpl(const device_vector_ptr& source, device_vector_ptr&
 }
 
 __global__ void forwardDifference2DAdjointKernel(const int cols, const int rows, const float* dx, const float* dy, float* target) {
-    for (auto idy = blockIdx.y * blockDim.y + threadIdx.y + 1; idy < rows - 1; idy += blockDim.y * gridDim.y) {
-        for (auto idx = blockIdx.x * blockDim.x + threadIdx.x + 1; idx < cols - 1; idx += blockDim.x * gridDim.x) {
-            const auto index = idx + cols * idy;
+    for (auto idy = blockIdx.y * blockDim.y + threadIdx.y + 1; idy < cols - 1; idy += blockDim.y * gridDim.y) {
+        for (auto idx = blockIdx.x * blockDim.x + threadIdx.x + 1; idx < rows - 1; idx += blockDim.x * gridDim.x) {
+            const auto index = idx + rows * idy;
 
-            target[index] = -dx[index] + dx[index - 1] - dy[index] + dy[index - cols];
+            target[index] = -dx[index] + dx[index - 1] - dy[index] + dy[index - rows];
         }
     }
 }
