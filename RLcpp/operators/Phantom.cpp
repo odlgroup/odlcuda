@@ -1,6 +1,6 @@
-#include <TVLib/utils/Phantom.h>
-#include <TVLib/utils/EigenUtils.h>
-#include <TVLib/utils/Ellipse.h>
+#include <RLCpp/utils/Phantom.h>
+#include <RLCpp/utils/EigenUtils.h>
+#include <RLCpp/utils/Ellipse.h>
 
 #include <vector>
 #include <iostream>
@@ -8,7 +8,7 @@
 
 using namespace Eigen;
 
-namespace TVLib {
+namespace RLCpp {
 
 namespace {
 /**

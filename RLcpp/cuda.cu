@@ -283,6 +283,7 @@ __global__ void forwardDifference2DKernel(const int cols, const int rows, const 
         }
     }
 }
+
 void forwardDifference2DImpl(const device_vector_ptr& source, device_vector_ptr& dx, device_vector_ptr& dy, const int cols, const int rows) {
     dim3 dimBlock(32, 32);
     dim3 dimGrid(32, 32);

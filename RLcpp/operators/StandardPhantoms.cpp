@@ -1,6 +1,5 @@
-#include <TVLib/utils/Phantom.h>
-#include <TVLib/utils/EigenUtils.h>
-#include <TVLib/utils/PrintArray.h>
+#include <RLCpp/utils/Phantom.h>
+#include <RLCpp/utils/EigenUtils.h>
 
 #include <stdexcept> // std::invalid_argument
 #include <vector>
@@ -9,7 +8,7 @@
 
 using namespace Eigen;
 
-namespace TVLib {
+namespace RLCpp {
 namespace {
 /**
  * The Shepp-Logan ellipse parameters, as defined in:

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <TVLib/utils/utilities_export.h>
-#include <TVLib/utils/StandardPhantoms.h>
+#include <RLCpp/utils/utilities_export.h>
+#include <RLCpp/utils/StandardPhantoms.h>
 
 #include <Eigen/Dense>
 
-namespace TVLib {
+namespace RLCpp {
 /**
  * Constructs a phantom.
  * @param size			The size of the phantom (in units)
