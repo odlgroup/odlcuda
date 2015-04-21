@@ -21,7 +21,7 @@ extern device_vector_ptr makeThrustVector(size_t size);
 extern device_vector_ptr makeThrustVector(size_t size, float value);
 
 //Algebra
-extern void linCombImpl(float a, const device_vector_ptr& v1, float b, device_vector_ptr& v2);
+extern void linCombImpl(device_vector_ptr& z, float a, const device_vector_ptr& x, float b, const device_vector_ptr& y);
 extern float innerImpl(const device_vector_ptr& v1, const device_vector_ptr& v2);
 extern void multiplyImpl(const device_vector_ptr& v1, device_vector_ptr& v2);
 
@@ -208,10 +208,10 @@ class CudaRNImpl {
         return CudaRNVectorImpl(_n);
     }
 
-    void linComb(float a, const CudaRNVectorImpl& v1, float b, CudaRNVectorImpl& v2) {
+	void linComb(CudaRNVectorImpl& z, float a, const CudaRNVectorImpl& x, float b, CudaRNVectorImpl& y) {
         assert(v1._size == v2._size);
 
-        linCombImpl(a, v1._impl, b, v2._impl);
+        linCombImpl(z._impl, a, x._impl, b, y._impl);
     }
 
     float inner(const CudaRNVectorImpl& v1, const CudaRNVectorImpl& v2) {

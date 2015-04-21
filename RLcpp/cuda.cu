@@ -37,52 +37,55 @@ device_vector_ptr makeThrustVector(size_t size, float value) {
     return std::make_shared<device_vector>(size, value);
 }
 
-void linCombImpl(float a, const device_vector_ptr& x, float b, device_vector_ptr& y) {
+
+
+void linCombImpl(device_vector_ptr& z, float a, const device_vector_ptr& x, float b, const device_vector_ptr& y) {
     using namespace thrust::placeholders;
 
 #if 1 //Efficient
     if (a == 0.0f) {
-        if (b == 0.0f) { // y = 0
-            thrust::fill(y->begin(), y->end(), 0.0f);
-        } else if (b == 1.0f) {  // y = y, no-op
+        if (b == 0.0f) { // z = 0
+            thrust::fill(z->begin(), z->end(), 0.0f);
+        } else if (b == 1.0f) {  // z = y
+			thrust::copy(y->begin(), y->end(), z->begin());
         } else if (b == -1.0f) { // y = -y
-            thrust::transform(y->begin(), y->end(), y->begin(), -_1);
+            thrust::transform(y->begin(), y->end(), z->begin(), -_1);
         } else { // y = b*y
-            thrust::transform(y->begin(), y->end(), y->begin(), b * _1);
+            thrust::transform(y->begin(), y->end(), z->begin(), b * _1);
         }
     } else if (a == 1.0f) {
-        if (b == 0.0f) { // y = x
-            thrust::copy(x->begin(), x->end(), y->begin());
-        } else if (b == 1.0f) { // y = x+y
-            thrust::transform(x->begin(), x->end(), y->begin(), y->begin(), _1 + _2);
-        } else if (b == -1.0f) { // y = x-y
-            thrust::transform(x->begin(), x->end(), y->begin(), y->begin(), _1 - _2);
-        } else { // y = x + b*y
-            thrust::transform(x->begin(), x->end(), y->begin(), y->begin(), _1 + b * _2);
+        if (b == 0.0f) { // z = x
+            thrust::copy(x->begin(), x->end(), z->begin());
+        } else if (b == 1.0f) { // z = x+y
+            thrust::transform(x->begin(), x->end(), y->begin(), z->begin(), _1 + _2);
+        } else if (b == -1.0f) { // z = x-y
+            thrust::transform(x->begin(), x->end(), y->begin(), z->begin(), _1 - _2);
+        } else { // z = x + b*y
+            thrust::transform(x->begin(), x->end(), y->begin(), z->begin(), _1 + b * _2);
         }
     } else if (a == -1.0f) {
-        if (b == 0.0f) { // y = -x
-            thrust::transform(x->begin(), x->end(), y->begin(), -_1);
-        } else if (b == 1.0f) { // y = -x+y
-            thrust::transform(x->begin(), x->end(), y->begin(), y->begin(), -_1 + _2);
-        } else if (b == -1.0f) { // y = -x-y
-            thrust::transform(x->begin(), x->end(), y->begin(), y->begin(), -_1 - _2);
-        } else { // y = -x + b*y
-            thrust::transform(x->begin(), x->end(), y->begin(), y->begin(), -_1 + b * _2);
+        if (b == 0.0f) { // z = -x
+            thrust::transform(x->begin(), x->end(), z->begin(), -_1);
+        } else if (b == 1.0f) { // z = -x+y
+            thrust::transform(x->begin(), x->end(), y->begin(), z->begin(), -_1 + _2);
+        } else if (b == -1.0f) { // z = -x-y
+            thrust::transform(x->begin(), x->end(), y->begin(), z->begin(), -_1 - _2);
+        } else { // z = -x + b*y
+            thrust::transform(x->begin(), x->end(), y->begin(), z->begin(), -_1 + b * _2);
         }
     } else {
-        if (b == 0.0f) { // y = a*x
-            thrust::transform(x->begin(), x->end(), y->begin(), a * _1);
-        } else if (b == 1.0f) { // y = a*x+y
-            thrust::transform(x->begin(), x->end(), y->begin(), y->begin(), a * _1 + _2);
-        } else if (b == -1.0f) { // y = a*x-y
-            thrust::transform(x->begin(), x->end(), y->begin(), y->begin(), a * _1 - _2);
-        } else { // y = a*x + b*y
-            thrust::transform(x->begin(), x->end(), y->begin(), y->begin(), a * _1 + b * _2);
+        if (b == 0.0f) { // z = a*x
+            thrust::transform(x->begin(), x->end(), z->begin(), a * _1);
+        } else if (b == 1.0f) { // z = a*x+y
+            thrust::transform(x->begin(), x->end(), y->begin(), z->begin(), a * _1 + _2);
+        } else if (b == -1.0f) { // z = a*x-y
+            thrust::transform(x->begin(), x->end(), y->begin(), z->begin(), a * _1 - _2);
+        } else { // z = a*x + b*y
+            thrust::transform(x->begin(), x->end(), y->begin(), z->begin(), a * _1 + b * _2);
         }
     }
 #else //Basic
-    thrust::transform(x->begin(), x->end(), y->begin(), y->begin(), a * _1 + b * _2);
+    thrust::transform(x->begin(), x->end(), y->begin(), z->begin(), a * _1 + b * _2);
 #endif
 }
 
