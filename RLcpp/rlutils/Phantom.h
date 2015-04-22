@@ -1,7 +1,8 @@
 #pragma once
 
-#include <RLCpp/rlutils/utilities_export.h>
-#include <RLCpp/rlutils/StandardPhantoms.h>
+#include <RLcpp/rlutils/Phantom.h>
+#include <RLcpp/rlutils/utilities_export.h>
+#include <RLcpp/rlutils/StandardPhantoms.h>
 
 #include <Eigen/Dense>
 

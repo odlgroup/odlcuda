@@ -1,4 +1,3 @@
-#pragma once
 //Thrust bug...
 #define DEBUG 1
 #include <boost/python.hpp>
@@ -181,7 +180,8 @@ class CudaRNVectorImpl {
 
     friend std::ostream& operator<<(std::ostream& ss, const CudaRNVectorImpl& v) {
         ss << "CudaRNVectorImpl: ";
-        printData(v._impl, std::ostream_iterator<float>(ss, " "), std::min<int>(100, v._size));
+	auto outputIter = std::ostream_iterator<float>(ss, " ");
+        printData(v._impl, outputIter, std::min<int>(100, v._size));
         return ss;
     }
 
@@ -216,7 +216,8 @@ class CudaRNImpl {
     }
 
 	void linComb(CudaRNVectorImpl& z, float a, const CudaRNVectorImpl& x, float b, CudaRNVectorImpl& y) {
-        assert(v1._size == v2._size);
+        assert(z._size == x._size);
+        assert(z._size == y._size);
 
         linCombImpl(z._impl, a, x._impl, b, y._impl);
     }

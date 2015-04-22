@@ -1,6 +1,6 @@
-#include <RLCpp/rlutils/Phantom.h>
-#include <RLCpp/rlutils/EigenUtils.h>
-
+#include <RLcpp/rlutils/StandardPhantoms.h>
+#include <RLcpp/rlutils/Phantom.h>
+#include <RLcpp/rlutils/EigenUtils.h>
 #include <stdexcept> // std::invalid_argument
 #include <vector>
 #include <iostream>

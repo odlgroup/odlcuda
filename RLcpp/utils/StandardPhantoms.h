@@ -1,7 +1,7 @@
 #pragma once
 
-#include <RLCpp/utils/utilities_export.h>
-#include <RLCpp/utils/Ellipse.h>
+#include <RLcpp/rlutils/utilities_export.h>
+#include <RLcpp/rlutils/Ellipse.h>
 #include <vector>
 
 #include <Eigen/Dense>

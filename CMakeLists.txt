@@ -57,6 +57,11 @@ else()
 	else()
 		message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 	endif()
+
+	if (CUDA_ENABLED)
+		set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -std=c++11)
+		SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
+	endif()
 endif()
 
 # Python bindings
@@ -66,8 +71,6 @@ if(PYTHON_ENABLED)
 	set(Boost_USE_SHARED_LIBS   ON)
 	set(Boost_USE_MULTITHREADED ON)
 	find_package(Boost COMPONENTS
-                system
-                thread
                 python
              REQUIRED)
 	include_directories(${Boost_INCLUDE_DIRS})
