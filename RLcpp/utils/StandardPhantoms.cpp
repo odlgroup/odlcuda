@@ -1,5 +1,5 @@
-#include <RLCpp/utils/Phantom.h>
-#include <RLCpp/utils/EigenUtils.h>
+#include <RLcpp/utils/Phantom.h>
+#include <RLcpp/utils/EigenUtils.h>
 
 #include <stdexcept> // std::invalid_argument
 #include <vector>

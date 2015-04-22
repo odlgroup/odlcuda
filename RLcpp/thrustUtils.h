@@ -52,6 +52,6 @@ class strided_range {
 };
 
 template <typename Iterator>
-strided_range<Iterator> make_strided_range(const Iterator& begin, const Iterator& end, const strided_range<Iterator>::difference_type step) {
+strided_range<Iterator> make_strided_range(const Iterator& begin, const Iterator& end, const typename strided_range<Iterator>::difference_type step) {
     return {begin, end, step};
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "boost/python/numeric.hpp"
-#include <exception>
+#include <stdexcept>
 #include <Python.h>
 #include <numpy/arrayobject.h>
 #include <typeinfo>
@@ -10,7 +10,7 @@
 using namespace boost::python;
 
 template <typename T>
-int getEnum() { static_assert(false && "TYPE NOT SUPPORTED"); }
+int getEnum();
 
 #define makeDefinition(TYPE, NAME) \
 	template <>                    \
@@ -64,7 +64,7 @@ EigenSize getSize(const numeric::array& data) {
 			dimension = 1;
 	}
 	else
-		throw std::exception("Dimension is not 1 or 2");
+		throw std::logic_error("Dimension is not 1 or 2");
 
 	return{ dataRows, dataCols, dimension, datadimension };
 }
@@ -85,7 +85,7 @@ EigenSize getSizeGeneral(const object& data) {
 		}
 	}
 	catch (const error_already_set&) {
-		throw std::exception("Data is not of array type");
+		throw std::logic_error("Data is not of array type");
 	}
 
 	if (dataRows > 1 && dataCols > 1)
@@ -117,24 +117,13 @@ T* getDataPtr(const numeric::array& data) {
 	PyArrayObject* a = (PyArrayObject*)data.ptr();
 
 	if (a == NULL)
-		throw std::exception("Could not get NP array.");
+		throw std::logic_error("Could not get NP array.");
 
 	//Check that type is correct
 	if (a->descr->type_num != getEnum<T>())
-		throw std::exception(("Expected element type " + std::string(typeid(T).name()) + " " + a->descr->type).c_str());
+		throw std::logic_error(("Expected element type " + std::string(typeid(T).name()) + " " + a->descr->type).c_str());
 
 	T* p = (T*)a->data;
 
 	return p;
-}
-
-template <typename EigenArray>
-numeric::array copyToNumpyOutput(const EigenArray& data) {
-	typedef internal::traits<EigenArray>::Scalar Scalar;
-
-	numeric::array arr = makeArray<Scalar>((npy_intp)data.rows(), (npy_intp)data.cols());
-	auto mapped = mapInput<ArrayXXd>(arr);
-	mapped = data;
-
-	return arr;
 }

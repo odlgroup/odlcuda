@@ -1,5 +1,5 @@
-#pragma once
 #include <algorithm>
+#include <memory>
 
 // includes CUDA Runtime
 #include <cuda_runtime.h>
@@ -16,16 +16,6 @@
 // RL
 #include <RLcpp/thrustUtils.h>
 
-template <typename T>
-struct uninitialized_allocator
-    : thrust::device_malloc_allocator<T> {
-    // note that construct is annotated as
-    // a __host__ __device__ function
-    __host__ __device__ void construct(T* p) {
-        // no-op
-    }
-};
-
 typedef thrust::device_vector<float> device_vector;
 typedef std::shared_ptr<device_vector> device_vector_ptr;
 
@@ -36,8 +26,6 @@ device_vector_ptr makeThrustVector(size_t size) {
 device_vector_ptr makeThrustVector(size_t size, float value) {
     return std::make_shared<device_vector>(size, value);
 }
-
-
 
 void linCombImpl(device_vector_ptr& z, float a, const device_vector_ptr& x, float b, const device_vector_ptr& y) {
     using namespace thrust::placeholders;

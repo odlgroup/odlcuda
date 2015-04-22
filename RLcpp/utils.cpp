@@ -1,5 +1,3 @@
-#pragma once
-
 #include <boost/python.hpp>
 #include "boost/python/extract.hpp"
 #include "boost/python/numeric.hpp"
@@ -7,7 +5,6 @@
 #include <vector>
 #include <Eigen/Dense>
 #include <RLcpp/numpy_eigen.h>
-#include <RLcpp/wrap.h>
 #include <RLcpp/utils/StandardPhantoms.h>
 #include <RLcpp/utils/Phantom.h>
 
