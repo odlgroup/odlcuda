@@ -37,7 +37,9 @@ device_vector_ptr makeThrustVector(size_t size, float value) {
     return std::make_shared<device_vector>(size, value);
 }
 
-
+float* getRawPtr(device_vector_ptr& ptr){
+	return thrust::raw_pointer_cast(ptr->data());
+}
 
 void linCombImpl(device_vector_ptr& z, float a, const device_vector_ptr& x, float b, const device_vector_ptr& y) {
     using namespace thrust::placeholders;

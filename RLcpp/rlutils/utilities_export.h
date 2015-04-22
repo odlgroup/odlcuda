@@ -6,7 +6,7 @@
 #else
 #  ifndef UTILITIES_EXPORT
 #    ifdef _WIN32
-#      ifdef utils_EXPORTS
+#      ifdef rlutils_EXPORTS
         /* We are building this library */
 #        define UTILITIES_EXPORT __declspec(dllexport)
 #      else

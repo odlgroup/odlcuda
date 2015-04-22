@@ -8,8 +8,8 @@
 #include <Eigen/Dense>
 #include <RLcpp/numpy_eigen.h>
 #include <RLcpp/wrap.h>
-#include <RLcpp/utils/StandardPhantoms.h>
-#include <RLcpp/utils/Phantom.h>
+#include <RLcpp/rlutils/StandardPhantoms.h>
+#include <RLcpp/rlutils/Phantom.h>
 
 using namespace boost::python;
 using namespace Eigen;

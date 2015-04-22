@@ -11,4 +11,4 @@ set(Sources
 	
 include_directories ("${PROJECT_SOURCE_DIR}")
 
-add_library(utils SHARED ${Headers} ${Sources})
+add_library(rlutils SHARED ${Headers} ${Sources})

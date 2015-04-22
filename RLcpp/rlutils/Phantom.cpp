@@ -1,6 +1,6 @@
-#include <RLCpp/utils/Phantom.h>
-#include <RLCpp/utils/EigenUtils.h>
-#include <RLCpp/utils/Ellipse.h>
+#include <RLCpp/rlutils/Phantom.h>
+#include <RLCpp/rlutils/EigenUtils.h>
+#include <RLCpp/rlutils/Ellipse.h>
 
 #include <vector>
 #include <iostream>

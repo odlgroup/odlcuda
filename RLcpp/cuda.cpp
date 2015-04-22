@@ -20,6 +20,9 @@ typedef std::shared_ptr<thrust::device_vector<float>> device_vector_ptr;
 extern device_vector_ptr makeThrustVector(size_t size);
 extern device_vector_ptr makeThrustVector(size_t size, float value);
 
+//Get ptr
+extern float* getRawPtr(device_vector_ptr& ptr);
+
 //Algebra
 extern void linCombImpl(device_vector_ptr& z, float a, const device_vector_ptr& x, float b, const device_vector_ptr& y);
 extern float innerImpl(const device_vector_ptr& v1, const device_vector_ptr& v2);
@@ -190,6 +193,10 @@ class CudaRNVectorImpl {
         return _impl;
     }
 
+	uintptr_t dataPtr() {
+		return reinterpret_cast<uintptr_t>(getRawPtr(_impl));
+	}
+
     const size_t _size;
     device_vector_ptr _impl;
 };
@@ -302,7 +309,6 @@ BOOST_PYTHON_MODULE(PyCuda) {
     def("abs", absVector);
     def("sum", sumVector);
 
-    //typedef ClassWrapper<VectorXd, id<size_t>> EigenVector1;
     class_<CudaRNImpl>("CudaRNImpl", "Documentation",
                        init<size_t>())
         .def("zero", &CudaRNImpl::zero)
@@ -320,5 +326,6 @@ BOOST_PYTHON_MODULE(PyCuda) {
         .def("__getitem__", &CudaRNVectorImpl::getItem)
         .def("__setitem__", &CudaRNVectorImpl::setItem)
         .def("getSlice", &CudaRNVectorImpl::getSlice)
-        .def("setSlice", &CudaRNVectorImpl::setSlice);
+        .def("setSlice", &CudaRNVectorImpl::setSlice)
+		.def("dataPtr", &CudaRNVectorImpl::dataPtr);
 }
