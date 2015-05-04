@@ -40,7 +40,7 @@ void linCombImpl(device_vector_ptr& z, float a, const device_vector_ptr& x, floa
             thrust::fill(z->begin(), z->end(), 0.0f);
         } else if (b == 1.0f) {  // z = y
 			thrust::copy(y->begin(), y->end(), z->begin());
-        } else if (b == -1.0f) { // y = -y
+        } else if (b == -1.0f) { // z = -y
             thrust::transform(y->begin(), y->end(), z->begin(), -_1);
         } else { // y = b*y
             thrust::transform(y->begin(), y->end(), z->begin(), b * _1);
