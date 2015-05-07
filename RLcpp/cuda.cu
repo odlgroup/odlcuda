@@ -27,8 +27,8 @@ device_vector_ptr makeThrustVector(size_t size, float value) {
     return std::make_shared<device_vector>(size, value);
 }
 
-float* getRawPtr(device_vector_ptr& ptr){
-	return thrust::raw_pointer_cast(ptr->data());
+float* getRawPtr(device_vector_ptr& ptr) {
+    return thrust::raw_pointer_cast(ptr->data());
 }
 
 void linCombImpl(device_vector_ptr& z, float a, const device_vector_ptr& x, float b, const device_vector_ptr& y) {
@@ -38,8 +38,8 @@ void linCombImpl(device_vector_ptr& z, float a, const device_vector_ptr& x, floa
     if (a == 0.0f) {
         if (b == 0.0f) { // z = 0
             thrust::fill(z->begin(), z->end(), 0.0f);
-        } else if (b == 1.0f) {  // z = y
-			thrust::copy(y->begin(), y->end(), z->begin());
+        } else if (b == 1.0f) { // z = y
+            thrust::copy(y->begin(), y->end(), z->begin());
         } else if (b == -1.0f) { // y = -y
             thrust::transform(y->begin(), y->end(), z->begin(), -_1);
         } else { // y = b*y
@@ -126,45 +126,43 @@ void setItemImpl(device_vector_ptr& v1, int index, float value) {
 template <typename I1, typename I2>
 void stridedGetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, int step) {
     if (step == 1) {
-		thrust::copy(fromBegin, fromEnd, toBegin);
+        thrust::copy(fromBegin, fromEnd, toBegin);
     } else {
-		auto iter = make_strided_range(fromBegin, fromEnd, step);
+        auto iter = make_strided_range(fromBegin, fromEnd, step);
         thrust::copy(iter.begin(), iter.end(), toBegin);
     }
 }
 
 void getSliceImpl(const device_vector_ptr& v1, int start, int stop, int step, double* target) {
     if (step > 0) {
-		stridedGetImpl(v1->begin() + start, v1->begin() + stop, target, step);
+        stridedGetImpl(v1->begin() + start, v1->begin() + stop, target, step);
     } else {
         auto reversedBegin = thrust::make_reverse_iterator(v1->begin() + start);
         auto reversedEnd = thrust::make_reverse_iterator(v1->begin() + stop);
 
-		stridedGetImpl(reversedBegin, reversedEnd, target, -step);
+        stridedGetImpl(reversedBegin, reversedEnd, target, -step);
     }
 }
 
 template <typename I1, typename I2>
 void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, int step) {
-	if (step == 1) {
-		thrust::copy(fromBegin, fromEnd, toBegin);
-	}
-	else {
-		auto iter = make_strided_range(toBegin, toEnd, step);
-		thrust::copy(fromBegin, fromEnd, iter.begin());
-	}
+    if (step == 1) {
+        thrust::copy(fromBegin, fromEnd, toBegin);
+    } else {
+        auto iter = make_strided_range(toBegin, toEnd, step);
+        thrust::copy(fromBegin, fromEnd, iter.begin());
+    }
 }
 
 void setSliceImpl(const device_vector_ptr& v1, int start, int stop, int step, double* source, int num) {
-	if (step > 0) {
-		stridedSetImpl(source, source+num, v1->begin() + start, v1->begin() + stop, step);
-	}
-	else {
-		auto reversedBegin = thrust::make_reverse_iterator(v1->begin() + start);
-		auto reversedEnd = thrust::make_reverse_iterator(v1->begin() + stop);
+    if (step > 0) {
+        stridedSetImpl(source, source + num, v1->begin() + start, v1->begin() + stop, step);
+    } else {
+        auto reversedBegin = thrust::make_reverse_iterator(v1->begin() + start);
+        auto reversedEnd = thrust::make_reverse_iterator(v1->begin() + stop);
 
-		stridedSetImpl(source, source + num, reversedBegin, reversedEnd, -step);
-	}
+        stridedSetImpl(source, source + num, reversedBegin, reversedEnd, -step);
+    }
 }
 
 __global__ void convKernel(const float* source,

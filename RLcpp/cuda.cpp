@@ -152,7 +152,8 @@ class CudaRNVectorImpl {
         return getItemImpl(_impl, index);
     }
 
-    void setItem(int index, float value) {
+		void setItem(int index, float value) {
+			  if (index < 0) index += _size; //Handle negative indexes like python
         validateIndex(index);
         setItemImpl(_impl, index, value);
     }
@@ -173,14 +174,18 @@ class CudaRNVectorImpl {
     void setSlice(const slice index, const numeric::array& arr) {
         sliceHelper sh(index, _size);
         sh.validate();
-        assert(sh.numel == len(arr));
-        if (sh.numel > 0)
+
+				if (sh.numel != len(arr))
+					throw std::out_of_range("Size of array does not match slice");
+
+        if (sh.numel > 0) {
             setSliceImpl(_impl, sh.start, sh.stop, sh.step, getDataPtr<double>(arr), sh.numel);
+        }
     }
 
     friend std::ostream& operator<<(std::ostream& ss, const CudaRNVectorImpl& v) {
         ss << "CudaRNVectorImpl: ";
-	auto outputIter = std::ostream_iterator<float>(ss, " ");
+        auto outputIter = std::ostream_iterator<float>(ss, " ");
         printData(v._impl, outputIter, std::min<int>(100, v._size));
         return ss;
     }
@@ -193,9 +198,9 @@ class CudaRNVectorImpl {
         return _impl;
     }
 
-	uintptr_t dataPtr() {
-		return reinterpret_cast<uintptr_t>(getRawPtr(_impl));
-	}
+    uintptr_t dataPtr() {
+        return reinterpret_cast<uintptr_t>(getRawPtr(_impl));
+    }
 
     const size_t _size;
     device_vector_ptr _impl;
@@ -215,7 +220,7 @@ class CudaRNImpl {
         return CudaRNVectorImpl(_n);
     }
 
-	void linComb(CudaRNVectorImpl& z, float a, const CudaRNVectorImpl& x, float b, CudaRNVectorImpl& y) {
+    void linComb(CudaRNVectorImpl& z, float a, const CudaRNVectorImpl& x, float b, CudaRNVectorImpl& y) {
         assert(z._size == x._size);
         assert(z._size == y._size);
 
@@ -296,7 +301,7 @@ BOOST_PYTHON_MODULE(PyCuda) {
 
     boost::python::numeric::array::set_module_and_type("numpy", "ndarray");
 
-	def("conv", convolution);
+    def("conv", convolution);
     def("forwardDiff", forwardDifference);
     def("forwardDiffAdj", forwardDifferenceAdjoint);
     def("forwardDiff2D", forwardDifference2D);
@@ -328,5 +333,5 @@ BOOST_PYTHON_MODULE(PyCuda) {
         .def("__setitem__", &CudaRNVectorImpl::setItem)
         .def("getSlice", &CudaRNVectorImpl::getSlice)
         .def("setSlice", &CudaRNVectorImpl::setSlice)
-		.def("dataPtr", &CudaRNVectorImpl::dataPtr);
+        .def("dataPtr", &CudaRNVectorImpl::dataPtr);
 }

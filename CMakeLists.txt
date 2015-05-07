@@ -25,8 +25,10 @@ option(CUDA_ENABLED "Enable CUDA" TRUE)
 if(CUDA_ENABLED)
 	find_package(CUDA QUIET REQUIRED)
  
+	set(CUDA_COMPUTE "52" CACHE STRING "Cuda compute capability to compile for")
+ 
 	# Pass options to NVCC
-	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_52,code=sm_52)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_${CUDA_COMPUTE},code=sm_${CUDA_COMPUTE})
 	
 	# Enable fast math
 	option(CUDA_USE_FAST_MATH "Enable fast math in cuda (can decrease precision)" TRUE)
