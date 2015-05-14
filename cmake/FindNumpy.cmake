@@ -37,6 +37,15 @@ find_path(PYTHON_NUMPY_INCLUDE_DIR numpy/arrayobject.h
 		  "${PYTHON_INCLUDE_DIRS}/../Lib/site-packages/numpy/core/include"
           "${NUMPY_PATH}/"
           "${PYTHON_INCLUDE_PATH}/"
+          /usr/include/python/
+          /usr/include/python3.6/
+          /usr/include/python3.5/
+          /usr/include/python3.4/
+          /usr/include/python3.3/
+          /usr/include/python3.2/
+          /usr/include/python3.1/
+          /usr/include/python3.0/
+          /usr/include/python2.7/
           /usr/include/python2.6/
           /usr/include/python2.5/
           /usr/include/python2.4/
