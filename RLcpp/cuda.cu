@@ -38,15 +38,9 @@ void linCombImpl(device_vector_ptr& z, float a, const device_vector_ptr& x, floa
     if (a == 0.0f) {
         if (b == 0.0f) { // z = 0
             thrust::fill(z->begin(), z->end(), 0.0f);
-<<<<<<< HEAD
         } else if (b == 1.0f) { // z = y
             thrust::copy(y->begin(), y->end(), z->begin());
         } else if (b == -1.0f) { // y = -y
-=======
-        } else if (b == 1.0f) {  // z = y
-			thrust::copy(y->begin(), y->end(), z->begin());
-        } else if (b == -1.0f) { // z = -y
->>>>>>> 8e25160939831cf341e1f32fa73727aea5484f75
             thrust::transform(y->begin(), y->end(), z->begin(), -_1);
         } else { // y = b*y
             thrust::transform(y->begin(), y->end(), z->begin(), b * _1);
