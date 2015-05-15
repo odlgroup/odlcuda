@@ -8,6 +8,7 @@
 
 // thrust
 #include <thrust/iterator/reverse_iterator.h>
+#include <thrust/iterator/constant_iterator.h>
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>
 #include <thrust/inner_product.h>
