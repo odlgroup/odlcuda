@@ -27,7 +27,12 @@ char const* greet() {
 
 // Expose classes and methods to Python
 BOOST_PYTHON_MODULE(PyUtils) {
-    import_array(); //Import numpy
+    auto result = _import_array(); //Import numpy
+    if (result < 0) {
+        PyErr_Print();
+        PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
+        return;
+    }
 
     boost::python::numeric::array::set_module_and_type("numpy", "ndarray");
 
