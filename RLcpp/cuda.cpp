@@ -5,6 +5,9 @@
 #include <iostream>
 #define _DEBUG 1
 #include <thrust/device_vector.h>
+// Disable deprecated API
+#include <numpy/numpyconfig.h>
+//#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 #include <RLcpp/numpy_utils.h>
 
@@ -297,8 +300,12 @@ float sumVector(const CudaRNVectorImpl& source) {
 
 // Expose classes and methods to Python
 BOOST_PYTHON_MODULE(PyCuda) {
-    import_array(); //Import numpy
-
+    auto result = _import_array(); //Import numpy
+    if (result < 0) {
+        PyErr_Print();
+        PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
+        return;
+    }
     boost::python::numeric::array::set_module_and_type("numpy", "ndarray");
 
     def("conv", convolution);
