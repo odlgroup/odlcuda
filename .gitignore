@@ -21,4 +21,4 @@
 *.app
 
 # Build folder
-build/
+build*/
