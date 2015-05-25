@@ -1,5 +1,9 @@
 #pragma once
 
+// Disable deprecated API
+#include <numpy/numpyconfig.h>
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+
 #include "boost/python/numeric.hpp"
 #include <stdexcept>
 #include <Python.h>
@@ -39,7 +43,7 @@ bool isType(const numeric::array& data)
 	if (a == NULL)
 		return false;
 
-	return a->descr->type_num == getEnum<T>();
+	return PyArray_TYPE(a) == getEnum<T>();
 }
 
 struct EigenSize {
@@ -120,10 +124,10 @@ T* getDataPtr(const numeric::array& data) {
 		throw std::logic_error("Could not get NP array.");
 
 	//Check that type is correct
-	if (a->descr->type_num != getEnum<T>())
-		throw std::logic_error(("Expected element type " + std::string(typeid(T).name()) + " " + a->descr->type).c_str());
+	if (PyArray_TYPE(a) != getEnum<T>())
+		throw std::logic_error(("Expected element type " + std::string(typeid(T).name()) + " " + PyArray_DESCR(a)->type).c_str());
 
-	T* p = (T*)a->data;
+	T* p = (T*)PyArray_DATA(a);
 
 	return p;
 }
