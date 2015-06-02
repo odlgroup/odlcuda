@@ -9,12 +9,13 @@
 #include <numpy/numpyconfig.h>
 //#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
+
 #include <RLcpp/numpy_utils.h>
+#include <RLcpp/DeviceVector.h>
 
 using namespace boost::python;
 
-//Use a special allocator that does not automatically initialize the vector for efficiency
-typedef std::shared_ptr<thrust::device_vector<float>> device_vector_ptr;
+typedef std::shared_ptr<DeviceVector<float>> device_vector_ptr;
 
 //Externally (CUDA) compiled
 

@@ -16,20 +16,107 @@
 
 // RL
 #include <RLcpp/thrustUtils.h>
+#include <RLcpp/DeviceVector.h>
 
-typedef thrust::device_vector<float> device_vector;
-typedef std::shared_ptr<device_vector> device_vector_ptr;
+template <typename T>
+class DeviceVector {
+  public:
+    virtual ~DeviceVector() {}
+    virtual T* data() = 0;
+    virtual T const* data() const = 0;
+    virtual size_t size() const = 0;
+
+    thrust::device_ptr<T> begin() {
+        return thrust::device_pointer_cast<T>(data());
+    }
+		thrust::device_ptr<const T> begin() const {
+			return thrust::device_pointer_cast<const T>(data());
+		}
+
+    thrust::device_ptr<T> end() {
+        return begin() + size();
+    }
+		thrust::device_ptr<const T> end() const {
+			return begin() + size();
+		}
+
+    thrust::device_reference<T> operator[](size_t index) {
+        return thrust::device_reference<T>{begin() + index};
+    }
+    thrust::device_reference<const T> operator[](size_t index) const {
+        return thrust::device_reference<T>{begin() + index};
+    }
+};
+
+template <typename T>
+class ThrustDeviceVector : public DeviceVector<T> {
+  private:
+    thrust::device_vector<T> _data;
+
+  public:
+    ThrustDeviceVector(size_t size)
+        : _data(size) {}
+
+    ThrustDeviceVector(size_t size, T value)
+        : _data(size, value) {}
+
+    T* data() override {
+        return thrust::raw_pointer_cast(_data.data());
+    }
+    T const* data() const override {
+        return thrust::raw_pointer_cast(_data.data());
+    }
+
+    size_t size() const override {
+        return _data.size();
+    }
+};
+
+template <typename T>
+class WrapperDeviceVector : public DeviceVector<T> {
+  private:
+    const T* _data;
+    const size_t _size;
+
+  public:
+    WrapperDeviceVector(const T* data, size_t size)
+        : _data(data),
+          _size(size) {}
+
+    T* data() override {
+        return _data;
+    }
+    T const* data() const override {
+        return _data;
+    }
+
+    size_t size() const override {
+        return _size;
+    }
+};
+
+typedef std::shared_ptr<DeviceVector<float>> device_vector_ptr;
 
 device_vector_ptr makeThrustVector(size_t size) {
-    return std::make_shared<device_vector>(size);
+    device_vector_ptr vec = std::make_shared<ThrustDeviceVector<float>>(size);
+    return vec;
 }
 
 device_vector_ptr makeThrustVector(size_t size, float value) {
-    return std::make_shared<device_vector>(size, value);
+    device_vector_ptr vec = std::make_shared<ThrustDeviceVector<float>>(size, value);
+    return vec;
 }
 
 float* getRawPtr(device_vector_ptr& ptr) {
-    return thrust::raw_pointer_cast(ptr->data());
+    return ptr->data();
+}
+
+thrust::device_ptr<float> tbegin(device_vector_ptr& vec) {
+    return thrust::device_pointer_cast(vec->begin());
+}
+
+thrust::device_ptr<float> tend(device_vector_ptr& vec) {
+    return thrust::device_pointer_cast(vec->end());
 }
 
 void linCombImpl(device_vector_ptr& z, float a, const device_vector_ptr& x, float b, const device_vector_ptr& y) {
@@ -189,9 +276,9 @@ void convImpl(const device_vector_ptr& source, const device_vector_ptr& kernel, 
     unsigned dimBlock(256);
     unsigned dimGrid(1 + (len / dimBlock));
 
-    convKernel<<<dimGrid, dimBlock>>>(thrust::raw_pointer_cast(source->data()),
-                                      thrust::raw_pointer_cast(kernel->data()),
-                                      thrust::raw_pointer_cast(target->data()),
+    convKernel<<<dimGrid, dimBlock>>>(source->data(),
+                                      kernel->data(),
+                                      target->data(),
                                       len);
 }
 
@@ -214,8 +301,8 @@ void forwardDifferenceImpl(const device_vector_ptr& source, device_vector_ptr& t
     unsigned dimGrid(std::min(128u, 1 + (len / dimBlock)));
 
     forwardDifferenceKernel<<<dimBlock, dimGrid>>>(len,
-                                                   thrust::raw_pointer_cast(source->data()),
-                                                   thrust::raw_pointer_cast(target->data()));
+                                                   source->data(),
+                                                   target->data());
 }
 
 __global__ void forwardDifferenceAdjointKernel(const int len, const float* source, float* target) {
@@ -229,8 +316,8 @@ void forwardDifferenceAdjointImpl(const device_vector_ptr& source, device_vector
     unsigned dimGrid(std::min(128u, 1 + (len / dimBlock)));
 
     forwardDifferenceAdjointKernel<<<dimBlock, dimGrid>>>(len,
-                                                          thrust::raw_pointer_cast(source->data()),
-                                                          thrust::raw_pointer_cast(target->data()));
+                                                          source->data(),
+                                                          target->data());
 }
 
 void maxVectorVectorImpl(const device_vector_ptr& v1, const device_vector_ptr& v2, device_vector_ptr& target) {
@@ -283,9 +370,9 @@ void forwardDifference2DImpl(const device_vector_ptr& source, device_vector_ptr&
     dim3 dimGrid(32, 32);
 
     forwardDifference2DKernel<<<dimGrid, dimBlock>>>(cols, rows,
-                                                     thrust::raw_pointer_cast(source->data()),
-                                                     thrust::raw_pointer_cast(dx->data()),
-                                                     thrust::raw_pointer_cast(dy->data()));
+                                                     source->data(),
+                                                     dx->data(),
+                                                     dy->data());
 }
 
 __global__ void forwardDifference2DAdjointKernel(const int cols, const int rows, const float* dx, const float* dy, float* target) {
@@ -303,7 +390,7 @@ void forwardDifference2DAdjointImpl(const device_vector_ptr& dx, const device_ve
     dim3 dimGrid(32, 32);
 
     forwardDifference2DAdjointKernel<<<dimGrid, dimBlock>>>(cols, rows,
-                                                            thrust::raw_pointer_cast(dx->data()),
-                                                            thrust::raw_pointer_cast(dy->data()),
-                                                            thrust::raw_pointer_cast(target->data()));
+                                                            dx->data(),
+                                                            dy->data(),
+                                                            target->data());
 }
