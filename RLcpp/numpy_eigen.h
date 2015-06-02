@@ -2,7 +2,7 @@
 
 // Disable deprecated API
 #include <numpy/numpyconfig.h>
-//#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 #include "boost/python/numeric.hpp"
 #include <numpy/arrayobject.h>

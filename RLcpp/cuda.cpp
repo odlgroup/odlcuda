@@ -1,3 +1,7 @@
+// Disable deprecated API
+#include <numpy/numpyconfig.h>
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+
 //Thrust bug...
 #define DEBUG 1
 #include <boost/python.hpp>
@@ -5,9 +9,6 @@
 #include <iostream>
 #define _DEBUG 1
 #include <thrust/device_vector.h>
-// Disable deprecated API
-#include <numpy/numpyconfig.h>
-//#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 
 #include <RLcpp/numpy_utils.h>
