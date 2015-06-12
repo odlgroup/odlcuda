@@ -23,6 +23,7 @@ typedef std::shared_ptr<DeviceVector<float>> device_vector_ptr;
 //Create
 extern device_vector_ptr makeThrustVector(size_t size);
 extern device_vector_ptr makeThrustVector(size_t size, float value);
+extern device_vector_ptr makeWrapperVector(float* const data, size_t size);
 
 //Get ptr
 extern float* getRawPtr(device_vector_ptr& ptr);
@@ -143,6 +144,11 @@ class CudaRNVectorImpl {
           _impl(makeThrustVector(len(data))) {
         assert(this->_size == len(data));
         copyHostToDevice(getDataPtr<double>(data), this->_impl);
+    }
+
+    CudaRNVectorImpl(size_t size, device_vector_ptr impl)
+        : _size(size),
+          _impl(impl) {
     }
 
     void validateIndex(ptrdiff_t index) const {
@@ -299,6 +305,10 @@ float sumVector(const CudaRNVectorImpl& source) {
     return sumImpl(source);
 }
 
+CudaRNVectorImpl vectorFromPointer(uintptr_t ptr, size_t size) {
+	return CudaRNVectorImpl{size, makeWrapperVector(reinterpret_cast<float*>(ptr), size) };
+}
+
 // Expose classes and methods to Python
 BOOST_PYTHON_MODULE(PyCuda) {
     auto result = _import_array(); //Import numpy
@@ -323,6 +333,8 @@ BOOST_PYTHON_MODULE(PyCuda) {
     def("abs", absVector);
     def("sum", sumVector);
 
+    def("vectorFromPointer", vectorFromPointer);
+
     class_<CudaRNImpl>("CudaRNImpl", "Documentation",
                        init<size_t>())
         .def("zero", &CudaRNImpl::zero)
@@ -335,7 +347,6 @@ BOOST_PYTHON_MODULE(PyCuda) {
     class_<CudaRNVectorImpl>("CudaRNVectorImpl", "Documentation",
                              init<size_t>())
         .def(init<size_t, float>())
-        .def(init<numeric::array>())
         .def(self_ns::str(self_ns::self))
         .def("__getitem__", &CudaRNVectorImpl::getItem)
         .def("__setitem__", &CudaRNVectorImpl::setItem)

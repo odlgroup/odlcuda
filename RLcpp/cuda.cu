@@ -29,22 +29,22 @@ class DeviceVector {
     thrust::device_ptr<T> begin() {
         return thrust::device_pointer_cast<T>(data());
     }
-		thrust::device_ptr<const T> begin() const {
-			return thrust::device_pointer_cast<const T>(data());
-		}
+    thrust::device_ptr<const T> begin() const {
+        return thrust::device_pointer_cast<const T>(data());
+    }
 
     thrust::device_ptr<T> end() {
         return begin() + size();
     }
-		thrust::device_ptr<const T> end() const {
-			return begin() + size();
-		}
+    thrust::device_ptr<const T> end() const {
+        return begin() + size();
+    }
 
     thrust::device_reference<T> operator[](size_t index) {
         return thrust::device_reference<T>{begin() + index};
     }
     thrust::device_reference<const T> operator[](size_t index) const {
-        return thrust::device_reference<T>{begin() + index};
+        return thrust::device_reference<const T>{begin() + index};
     }
 };
 
@@ -75,18 +75,19 @@ class ThrustDeviceVector : public DeviceVector<T> {
 template <typename T>
 class WrapperDeviceVector : public DeviceVector<T> {
   private:
-    const T* _data;
+    T * const _data;
     const size_t _size;
 
   public:
-    WrapperDeviceVector(const T* data, size_t size)
+    WrapperDeviceVector(T * const data, size_t size)
         : _data(data),
           _size(size) {}
 
     T* data() override {
         return _data;
     }
-    T const* data() const override {
+
+    T const * data() const override {
         return _data;
     }
 
@@ -105,6 +106,11 @@ device_vector_ptr makeThrustVector(size_t size) {
 device_vector_ptr makeThrustVector(size_t size, float value) {
     device_vector_ptr vec = std::make_shared<ThrustDeviceVector<float>>(size, value);
     return vec;
+}
+
+device_vector_ptr makeWrapperVector(float * const data, size_t size) {
+	device_vector_ptr vec = std::make_shared<WrapperDeviceVector<float>>(data, size);
+	return vec;
 }
 
 float* getRawPtr(device_vector_ptr& ptr) {
@@ -186,7 +192,6 @@ float sumImpl(const device_vector_ptr& v) {
 struct Square {
     __host__ __device__ float operator()(const float& x) const { return x * x; }
 };
-
 float normImpl(const device_vector_ptr& v1) {
     return sqrtf(thrust::transform_reduce(v1->begin(), v1->end(), Square{}, 0.0f, thrust::plus<float>{}));
 }
