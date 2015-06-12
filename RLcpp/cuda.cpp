@@ -37,7 +37,7 @@ extern void absImpl(const device_vector_ptr& source, device_vector_ptr& target);
 extern void negImpl(const device_vector_ptr& source, device_vector_ptr& target);
 
 //Reductions
-extern float normSqImpl(const device_vector_ptr& v1);
+extern float normImpl(const device_vector_ptr& v1);
 extern float sumImpl(const device_vector_ptr& v);
 
 //Copy methods
@@ -127,7 +127,6 @@ struct sliceHelper {
 };
 
 class CudaRNVectorImpl {
-
   public:
     CudaRNVectorImpl(size_t size)
         : _size(size),
@@ -146,19 +145,19 @@ class CudaRNVectorImpl {
         copyHostToDevice(getDataPtr<double>(data), this->_impl);
     }
 
-    void validateIndex(int index) const {
+    void validateIndex(ptrdiff_t index) const {
         if (index < 0 || index >= _size)
             throw std::out_of_range("index out of range");
     }
 
-    float getItem(int index) const {
+    float getItem(ptrdiff_t index) const {
         if (index < 0) index += _size; //Handle negative indexes like python
         validateIndex(index);
         return getItemImpl(_impl, index);
     }
 
-		void setItem(int index, float value) {
-			  if (index < 0) index += _size; //Handle negative indexes like python
+    void setItem(ptrdiff_t index, float value) {
+        if (index < 0) index += _size; //Handle negative indexes like python
         validateIndex(index);
         setItemImpl(_impl, index, value);
     }
@@ -180,8 +179,8 @@ class CudaRNVectorImpl {
         sliceHelper sh(index, _size);
         sh.validate();
 
-				if (sh.numel != len(arr))
-					throw std::out_of_range("Size of array does not match slice");
+        if (sh.numel != len(arr))
+            throw std::out_of_range("Size of array does not match slice");
 
         if (sh.numel > 0) {
             setSliceImpl(_impl, sh.start, sh.stop, sh.step, getDataPtr<double>(arr), sh.numel);
@@ -236,8 +235,8 @@ class CudaRNImpl {
         return innerImpl(v1._impl, v2._impl);
     }
 
-    float normSq(const CudaRNVectorImpl& v) const {
-        return normSqImpl(v._impl);
+    float norm(const CudaRNVectorImpl& v) const {
+        return normImpl(v._impl);
     }
 
     void multiply(const CudaRNVectorImpl& v1, CudaRNVectorImpl& v2) {
@@ -331,7 +330,7 @@ BOOST_PYTHON_MODULE(PyCuda) {
         .def("linComb", &CudaRNImpl::linComb)
         .def("inner", &CudaRNImpl::inner)
         .def("multiply", &CudaRNImpl::multiply)
-        .def("normSq", &CudaRNImpl::normSq);
+        .def("norm", &CudaRNImpl::norm);
 
     class_<CudaRNVectorImpl>("CudaRNVectorImpl", "Documentation",
                              init<size_t>())

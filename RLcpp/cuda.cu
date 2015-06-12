@@ -186,8 +186,9 @@ float sumImpl(const device_vector_ptr& v) {
 struct Square {
     __host__ __device__ float operator()(const float& x) const { return x * x; }
 };
-float normSqImpl(const device_vector_ptr& v1) {
-    return thrust::transform_reduce(v1->begin(), v1->end(), Square{}, 0.0f, thrust::plus<float>{});
+
+float normImpl(const device_vector_ptr& v1) {
+    return sqrtf(thrust::transform_reduce(v1->begin(), v1->end(), Square{}, 0.0f, thrust::plus<float>{}));
 }
 
 //Copies
