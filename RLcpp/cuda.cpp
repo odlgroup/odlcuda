@@ -300,11 +300,6 @@ CudaRNVectorImpl<float> vectorFromPointer(uintptr_t ptr, size_t size) {
     return CudaRNVectorImpl<float>{size, makeWrapperVector((float*)ptr, size)};
 }
 
-template <typename F, typename... T>
-auto passthrough(T... args) -> decltype(F(args...)){
-	return F(args...);
-}
-
 // Expose classes and methods to Python
 BOOST_PYTHON_MODULE(PyCuda) {
     auto result = _import_array(); //Import numpy
@@ -315,7 +310,7 @@ BOOST_PYTHON_MODULE(PyCuda) {
     }
     boost::python::numeric::array::set_module_and_type("numpy", "ndarray");
 
-	#def("conv", convolution);
+	def("conv", convolution);
     def("forwardDiff", forwardDifference);
     def("forwardDiffAdj", forwardDifferenceAdjoint);
     def("forwardDiff2D", forwardDifference2D);
