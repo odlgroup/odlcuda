@@ -101,30 +101,108 @@ DeviceVectorPtr<T> makeThrustVector(size_t size) {
     return std::make_shared<ThrustDeviceVector<T>>(size);
 }
 template DeviceVectorPtr<float> makeThrustVector(size_t size);
+template DeviceVectorPtr<unsigned char> makeThrustVector(size_t size);
 
 template <typename T>
 DeviceVectorPtr<T> makeThrustVector(size_t size, T value) {
     return std::make_shared<ThrustDeviceVector<T>>(size, value);
 }
 template DeviceVectorPtr<float> makeThrustVector(size_t size, float value);
+template DeviceVectorPtr<unsigned char> makeThrustVector(size_t size, unsigned char value);
 
 template <typename T>
 DeviceVectorPtr<T> makeWrapperVector(T * data, size_t size) {
     return std::make_shared<WrapperDeviceVector<T>>(data, size);
 }
 template DeviceVectorPtr<float> makeWrapperVector(float * data, size_t size);
+template DeviceVectorPtr<unsigned char> makeWrapperVector(unsigned char * data, size_t size);
 
 template <typename T>
 T* getRawPtr(DeviceVector<T>& vec) {
 	return vec.data();
 }
 template float* getRawPtr(DeviceVector<float>& vec);
+template unsigned char* getRawPtr(DeviceVector<unsigned char>& vec);
 
 template <typename T>
 T const* getRawPtr(const DeviceVector<T>& vec) {
     return vec.data();
 }
-template float const* getRawPtr(const DeviceVector<float>& vec);
+template const float * getRawPtr(const DeviceVector<float>& vec);
+template const unsigned char * getRawPtr(const DeviceVector<unsigned char>& vec);
+
+
+void printData(const DeviceVector<float>& v1, std::ostream_iterator<float>& out, int numel) {
+	thrust::copy(v1.begin(), v1.begin() + numel, out);
+}
+
+template <typename T>
+T getItemImpl(const DeviceVector<T>& v1, int index) {
+	return v1[index];
+}
+template float getItemImpl(const DeviceVector<float>& v1, int index);
+template unsigned char getItemImpl(const DeviceVector<unsigned char>& v1, int index);
+
+template <typename T>
+void setItemImpl(DeviceVector<T>& v1, int index, T value) {
+	v1[index] = value;
+}
+template void setItemImpl(DeviceVector<float>& v1, int index, float value);
+template void setItemImpl(DeviceVector<unsigned char>& v1, int index, unsigned char value);
+
+template <typename I1, typename I2>
+void stridedGetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, int step) {
+	if (step == 1) {
+		thrust::copy(fromBegin, fromEnd, toBegin);
+	}
+	else {
+		auto iter = make_strided_range(fromBegin, fromEnd, step);
+		thrust::copy(iter.begin(), iter.end(), toBegin);
+	}
+}
+
+template <typename T, typename S>
+void getSliceImpl(const DeviceVector<T>& v1, int start, int stop, int step, S* target) {
+	if (step > 0) {
+		stridedGetImpl(v1.begin() + start, v1.begin() + stop, target, step);
+	}
+	else {
+		auto reversedBegin = thrust::make_reverse_iterator(v1.begin() + start);
+		auto reversedEnd = thrust::make_reverse_iterator(v1.begin() + stop);
+
+		stridedGetImpl(reversedBegin, reversedEnd, target, -step);
+	}
+}
+template void getSliceImpl(const DeviceVector<float>& v1, int start, int stop, int step, double* target);
+template void getSliceImpl(const DeviceVector<unsigned char>& v1, int start, int stop, int step, double* target);
+template void getSliceImpl(const DeviceVector<unsigned char>& v1, int start, int stop, int step, unsigned char* target);
+
+template <typename I1, typename I2>
+void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, int step) {
+	if (step == 1) {
+		thrust::copy(fromBegin, fromEnd, toBegin);
+	}
+	else {
+		auto iter = make_strided_range(toBegin, toEnd, step);
+		thrust::copy(fromBegin, fromEnd, iter.begin());
+	}
+}
+
+template <typename T, typename S>
+void setSliceImpl(DeviceVector<T>& v1, int start, int stop, int step, const S * source, int num) {
+	if (step > 0) {
+		stridedSetImpl(source, source + num, v1.begin() + start, v1.begin() + stop, step);
+	}
+	else {
+		auto reversedBegin = thrust::make_reverse_iterator(v1.begin() + start);
+		auto reversedEnd = thrust::make_reverse_iterator(v1.begin() + stop);
+
+		stridedSetImpl(source, source + num, reversedBegin, reversedEnd, -step);
+	}
+}
+template void setSliceImpl(DeviceVector<float>& v1, int start, int stop, int step, const double* source, int num);
+template void setSliceImpl(DeviceVector<unsigned char>& v1, int start, int stop, int step, const double* source, int num);
+template void setSliceImpl(DeviceVector<unsigned char>& v1, int start, int stop, int step, const unsigned char* source, int num);
 
 void linCombImpl(DeviceVector<float>& z, float a, const DeviceVector<float>& x, float b, const DeviceVector<float>& y) {
     using namespace thrust::placeholders;
@@ -195,69 +273,6 @@ struct Square {
 };
 float normImpl(const DeviceVector<float>& v1) {
     return sqrtf(thrust::transform_reduce(v1.begin(), v1.end(), Square{}, 0.0f, thrust::plus<float>{}));
-}
-
-//Copies
-void copyHostToDevice(double* source, DeviceVector<float>& target) {
-    thrust::copy_n(source, target.size(), target.begin());
-}
-
-void copyDeviceToHost(const DeviceVector<float>& source, double* target) {
-    thrust::copy(source.begin(), source.end(), target);
-}
-
-void printData(const DeviceVector<float>& v1, std::ostream_iterator<float>& out, int numel) {
-    thrust::copy(v1.begin(), v1.begin() + numel, out);
-}
-
-float getItemImpl(const DeviceVector<float>& v1, int index) {
-    return v1[index];
-}
-
-void setItemImpl(DeviceVector<float>& v1, int index, float value) {
-    v1[index] = value;
-}
-
-template <typename I1, typename I2>
-void stridedGetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, int step) {
-    if (step == 1) {
-        thrust::copy(fromBegin, fromEnd, toBegin);
-    } else {
-        auto iter = make_strided_range(fromBegin, fromEnd, step);
-        thrust::copy(iter.begin(), iter.end(), toBegin);
-    }
-}
-
-void getSliceImpl(const DeviceVector<float>& v1, int start, int stop, int step, double* target) {
-    if (step > 0) {
-        stridedGetImpl(v1.begin() + start, v1.begin() + stop, target, step);
-    } else {
-        auto reversedBegin = thrust::make_reverse_iterator(v1.begin() + start);
-        auto reversedEnd = thrust::make_reverse_iterator(v1.begin() + stop);
-
-        stridedGetImpl(reversedBegin, reversedEnd, target, -step);
-    }
-}
-
-template <typename I1, typename I2>
-void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, int step) {
-    if (step == 1) {
-        thrust::copy(fromBegin, fromEnd, toBegin);
-    } else {
-        auto iter = make_strided_range(toBegin, toEnd, step);
-        thrust::copy(fromBegin, fromEnd, iter.begin());
-    }
-}
-
-void setSliceImpl(DeviceVector<float>& v1, int start, int stop, int step, double* source, int num) {
-    if (step > 0) {
-        stridedSetImpl(source, source + num, v1.begin() + start, v1.begin() + stop, step);
-    } else {
-        auto reversedBegin = thrust::make_reverse_iterator(v1.begin() + start);
-        auto reversedEnd = thrust::make_reverse_iterator(v1.begin() + stop);
-
-        stridedSetImpl(source, source + num, reversedBegin, reversedEnd, -step);
-    }
 }
 
 __global__ void convKernel(const float* source,
