@@ -16,58 +16,62 @@
 
 using namespace boost::python;
 
-typedef std::shared_ptr<DeviceVector<float>> device_vector_ptr;
-
 //Externally (CUDA) compiled
 
 //Create
-extern device_vector_ptr makeThrustVector(size_t size);
-extern device_vector_ptr makeThrustVector(size_t size, float value);
-extern device_vector_ptr makeWrapperVector(float* const data, size_t size);
+template <typename T>
+extern DeviceVectorPtr<T> makeThrustVector(size_t size);
+
+template <typename T>
+extern DeviceVectorPtr<T> makeThrustVector(size_t size, T value);
+
+template <typename T>
+extern DeviceVectorPtr<T> makeWrapperVector(T * data, size_t size);
 
 //Get ptr
-extern float* getRawPtr(device_vector_ptr& ptr);
+template <typename T>
+extern T* getRawPtr(DeviceVector<T>& ptr);
+template <typename T>
+extern T const* getRawPtr(const DeviceVector<T>& ptr);
 
 //Algebra
-extern void linCombImpl(device_vector_ptr& z, float a, const device_vector_ptr& x, float b, const device_vector_ptr& y);
-extern float innerImpl(const device_vector_ptr& v1, const device_vector_ptr& v2);
-extern void multiplyImpl(const device_vector_ptr& v1, device_vector_ptr& v2);
+extern void linCombImpl(DeviceVector<float>& z, float a, const DeviceVector<float>& x, float b, const DeviceVector<float>& y);
+extern float innerImpl(const DeviceVector<float>& v1, const DeviceVector<float>& v2);
+extern void multiplyImpl(const DeviceVector<float>& v1, DeviceVector<float>& v2);
 
 //Transformations
-extern void absImpl(const device_vector_ptr& source, device_vector_ptr& target);
-extern void negImpl(const device_vector_ptr& source, device_vector_ptr& target);
+extern void absImpl(const DeviceVector<float>& source, DeviceVector<float>& target);
+extern void negImpl(const DeviceVector<float>& source, DeviceVector<float>& target);
 
 //Reductions
-extern float normImpl(const device_vector_ptr& v1);
-extern float sumImpl(const device_vector_ptr& v);
+extern float normImpl(const DeviceVector<float>& v1);
+extern float sumImpl(const DeviceVector<float>& v);
 
 //Copy methods
-extern void copyHostToDevice(double* source, device_vector_ptr& target);
-extern void copyDeviceToHost(const device_vector_ptr& source, double* target);
-extern void printData(const device_vector_ptr& v1, std::ostream_iterator<float>& out, int numel);
+extern void printData(const DeviceVector<float>& v1, std::ostream_iterator<float>& out, int numel);
 
 //Getters and setters
-extern float getItemImpl(const device_vector_ptr& v1, int index);
-extern void setItemImpl(device_vector_ptr& v1, int index, float value);
-extern void getSliceImpl(const device_vector_ptr& v1, int begin, int end, int step, double* target);
-extern void setSliceImpl(const device_vector_ptr& v1, int begin, int end, int step, double* source, int num);
+extern float getItemImpl(const DeviceVector<float>& v1, int index);
+extern void setItemImpl(DeviceVector<float>& v1, int index, float value);
+extern void getSliceImpl(const DeviceVector<float>& v1, int begin, int end, int step, double* target);
+extern void setSliceImpl(DeviceVector<float>& v1, int begin, int end, int step, double* source, int num);
 
 //Functions
-extern void convImpl(const device_vector_ptr& source, const device_vector_ptr& kernel, device_vector_ptr& target);
+extern void convImpl(const DeviceVector<float>& source, const DeviceVector<float>& kernel, DeviceVector<float>& target);
 
-extern void forwardDifferenceImpl(const device_vector_ptr& source, device_vector_ptr& target);
-extern void forwardDifferenceAdjointImpl(const device_vector_ptr& source, device_vector_ptr& target);
+extern void forwardDifferenceImpl(const DeviceVector<float>& source, DeviceVector<float>& target);
+extern void forwardDifferenceAdjointImpl(const DeviceVector<float>& source, DeviceVector<float>& target);
 
-extern void forwardDifference2DImpl(const device_vector_ptr& source, device_vector_ptr& dx, device_vector_ptr& dy, int cols, int rows);
-extern void forwardDifference2DAdjointImpl(const device_vector_ptr& dx, const device_vector_ptr& dy, device_vector_ptr& target, int cols, int rows);
+extern void forwardDifference2DImpl(const DeviceVector<float>& source, DeviceVector<float>& dx, DeviceVector<float>& dy, int cols, int rows);
+extern void forwardDifference2DAdjointImpl(const DeviceVector<float>& dx, const DeviceVector<float>& dy, DeviceVector<float>& target, int cols, int rows);
 
-extern void maxVectorVectorImpl(const device_vector_ptr& v1, const device_vector_ptr& v2, device_vector_ptr& target);
-extern void maxVectorScalarImpl(const device_vector_ptr& v1, float scalar, device_vector_ptr& target);
-extern void divideVectorVectorImpl(const device_vector_ptr& dividend, const device_vector_ptr& divisor, device_vector_ptr& quotient);
+extern void maxVectorVectorImpl(const DeviceVector<float>& v1, const DeviceVector<float>& v2, DeviceVector<float>& target);
+extern void maxVectorScalarImpl(const DeviceVector<float>& v1, float scalar, DeviceVector<float>& target);
+extern void divideVectorVectorImpl(const DeviceVector<float>& dividend, const DeviceVector<float>& divisor, DeviceVector<float>& quotient);
 
-extern void addScalarImpl(const device_vector_ptr& v1, float scalar, device_vector_ptr& target);
-extern void signImpl(const device_vector_ptr& v1, device_vector_ptr& target);
-extern void sqrtImpl(const device_vector_ptr& v1, device_vector_ptr& target);
+extern void addScalarImpl(const DeviceVector<float>& v1, float scalar, DeviceVector<float>& target);
+extern void signImpl(const DeviceVector<float>& v1, DeviceVector<float>& target);
+extern void sqrtImpl(const DeviceVector<float>& v1, DeviceVector<float>& target);
 
 struct sliceHelper {
     sliceHelper(const slice& index, int n) : arraySize(n) {
@@ -114,9 +118,7 @@ struct sliceHelper {
             numel = std::max(0, 1 + (stop - start - 1) / step);
         else
             numel = std::max(0, 1 + (start - stop - 1) / std::abs(step));
-    }
 
-    void validate() {
         if (start < 0 || stop > arraySize)
             throw std::out_of_range("Slice index out of range");
     }
@@ -131,22 +133,15 @@ class CudaRNVectorImpl {
   public:
     CudaRNVectorImpl(size_t size)
         : _size(size),
-          _impl(makeThrustVector(size)) {
+          _impl(makeThrustVector<float>(size)) {
     }
 
     CudaRNVectorImpl(size_t size, float value)
         : _size(size),
-          _impl(makeThrustVector(size, value)) {
+          _impl(makeThrustVector<float>(size, value)) {
     }
 
-    CudaRNVectorImpl(const numeric::array& data)
-        : _size(len(data)),
-          _impl(makeThrustVector(len(data))) {
-        assert(this->_size == len(data));
-        copyHostToDevice(getDataPtr<double>(data), this->_impl);
-    }
-
-    CudaRNVectorImpl(size_t size, device_vector_ptr impl)
+	CudaRNVectorImpl(size_t size, DeviceVectorPtr<float> impl)
         : _size(size),
           _impl(impl) {
     }
@@ -159,22 +154,21 @@ class CudaRNVectorImpl {
     float getItem(ptrdiff_t index) const {
         if (index < 0) index += _size; //Handle negative indexes like python
         validateIndex(index);
-        return getItemImpl(_impl, index);
+        return getItemImpl(*this, index);
     }
 
     void setItem(ptrdiff_t index, float value) {
         if (index < 0) index += _size; //Handle negative indexes like python
         validateIndex(index);
-        setItemImpl(_impl, index, value);
+        setItemImpl(*this, index, value);
     }
 
     numeric::array getSlice(const slice index) const {
         sliceHelper sh(index, _size);
-        sh.validate();
 
         if (sh.numel > 0) {
             numeric::array arr = makeArray<double>(sh.numel);
-            getSliceImpl(_impl, sh.start, sh.stop, sh.step, getDataPtr<double>(arr));
+            getSliceImpl(*this, sh.start, sh.stop, sh.step, getDataPtr<double>(arr));
             return arr;
         } else {
             return makeArray<double>(0);
@@ -183,37 +177,47 @@ class CudaRNVectorImpl {
 
     void setSlice(const slice index, const numeric::array& arr) {
         sliceHelper sh(index, _size);
-        sh.validate();
 
         if (sh.numel != len(arr))
             throw std::out_of_range("Size of array does not match slice");
 
         if (sh.numel > 0) {
-            setSliceImpl(_impl, sh.start, sh.stop, sh.step, getDataPtr<double>(arr), sh.numel);
+            setSliceImpl(*this, sh.start, sh.stop, sh.step, getDataPtr<double>(arr), sh.numel);
         }
     }
 
     friend std::ostream& operator<<(std::ostream& ss, const CudaRNVectorImpl& v) {
         ss << "CudaRNVectorImpl: ";
         auto outputIter = std::ostream_iterator<float>(ss, " ");
-        printData(v._impl, outputIter, std::min<int>(100, v._size));
+        printData(v, outputIter, std::min<int>(100, v._size));
         return ss;
     }
 
-    operator device_vector_ptr&() {
-        return _impl;
+    operator DeviceVector<float>&() {
+        return *_impl;
     }
 
-    operator device_vector_ptr const&() const {
-        return _impl;
+    operator DeviceVector<float> const&() const {
+        return *_impl;
+    }
+
+    object convertFloat(float* ptr) {
+        object ctypes = import("ctypes");
+        long_ addr(reinterpret_cast<uintptr_t>(ptr));
+
+        object POINTER = ctypes.attr("POINTER");
+        object c_float = ctypes.attr("c_float");
+        object pointerType = POINTER(c_float);
+
+        return ctypes.attr("cast")(addr, pointerType);
     }
 
     uintptr_t dataPtr() {
-        return reinterpret_cast<uintptr_t>(getRawPtr(_impl));
+        return reinterpret_cast<uintptr_t>(getRawPtr(*_impl));
     }
 
     const size_t _size;
-    device_vector_ptr _impl;
+	DeviceVectorPtr<float> _impl;
 };
 
 class CudaRNImpl {
@@ -234,19 +238,19 @@ class CudaRNImpl {
         assert(z._size == x._size);
         assert(z._size == y._size);
 
-        linCombImpl(z._impl, a, x._impl, b, y._impl);
+        linCombImpl(z, a, x, b, y);
     }
 
     float inner(const CudaRNVectorImpl& v1, const CudaRNVectorImpl& v2) {
-        return innerImpl(v1._impl, v2._impl);
+        return innerImpl(v1, v2);
     }
 
     float norm(const CudaRNVectorImpl& v) const {
-        return normImpl(v._impl);
+        return normImpl(v);
     }
 
     void multiply(const CudaRNVectorImpl& v1, CudaRNVectorImpl& v2) {
-        multiplyImpl(v1._impl, v2._impl);
+        multiplyImpl(v1, v2);
     }
 
   private:
@@ -306,7 +310,7 @@ float sumVector(const CudaRNVectorImpl& source) {
 }
 
 CudaRNVectorImpl vectorFromPointer(uintptr_t ptr, size_t size) {
-	return CudaRNVectorImpl{size, makeWrapperVector(reinterpret_cast<float*>(ptr), size) };
+    return CudaRNVectorImpl{size, makeWrapperVector((float*)ptr, size)};
 }
 
 // Expose classes and methods to Python
