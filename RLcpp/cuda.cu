@@ -132,9 +132,13 @@ template const float * getRawPtr(const DeviceVector<float>& vec);
 template const unsigned char * getRawPtr(const DeviceVector<unsigned char>& vec);
 
 
-void printData(const DeviceVector<float>& v1, std::ostream_iterator<float>& out, int numel) {
+template <typename T>
+void printData(const DeviceVector<T>& v1, std::ostream_iterator<T>& out, int numel) {
 	thrust::copy(v1.begin(), v1.begin() + numel, out);
 }
+template void printData(const DeviceVector<float>& v1, std::ostream_iterator<float>& out, int numel);
+template void printData(const DeviceVector<unsigned char>& v1, std::ostream_iterator<unsigned char>& out, int numel);
+
 
 template <typename T>
 T getItemImpl(const DeviceVector<T>& v1, int index) {
@@ -143,12 +147,14 @@ T getItemImpl(const DeviceVector<T>& v1, int index) {
 template float getItemImpl(const DeviceVector<float>& v1, int index);
 template unsigned char getItemImpl(const DeviceVector<unsigned char>& v1, int index);
 
+
 template <typename T>
 void setItemImpl(DeviceVector<T>& v1, int index, T value) {
 	v1[index] = value;
 }
 template void setItemImpl(DeviceVector<float>& v1, int index, float value);
 template void setItemImpl(DeviceVector<unsigned char>& v1, int index, unsigned char value);
+
 
 template <typename I1, typename I2>
 void stridedGetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, int step) {
@@ -160,7 +166,6 @@ void stridedGetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, int step) {
 		thrust::copy(iter.begin(), iter.end(), toBegin);
 	}
 }
-
 template <typename T, typename S>
 void getSliceImpl(const DeviceVector<T>& v1, int start, int stop, int step, S* target) {
 	if (step > 0) {
@@ -177,6 +182,7 @@ template void getSliceImpl(const DeviceVector<float>& v1, int start, int stop, i
 template void getSliceImpl(const DeviceVector<unsigned char>& v1, int start, int stop, int step, double* target);
 template void getSliceImpl(const DeviceVector<unsigned char>& v1, int start, int stop, int step, unsigned char* target);
 
+
 template <typename I1, typename I2>
 void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, int step) {
 	if (step == 1) {
@@ -187,7 +193,6 @@ void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, int step) {
 		thrust::copy(fromBegin, fromEnd, iter.begin());
 	}
 }
-
 template <typename T, typename S>
 void setSliceImpl(DeviceVector<T>& v1, int start, int stop, int step, const S * source, int num) {
 	if (step > 0) {
@@ -204,7 +209,9 @@ template void setSliceImpl(DeviceVector<float>& v1, int start, int stop, int ste
 template void setSliceImpl(DeviceVector<unsigned char>& v1, int start, int stop, int step, const double* source, int num);
 template void setSliceImpl(DeviceVector<unsigned char>& v1, int start, int stop, int step, const unsigned char* source, int num);
 
-void linCombImpl(DeviceVector<float>& z, float a, const DeviceVector<float>& x, float b, const DeviceVector<float>& y) {
+
+template <typename T>
+void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b, const DeviceVector<T>& y) {
     using namespace thrust::placeholders;
 
 #if 1 //Efficient
@@ -253,6 +260,9 @@ void linCombImpl(DeviceVector<float>& z, float a, const DeviceVector<float>& x, 
     thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 + b * _2);
 #endif
 }
+template void linCombImpl(DeviceVector<float>& z, float a, const DeviceVector<float>& x, float b, const DeviceVector<float>& y);
+template void linCombImpl(DeviceVector<unsigned char>& z, unsigned char a, const DeviceVector<unsigned char>& x, unsigned char b, const DeviceVector<unsigned char>& y);
+
 
 void multiplyImpl(const DeviceVector<float>& v1, DeviceVector<float>& v2) {
     using namespace thrust::placeholders;
@@ -318,9 +328,9 @@ __global__ void forwardDifferenceKernel(const int len, const float* source, floa
     }
 }
 void forwardDifferenceImpl(const DeviceVector<float>& source, DeviceVector<float>& target) {
-    int len = source.size();
+    size_t len = source.size();
     unsigned dimBlock(256);
-    unsigned dimGrid(std::min(128u, 1 + (len / dimBlock)));
+    unsigned dimGrid(std::min<unsigned>(128, 1 + (len / dimBlock)));
 
     forwardDifferenceKernel<<<dimBlock, dimGrid>>>(len,
                                                    source.data(),
@@ -333,9 +343,9 @@ __global__ void forwardDifferenceAdjointKernel(const int len, const float* sourc
     }
 }
 void forwardDifferenceAdjointImpl(const DeviceVector<float>& source, DeviceVector<float>& target) {
-    int len = source.size();
+	size_t len = source.size();
     unsigned dimBlock(256);
-    unsigned dimGrid(std::min(128u, 1 + (len / dimBlock)));
+    unsigned dimGrid(std::min<unsigned>(128u, 1 + (len / dimBlock)));
 
     forwardDifferenceAdjointKernel<<<dimBlock, dimGrid>>>(len,
                                                           source.data(),
