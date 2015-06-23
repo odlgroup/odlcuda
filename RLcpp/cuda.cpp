@@ -18,6 +18,14 @@ using namespace boost::python;
 
 //Externally (CUDA) compiled
 
+template <typename T>
+struct CudaRNVectorImplMethods {
+    static void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b, const DeviceVector<T>& y);
+    static double normImpl(const DeviceVector<T>& v1);
+    static double innerImpl(const DeviceVector<float>& v1, const DeviceVector<float>& v2);
+    static void multiplyImpl(const DeviceVector<float>& v1, DeviceVector<float>& v2);
+};
+
 //Create
 template <typename T>
 extern DeviceVectorPtr<T> makeThrustVector(size_t size);
@@ -46,18 +54,11 @@ extern void setSliceImpl(DeviceVector<T>& v1, int begin, int end, int step, cons
 template <typename T>
 extern void printData(const DeviceVector<T>& v1, std::ostream_iterator<T>& out, int numel);
 
-//Algebra
-template <typename T>
-extern void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b, const DeviceVector<T>& y);
-extern float innerImpl(const DeviceVector<float>& v1, const DeviceVector<float>& v2);
-extern void multiplyImpl(const DeviceVector<float>& v1, DeviceVector<float>& v2);
-
 //Transformations
 extern void absImpl(const DeviceVector<float>& source, DeviceVector<float>& target);
 extern void negImpl(const DeviceVector<float>& source, DeviceVector<float>& target);
 
 //Reductions
-extern float normImpl(const DeviceVector<float>& v1);
 extern float sumImpl(const DeviceVector<float>& v);
 
 //Functions
@@ -78,8 +79,8 @@ extern void signImpl(const DeviceVector<float>& v1, DeviceVector<float>& target)
 extern void sqrtImpl(const DeviceVector<float>& v1, DeviceVector<float>& target);
 
 struct sliceHelper {
-	sliceHelper(const slice& index, ptrdiff_t n) : arraySize(n) {
-		extract<ptrdiff_t> stepIn(index.step());
+    sliceHelper(const slice& index, ptrdiff_t n) : arraySize(n) {
+        extract<ptrdiff_t> stepIn(index.step());
         if (stepIn.check())
             step = stepIn();
         else
@@ -88,7 +89,7 @@ struct sliceHelper {
         if (step == 0)
             throw std::invalid_argument("step = 0 is not valid");
 
-		extract<ptrdiff_t> startIn(index.start());
+        extract<ptrdiff_t> startIn(index.start());
         if (startIn.check()) {
             if (step > 0) {
                 start = startIn();
@@ -102,7 +103,7 @@ struct sliceHelper {
         else
             start = n;
 
-		extract<ptrdiff_t> stopIn(index.stop());
+        extract<ptrdiff_t> stopIn(index.stop());
         if (stopIn.check()) {
             if (step > 0) {
                 stop = stopIn();
@@ -119,9 +120,9 @@ struct sliceHelper {
         if (start == stop)
             numel = 0;
         else if (step > 0)
-			numel = std::max<ptrdiff_t>(0, 1 + (stop - start - 1) / step);
+            numel = std::max<ptrdiff_t>(0, 1 + (stop - start - 1) / step);
         else
-			numel = std::max<ptrdiff_t>(0, 1 + (start - stop - 1) / std::abs(step));
+            numel = std::max<ptrdiff_t>(0, 1 + (start - stop - 1) / std::abs(step));
 
         if (start < 0 || stop > arraySize)
             throw std::out_of_range("Slice index out of range");
@@ -130,7 +131,7 @@ struct sliceHelper {
     friend std::ostream& operator<<(std::ostream& ss, const sliceHelper& sh) {
         return ss << sh.start << " " << sh.stop << " " << sh.step << " " << sh.numel;
     }
-	ptrdiff_t start, stop, step, numel, arraySize;
+    ptrdiff_t start, stop, step, numel, arraySize;
 };
 
 template <typename T>
@@ -151,6 +152,10 @@ class CudaVectorImpl {
           _impl(impl) {
     }
 
+    static CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size) {
+        return CudaVectorImpl<T>{size, makeWrapperVector((T*)ptr, size)};
+    }
+
     void validateIndex(ptrdiff_t index) const {
         if (index < 0 || index >= _size)
             throw std::out_of_range("index out of range");
@@ -159,13 +164,13 @@ class CudaVectorImpl {
     T getItem(ptrdiff_t index) const {
         if (index < 0) index += _size; //Handle negative indexes like python
         validateIndex(index);
-		return getItemImpl(*_impl, index);
+        return getItemImpl(*_impl, index);
     }
 
     void setItem(ptrdiff_t index, T value) {
         if (index < 0) index += _size; //Handle negative indexes like python
         validateIndex(index);
-		setItemImpl(*_impl, index, value);
+        setItemImpl(*_impl, index, value);
     }
 
     numeric::array getSlice(const slice index) const {
@@ -173,7 +178,7 @@ class CudaVectorImpl {
 
         if (sh.numel > 0) {
             numeric::array arr = makeArray<double>(sh.numel);
-			getSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<double>(arr));
+            getSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<double>(arr));
             return arr;
         } else {
             return makeArray<double>(0);
@@ -187,12 +192,28 @@ class CudaVectorImpl {
             throw std::out_of_range("Size of array does not match slice");
 
         if (sh.numel > 0) {
-			setSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<double>(arr), sh.numel);
+            setSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<double>(arr), sh.numel);
         }
     }
 
+    void linComb(T a, const CudaVectorImpl<T>& x, T b, const CudaVectorImpl<T>& y) {
+        CudaRNVectorImplMethods<T>::linCombImpl(*this, a, x, b, y);
+    }
+
+    double inner(const CudaVectorImpl<T>& v2) const {
+        return CudaRNVectorImplMethods<T>::innerImpl(*this, v2);
+    }
+
+    double norm() const {
+        return CudaRNVectorImplMethods<T>::normImpl(*this);
+    }
+
+    void multiply(const CudaVectorImpl<T>& v1) {
+        CudaRNVectorImplMethods<T>::multiplyImpl(v1, *this);
+    }
+
     friend std::ostream& operator<<(std::ostream& ss, const CudaVectorImpl& v) {
-        ss << "CudaVectorImpl: ";
+        ss << "CudaVectorImpl" << typeid(T).name() << ">: ";
         auto outputIter = std::ostream_iterator<T>(ss, " ");
         printData(*v._impl, outputIter, std::min<int>(100, v._size));
         return ss;
@@ -213,47 +234,6 @@ class CudaVectorImpl {
     const size_t _size;
     DeviceVectorPtr<T> _impl;
 };
-
-// CudaRN
-template <typename T>
-bool tryLinComb(object& z, object a, const object& x, object b, object& y){
-	extract<CudaVectorImpl<T>&> zTExtract(z);
-	if (zTExtract.check())
-	{
-		float aT = extract<T>(a);
-		float bT = extract<T>(b);
-		const CudaVectorImpl<T>& xT = extract<const CudaVectorImpl<T>&>(x);
-		const CudaVectorImpl<T>& yT = extract<const CudaVectorImpl<T>&>(y);
-
-		linCombImpl<T>(*zTExtract()._impl, aT, *xT._impl, bT, *yT._impl);
-
-		return true;
-	}
-	else
-		return false;
-}
-
-void linComb(object& z, object a, const object& x, object b, object& y) {
-	if (tryLinComb<float>(z, a, x, b, y))
-		return;
-	else if (tryLinComb<unsigned char>(z, a, x, b, y))
-		return;
-	else {
-		throw std::out_of_range("No valid lincomb for this type");
-	}
-}
-
-float inner(const CudaVectorImpl<float>& v1, const CudaVectorImpl<float>& v2) {
-    return innerImpl(v1, v2);
-}
-
-float norm(const CudaVectorImpl<float>& v) {
-    return normImpl(v);
-}
-
-void multiply(const CudaVectorImpl<float>& v1, CudaVectorImpl<float>& v2) {
-    multiplyImpl(v1, v2);
-}
 
 // Functions
 void convolution(const CudaVectorImpl<float>& source, const CudaVectorImpl<float>& kernel, CudaVectorImpl<float>& target) {
@@ -308,10 +288,6 @@ float sumVector(const CudaVectorImpl<float>& source) {
     return sumImpl(source);
 }
 
-CudaVectorImpl<float> vectorFromPointer(uintptr_t ptr, size_t size) {
-    return CudaVectorImpl<float>{size, makeWrapperVector((float*)ptr, size)};
-}
-
 // Expose classes and methods to Python
 BOOST_PYTHON_MODULE(PyCuda) {
     auto result = _import_array(); //Import numpy
@@ -337,25 +313,27 @@ BOOST_PYTHON_MODULE(PyCuda) {
     def("sum", sumVector);
 
     //CudaRN
-    def("linComb", &linComb);
-    def("inner", &inner);
-    def("multiply", &multiply);
-    def("norm", &norm);
-    def("vectorFromPointer", vectorFromPointer);
-
     class_<CudaVectorImpl<float>>("CudaVectorImplFloat", "Documentation",
                                   init<size_t>())
         .def(init<size_t, float>())
+        .def("fromPointer", &CudaVectorImpl<float>::fromPointer)
+        .staticmethod("fromPointer")
         .def(self_ns::str(self_ns::self))
         .def("__getitem__", &CudaVectorImpl<float>::getItem)
         .def("__setitem__", &CudaVectorImpl<float>::setItem)
         .def("getSlice", &CudaVectorImpl<float>::getSlice)
         .def("setSlice", &CudaVectorImpl<float>::setSlice)
-        .def("dataPtr", &CudaVectorImpl<float>::dataPtr);
+        .def("dataPtr", &CudaVectorImpl<float>::dataPtr)
+        .def("linComb", &CudaVectorImpl<float>::linComb)
+        .def("inner", &CudaVectorImpl<float>::inner)
+        .def("norm", &CudaVectorImpl<float>::norm)
+        .def("multiply", &CudaVectorImpl<float>::multiply);
 
     class_<CudaVectorImpl<unsigned char>>("CudaVectorImplUChar", "Documentation",
                                           init<size_t>())
         .def(init<size_t, unsigned char>())
+        .def("fromPointer", &CudaVectorImpl<unsigned char>::fromPointer)
+        .staticmethod("fromPointer")
         .def(self_ns::str(self_ns::self))
         .def("__getitem__", &CudaVectorImpl<unsigned char>::getItem)
         .def("__setitem__", &CudaVectorImpl<unsigned char>::setItem)
