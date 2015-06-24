@@ -8,7 +8,9 @@
 #include <iostream>
 #include <vector>
 #include <Eigen/Dense>
-#include <RLcpp/numpy_eigen.h>
+
+#include <LCRUtils/python/numpy_eigen.h>
+
 #include <RLcpp/rlutils/StandardPhantoms.h>
 #include <RLcpp/rlutils/Phantom.h>
 
