@@ -75,11 +75,11 @@ class ThrustDeviceVector : public DeviceVector<T> {
 template <typename T>
 class WrapperDeviceVector : public DeviceVector<T> {
   private:
-    T * const _data;
+    T* const _data;
     const size_t _size;
 
   public:
-    WrapperDeviceVector(T * data, size_t size)
+    WrapperDeviceVector(T* data, size_t size)
         : _data(data),
           _size(size) {}
 
@@ -96,202 +96,144 @@ class WrapperDeviceVector : public DeviceVector<T> {
     }
 };
 
-template <typename T>
-DeviceVectorPtr<T> makeThrustVector(size_t size) {
-    return std::make_shared<ThrustDeviceVector<T>>(size);
-}
-template DeviceVectorPtr<float> makeThrustVector(size_t size);
-template DeviceVectorPtr<unsigned char> makeThrustVector(size_t size);
-
-template <typename T>
-DeviceVectorPtr<T> makeThrustVector(size_t size, T value) {
-    return std::make_shared<ThrustDeviceVector<T>>(size, value);
-}
-template DeviceVectorPtr<float> makeThrustVector(size_t size, float value);
-template DeviceVectorPtr<unsigned char> makeThrustVector(size_t size, unsigned char value);
-
-template <typename T>
-DeviceVectorPtr<T> makeWrapperVector(T * data, size_t size) {
-    return std::make_shared<WrapperDeviceVector<T>>(data, size);
-}
-template DeviceVectorPtr<float> makeWrapperVector(float * data, size_t size);
-template DeviceVectorPtr<unsigned char> makeWrapperVector(unsigned char * data, size_t size);
-
-template <typename T>
-T* getRawPtr(DeviceVector<T>& vec) {
-	return vec.data();
-}
-template float* getRawPtr(DeviceVector<float>& vec);
-template unsigned char* getRawPtr(DeviceVector<unsigned char>& vec);
-
-template <typename T>
-T const* getRawPtr(const DeviceVector<T>& vec) {
-    return vec.data();
-}
-template const float * getRawPtr(const DeviceVector<float>& vec);
-template const unsigned char * getRawPtr(const DeviceVector<unsigned char>& vec);
-
-
-template <typename T>
-void printData(const DeviceVector<T>& v1, std::ostream_iterator<T>& out, int numel) {
-	thrust::copy(v1.begin(), v1.begin() + numel, out);
-}
-template void printData(const DeviceVector<float>& v1, std::ostream_iterator<float>& out, int numel);
-template void printData(const DeviceVector<unsigned char>& v1, std::ostream_iterator<unsigned char>& out, int numel);
-
-
-template <typename T>
-T getItemImpl(const DeviceVector<T>& v1, int index) {
-	return v1[index];
-}
-template float getItemImpl(const DeviceVector<float>& v1, int index);
-template unsigned char getItemImpl(const DeviceVector<unsigned char>& v1, int index);
-
-
-template <typename T>
-void setItemImpl(DeviceVector<T>& v1, int index, T value) {
-	v1[index] = value;
-}
-template void setItemImpl(DeviceVector<float>& v1, int index, float value);
-template void setItemImpl(DeviceVector<unsigned char>& v1, int index, unsigned char value);
-
-
 template <typename I1, typename I2>
 void stridedGetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, int step) {
-	if (step == 1) {
-		thrust::copy(fromBegin, fromEnd, toBegin);
-	}
-	else {
-		auto iter = make_strided_range(fromBegin, fromEnd, step);
-		thrust::copy(iter.begin(), iter.end(), toBegin);
-	}
+    if (step == 1) {
+        thrust::copy(fromBegin, fromEnd, toBegin);
+    } else {
+        auto iter = make_strided_range(fromBegin, fromEnd, step);
+        thrust::copy(iter.begin(), iter.end(), toBegin);
+    }
 }
-template <typename T, typename S>
-void getSliceImpl(const DeviceVector<T>& v1, int start, int stop, int step, S* target) {
-	if (step > 0) {
-		stridedGetImpl(v1.begin() + start, v1.begin() + stop, target, step);
-	}
-	else {
-		auto reversedBegin = thrust::make_reverse_iterator(v1.begin() + start);
-		auto reversedEnd = thrust::make_reverse_iterator(v1.begin() + stop);
-
-		stridedGetImpl(reversedBegin, reversedEnd, target, -step);
-	}
-}
-template void getSliceImpl(const DeviceVector<float>& v1, int start, int stop, int step, double* target);
-template void getSliceImpl(const DeviceVector<unsigned char>& v1, int start, int stop, int step, double* target);
-template void getSliceImpl(const DeviceVector<unsigned char>& v1, int start, int stop, int step, unsigned char* target);
-
 
 template <typename I1, typename I2>
 void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, int step) {
-	if (step == 1) {
-		thrust::copy(fromBegin, fromEnd, toBegin);
-	}
-	else {
-		auto iter = make_strided_range(toBegin, toEnd, step);
-		thrust::copy(fromBegin, fromEnd, iter.begin());
-	}
+    if (step == 1) {
+        thrust::copy(fromBegin, fromEnd, toBegin);
+    } else {
+        auto iter = make_strided_range(toBegin, toEnd, step);
+        thrust::copy(fromBegin, fromEnd, iter.begin());
+    }
 }
-template <typename T, typename S>
-void setSliceImpl(DeviceVector<T>& v1, int start, int stop, int step, const S * source, int num) {
-	if (step > 0) {
-		stridedSetImpl(source, source + num, v1.begin() + start, v1.begin() + stop, step);
-	}
-	else {
-		auto reversedBegin = thrust::make_reverse_iterator(v1.begin() + start);
-		auto reversedEnd = thrust::make_reverse_iterator(v1.begin() + stop);
-
-		stridedSetImpl(source, source + num, reversedBegin, reversedEnd, -step);
-	}
-}
-template void setSliceImpl(DeviceVector<float>& v1, int start, int stop, int step, const double* source, int num);
-template void setSliceImpl(DeviceVector<unsigned char>& v1, int start, int stop, int step, const double* source, int num);
-template void setSliceImpl(DeviceVector<unsigned char>& v1, int start, int stop, int step, const unsigned char* source, int num);
 
 template <typename T>
-struct CudaRNVectorImplMethods{
-	static void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b, const DeviceVector<T>& y) {
-		using namespace thrust::placeholders;
+struct CudaRNVectorImplMethods {
+    static DeviceVectorPtr<T> makeThrustVector(size_t size) {
+        return std::make_shared<ThrustDeviceVector<T>>(size);
+    }
+    static DeviceVectorPtr<T> makeThrustVector(size_t size, T value) {
+        return std::make_shared<ThrustDeviceVector<T>>(size, value);
+    }
+    static DeviceVectorPtr<T> makeWrapperVector(T* data, size_t size) {
+        return std::make_shared<WrapperDeviceVector<T>>(data, size);
+    }
+
+    static T* getRawPtr(DeviceVector<T>& vec) {
+        return vec.data();
+    }
+    static T const* getRawPtr(const DeviceVector<T>& vec) {
+        return vec.data();
+    }
+
+    static T getItemImpl(const DeviceVector<T>& v1, int index) {
+        return v1[index];
+    }
+    static void setItemImpl(DeviceVector<T>& v1, int index, T value) {
+        v1[index] = value;
+    }
+
+    static void getSliceImpl(const DeviceVector<T>& v1, int start, int stop, int step, T* target) {
+        if (step > 0) {
+            stridedGetImpl(v1.begin() + start, v1.begin() + stop, target, step);
+        } else {
+            auto reversedBegin = thrust::make_reverse_iterator(v1.begin() + start);
+            auto reversedEnd = thrust::make_reverse_iterator(v1.begin() + stop);
+
+            stridedGetImpl(reversedBegin, reversedEnd, target, -step);
+        }
+    }
+
+    static void setSliceImpl(DeviceVector<T>& v1, int start, int stop, int step, const T* source, int num) {
+        if (step > 0) {
+            stridedSetImpl(source, source + num, v1.begin() + start, v1.begin() + stop, step);
+        } else {
+            auto reversedBegin = thrust::make_reverse_iterator(v1.begin() + start);
+            auto reversedEnd = thrust::make_reverse_iterator(v1.begin() + stop);
+
+            stridedSetImpl(source, source + num, reversedBegin, reversedEnd, -step);
+        }
+    }
+
+    static void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b, const DeviceVector<T>& y) {
+        using namespace thrust::placeholders;
 
 #if 1 //Efficient
-		if (a == 0.0f) {
-			if (b == 0.0f) { // z = 0
-				thrust::fill(z.begin(), z.end(), 0.0f);
-			}
-			else if (b == 1.0f) { // z = y
-				thrust::copy(y.begin(), y.end(), z.begin());
-			}
-			else if (b == -1.0f) { // y = -y
-				thrust::transform(y.begin(), y.end(), z.begin(), -_1);
-			}
-			else { // y = b*y
-				thrust::transform(y.begin(), y.end(), z.begin(), b * _1);
-			}
-		}
-		else if (a == 1.0f) {
-			if (b == 0.0f) { // z = x
-				thrust::copy(x.begin(), x.end(), z.begin());
-			}
-			else if (b == 1.0f) { // z = x+y
-				thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), _1 + _2);
-			}
-			else if (b == -1.0f) { // z = x-y
-				thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), _1 - _2);
-			}
-			else { // z = x + b*y
-				thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), _1 + b * _2);
-			}
-		}
-		else if (a == -1.0f) {
-			if (b == 0.0f) { // z = -x
-				thrust::transform(x.begin(), x.end(), z.begin(), -_1);
-			}
-			else if (b == 1.0f) { // z = -x+y
-				thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), -_1 + _2);
-			}
-			else if (b == -1.0f) { // z = -x-y
-				thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), -_1 - _2);
-			}
-			else { // z = -x + b*y
-				thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), -_1 + b * _2);
-			}
-		}
-		else {
-			if (b == 0.0f) { // z = a*x
-				thrust::transform(x.begin(), x.end(), z.begin(), a * _1);
-			}
-			else if (b == 1.0f) { // z = a*x+y
-				thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 + _2);
-			}
-			else if (b == -1.0f) { // z = a*x-y
-				thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 - _2);
-			}
-			else { // z = a*x + b*y
-				thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 + b * _2);
-			}
-		}
+        if (a == 0.0f) {
+            if (b == 0.0f) { // z = 0
+                thrust::fill(z.begin(), z.end(), 0.0f);
+            } else if (b == 1.0f) { // z = y
+                thrust::copy(y.begin(), y.end(), z.begin());
+            } else if (b == -1.0f) { // y = -y
+                thrust::transform(y.begin(), y.end(), z.begin(), -_1);
+            } else { // y = b*y
+                thrust::transform(y.begin(), y.end(), z.begin(), b * _1);
+            }
+        } else if (a == 1.0f) {
+            if (b == 0.0f) { // z = x
+                thrust::copy(x.begin(), x.end(), z.begin());
+            } else if (b == 1.0f) { // z = x+y
+                thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), _1 + _2);
+            } else if (b == -1.0f) { // z = x-y
+                thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), _1 - _2);
+            } else { // z = x + b*y
+                thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), _1 + b * _2);
+            }
+        } else if (a == -1.0f) {
+            if (b == 0.0f) { // z = -x
+                thrust::transform(x.begin(), x.end(), z.begin(), -_1);
+            } else if (b == 1.0f) { // z = -x+y
+                thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), -_1 + _2);
+            } else if (b == -1.0f) { // z = -x-y
+                thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), -_1 - _2);
+            } else { // z = -x + b*y
+                thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), -_1 + b * _2);
+            }
+        } else {
+            if (b == 0.0f) { // z = a*x
+                thrust::transform(x.begin(), x.end(), z.begin(), a * _1);
+            } else if (b == 1.0f) { // z = a*x+y
+                thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 + _2);
+            } else if (b == -1.0f) { // z = a*x-y
+                thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 - _2);
+            } else { // z = a*x + b*y
+                thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 + b * _2);
+            }
+        }
 #else //Basic
-		thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 + b * _2);
+        thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 + b * _2);
 #endif
-	}
+    }
 
-	static double normImpl(const DeviceVector<T>& v1) {
-		using namespace thrust::placeholders;
-		return sqrt(thrust::transform_reduce(v1.begin(), v1.end(), _1 * _1, 0.0, thrust::plus<double>{}));
-	}
+    static double normImpl(const DeviceVector<T>& v1) {
+        using namespace thrust::placeholders;
+        return sqrt(thrust::transform_reduce(v1.begin(), v1.end(), _1 * _1, 0.0, thrust::plus<double>{}));
+    }
 
-	static double innerImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2) {
-		return thrust::inner_product(v1.begin(), v1.end(), v2.begin(), 0.0);
-	}
+    static double innerImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2) {
+        return thrust::inner_product(v1.begin(), v1.end(), v2.begin(), 0.0);
+    }
 
-	static void multiplyImpl(const DeviceVector<T>& v1, DeviceVector<T>& v2) {
-		using namespace thrust::placeholders;
-		thrust::transform(v1.begin(), v1.end(), v2.begin(), v2.begin(), _1 * _2);
-	}
+    static void multiplyImpl(const DeviceVector<T>& v1, DeviceVector<T>& v2) {
+        using namespace thrust::placeholders;
+        thrust::transform(v1.begin(), v1.end(), v2.begin(), v2.begin(), _1 * _2);
+    }
+
+    static void printData(const DeviceVector<T>& v1, std::ostream_iterator<T>& out, int numel) {
+        thrust::copy(v1.begin(), v1.begin() + numel, out);
+    }
 };
-template struct CudaRNVectorImplMethods <float>;
-template struct CudaRNVectorImplMethods <unsigned char>;
+template struct CudaRNVectorImplMethods<float>;
+template struct CudaRNVectorImplMethods<unsigned char>;
 
 //Reductions
 float sumImpl(const DeviceVector<float>& v) {
@@ -356,7 +298,7 @@ __global__ void forwardDifferenceAdjointKernel(const int len, const float* sourc
     }
 }
 void forwardDifferenceAdjointImpl(const DeviceVector<float>& source, DeviceVector<float>& target) {
-	size_t len = source.size();
+    size_t len = source.size();
     unsigned dimBlock(256);
     unsigned dimGrid(std::min<unsigned>(128u, 1 + (len / dimBlock)));
 

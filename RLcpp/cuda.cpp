@@ -20,39 +20,30 @@ using namespace boost::python;
 
 template <typename T>
 struct CudaRNVectorImplMethods {
+    // Creation
+    static DeviceVectorPtr<T> makeThrustVector(size_t size);
+    static DeviceVectorPtr<T> makeThrustVector(size_t size, T value);
+    static DeviceVectorPtr<T> makeWrapperVector(T* data, size_t size);
+
+    //Get ptr
+    static T* getRawPtr(DeviceVector<T>& ptr);
+    static const T* getRawPtr(const DeviceVector<T>& ptr);
+
+    //Getters and setters
+    static T getItemImpl(const DeviceVector<T>& v1, int index);
+    static void setItemImpl(DeviceVector<T>& v1, int index, T value);
+    static void getSliceImpl(const DeviceVector<T>& v1, int begin, int end, int step, T* target);
+		static void setSliceImpl(DeviceVector<T>& v1, int begin, int end, int step, const T* source, int num);
+
+    //Algebra
     static void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b, const DeviceVector<T>& y);
     static double normImpl(const DeviceVector<T>& v1);
     static double innerImpl(const DeviceVector<float>& v1, const DeviceVector<float>& v2);
     static void multiplyImpl(const DeviceVector<float>& v1, DeviceVector<float>& v2);
+
+    //Copy methods
+    static void printData(const DeviceVector<T>& v1, std::ostream_iterator<T>& out, int numel);
 };
-
-//Create
-template <typename T>
-extern DeviceVectorPtr<T> makeThrustVector(size_t size);
-template <typename T>
-extern DeviceVectorPtr<T> makeThrustVector(size_t size, T value);
-template <typename T>
-extern DeviceVectorPtr<T> makeWrapperVector(T* data, size_t size);
-
-//Get ptr
-template <typename T>
-extern T* getRawPtr(DeviceVector<T>& ptr);
-template <typename T>
-extern const T* getRawPtr(const DeviceVector<T>& ptr);
-
-//Getters and setters
-template <typename T>
-extern T getItemImpl(const DeviceVector<T>& v1, int index);
-template <typename T>
-extern void setItemImpl(DeviceVector<T>& v1, int index, T value);
-template <typename T, typename S>
-extern void getSliceImpl(const DeviceVector<T>& v1, int begin, int end, int step, S* target);
-template <typename T, typename S>
-extern void setSliceImpl(DeviceVector<T>& v1, int begin, int end, int step, const S* source, int num);
-
-//Copy methods
-template <typename T>
-extern void printData(const DeviceVector<T>& v1, std::ostream_iterator<T>& out, int numel);
 
 //Transformations
 extern void absImpl(const DeviceVector<float>& source, DeviceVector<float>& target);
@@ -139,12 +130,12 @@ class CudaVectorImpl {
   public:
     CudaVectorImpl(size_t size)
         : _size(size),
-          _impl(makeThrustVector<T>(size)) {
+          _impl(CudaRNVectorImplMethods<T>::makeThrustVector(size)) {
     }
 
     CudaVectorImpl(size_t size, T value)
         : _size(size),
-          _impl(makeThrustVector<T>(size, value)) {
+          _impl(CudaRNVectorImplMethods<T>::makeThrustVector(size, value)) {
     }
 
     CudaVectorImpl(size_t size, DeviceVectorPtr<T> impl)
@@ -153,7 +144,7 @@ class CudaVectorImpl {
     }
 
     static CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size) {
-        return CudaVectorImpl<T>{size, makeWrapperVector((T*)ptr, size)};
+        return CudaVectorImpl<T>{size, CudaRNVectorImplMethods<T>::makeWrapperVector((T*)ptr, size)};
     }
 
     void validateIndex(ptrdiff_t index) const {
@@ -164,24 +155,24 @@ class CudaVectorImpl {
     T getItem(ptrdiff_t index) const {
         if (index < 0) index += _size; //Handle negative indexes like python
         validateIndex(index);
-        return getItemImpl(*_impl, index);
+        return CudaRNVectorImplMethods<T>::getItemImpl(*_impl, index);
     }
 
     void setItem(ptrdiff_t index, T value) {
         if (index < 0) index += _size; //Handle negative indexes like python
         validateIndex(index);
-        setItemImpl(*_impl, index, value);
+        CudaRNVectorImplMethods<T>::setItemImpl(*_impl, index, value);
     }
 
     numeric::array getSlice(const slice index) const {
         sliceHelper sh(index, _size);
 
         if (sh.numel > 0) {
-            numeric::array arr = makeArray<double>(sh.numel);
-            getSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<double>(arr));
+            numeric::array arr = makeArray<T>(sh.numel);
+            CudaRNVectorImplMethods<T>::getSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<T>(arr));
             return arr;
         } else {
-            return makeArray<double>(0);
+            return makeArray<T>(0);
         }
     }
 
@@ -192,7 +183,7 @@ class CudaVectorImpl {
             throw std::out_of_range("Size of array does not match slice");
 
         if (sh.numel > 0) {
-            setSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<double>(arr), sh.numel);
+            CudaRNVectorImplMethods<T>::setSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<T>(arr), sh.numel);
         }
     }
 
@@ -215,7 +206,7 @@ class CudaVectorImpl {
     friend std::ostream& operator<<(std::ostream& ss, const CudaVectorImpl& v) {
         ss << "CudaVectorImpl" << typeid(T).name() << ">: ";
         auto outputIter = std::ostream_iterator<T>(ss, " ");
-        printData(*v._impl, outputIter, std::min<int>(100, v._size));
+        CudaRNVectorImplMethods<T>::printData(*v._impl, outputIter, std::min<int>(100, v._size));
         return ss;
     }
 
@@ -228,7 +219,7 @@ class CudaVectorImpl {
     }
 
     uintptr_t dataPtr() {
-        return reinterpret_cast<uintptr_t>(getRawPtr(*_impl));
+        return reinterpret_cast<uintptr_t>(CudaRNVectorImplMethods<T>::getRawPtr(*_impl));
     }
 
     const size_t _size;
