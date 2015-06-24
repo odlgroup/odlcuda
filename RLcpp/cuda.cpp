@@ -11,7 +11,7 @@
 #include <thrust/device_vector.h>
 #include <numpy/arrayobject.h>
 
-#include <RLcpp/numpy_utils.h>
+#include <LCRUtils/python/numpy_utils.h>
 #include <RLcpp/DeviceVector.h>
 
 using namespace boost::python;
@@ -315,7 +315,7 @@ BOOST_PYTHON_MODULE(PyCuda) {
         .def("getSlice", &CudaVectorImpl<float>::getSlice)
         .def("setSlice", &CudaVectorImpl<float>::setSlice)
         .def("dataPtr", &CudaVectorImpl<float>::dataPtr)
-        .def("linComb", &CudaVectorImpl<float>::linComb)
+				.def("linComb", &CudaVectorImpl<float>::linComb)
         .def("inner", &CudaVectorImpl<float>::inner)
         .def("norm", &CudaVectorImpl<float>::norm)
         .def("multiply", &CudaVectorImpl<float>::multiply);

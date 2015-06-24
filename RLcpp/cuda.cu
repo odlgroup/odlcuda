@@ -15,8 +15,10 @@
 #include <thrust/adjacent_difference.h>
 
 // RL
-#include <RLcpp/thrustUtils.h>
 #include <RLcpp/DeviceVector.h>
+
+// Utils
+#include <LCRUtils/cuda/thrustUtils.h>
 
 template <typename T>
 class DeviceVector {
