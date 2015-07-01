@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 2.6) 
+
 project (RLcpp)
 
 #Set binary dir
@@ -11,6 +12,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 # Use folders in MSVC
 set_property(GLOBAL PROPERTY USE_FOLDERS true)
+
+# Create clang compile for YouCompleteMe
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Add test project
 enable_testing ()
