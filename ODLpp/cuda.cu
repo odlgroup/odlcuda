@@ -14,8 +14,8 @@
 #include <thrust/inner_product.h>
 #include <thrust/adjacent_difference.h>
 
-// RL
-#include <RLcpp/DeviceVector.h>
+// ODL
+#include <ODLcpp/DeviceVector.h>
 
 // Utils
 #include <LCRUtils/cuda/thrustUtils.h>
