@@ -1,6 +1,6 @@
 include_directories ("${PROJECT_SOURCE_DIR}")
 
-add_subdirectory(rlutils)
+add_subdirectory(odlutils)
 
 if (WIN32)
 	set(FILESTART "")
@@ -14,14 +14,14 @@ else(WIN32)
 	set(TARGET_PY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 endif(WIN32)
 
-set(LIB_NAME "PyUtils")
+set(LIB_NAME "utils")
 set(PYTHON_LIBS ${PYTHON_LIBS} ${LIB_NAME})
 add_library(${LIB_NAME} SHARED utils.cpp)
 set_property(TARGET ${LIB_NAME} PROPERTY FOLDER python)
-target_link_libraries(${LIB_NAME} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} rlutils)
+target_link_libraries(${LIB_NAME} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} odlutils)
 
 if (CUDA_ENABLED)
-	set(LIB_NAME "PyCuda")
+	set(LIB_NAME "cuda")
 	set(PYTHON_LIBS ${PYTHON_LIBS} ${LIB_NAME})
 	cuda_include_directories ("${PROJECT_SOURCE_DIR}")
 	CUDA_ADD_LIBRARY(${LIB_NAME} SHARED "cuda.cpp" "cuda.cu" "DeviceVector.h")
@@ -41,5 +41,5 @@ foreach(file_i ${PYTHON_LIBS})
 endforeach()
 
 add_custom_command(TARGET ${INSTALL_LIB} COMMAND cd ${TARGET_PY} && python ${CMAKE_CURRENT_SOURCE_DIR}/setup.py install)
-									
+
 add_dependencies(${INSTALL_LIB} ${PYTHON_LIBS})

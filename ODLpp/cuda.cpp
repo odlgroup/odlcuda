@@ -12,7 +12,7 @@
 #include <numpy/arrayobject.h>
 
 #include <LCRUtils/python/numpy_utils.h>
-#include <RLcpp/DeviceVector.h>
+#include <ODLpp/DeviceVector.h>
 
 using namespace boost::python;
 
@@ -280,7 +280,7 @@ float sumVector(const CudaVectorImpl<float>& source) {
 }
 
 // Expose classes and methods to Python
-BOOST_PYTHON_MODULE(PyCuda) {
+BOOST_PYTHON_MODULE(cuda) {
     auto result = _import_array(); //Import numpy
     if (result < 0) {
         PyErr_Print();

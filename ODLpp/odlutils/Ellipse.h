@@ -2,7 +2,7 @@
 
 #include <Eigen/Dense>
 
-namespace RLCpp {
+namespace ODLpp {
 /**
  * Definition of an ellipse in two dimensions, also contains an greyLevel value.
  * Intended to be used to describe areas in phantoms.

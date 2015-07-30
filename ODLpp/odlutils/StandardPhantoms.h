@@ -1,12 +1,14 @@
 #pragma once
 
-#include <RLcpp/rlutils/utilities_export.h>
-#include <RLcpp/rlutils/Ellipse.h>
+#include <ODLpp/odlutils/StandardPhantoms.h>
+#include <ODLpp/odlutils/utilities_export.h>
+#include <ODLpp/odlutils/Ellipse.h>
+
 #include <vector>
 
 #include <Eigen/Dense>
 
-namespace RLCpp {
+namespace ODLpp {
 /**
  * Enum of all phantom types supported by getPhantomParameters
  */

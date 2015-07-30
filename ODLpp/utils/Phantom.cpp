@@ -1,6 +1,6 @@
-#include <RLcpp/rlutils/Phantom.h>
-#include <RLcpp/rlutils/EigenUtils.h>
-#include <RLcpp/rlutils/Ellipse.h>
+#include <ODLpp/utils/Phantom.h>
+#include <ODLpp/utils/EigenUtils.h>
+#include <ODLpp/utils/Ellipse.h>
 
 #include <vector>
 #include <iostream>
@@ -8,7 +8,7 @@
 
 using namespace Eigen;
 
-namespace RLCpp {
+namespace ODLpp {
 
 namespace {
 /**

@@ -1,12 +1,11 @@
 #pragma once
 
-#include <RLcpp/rlutils/Phantom.h>
-#include <RLcpp/rlutils/utilities_export.h>
-#include <RLcpp/rlutils/StandardPhantoms.h>
+#include <ODLpp/utils/utilities_export.h>
+#include <ODLpp/utils/StandardPhantoms.h>
 
 #include <Eigen/Dense>
 
-namespace RLCpp {
+namespace ODLpp {
 /**
  * Constructs a phantom.
  * @param size			The size of the phantom (in units)

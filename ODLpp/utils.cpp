@@ -11,14 +11,14 @@
 
 #include <LCRUtils/python/numpy_eigen.h>
 
-#include <RLcpp/rlutils/StandardPhantoms.h>
-#include <RLcpp/rlutils/Phantom.h>
+#include <ODLpp/odlutils/StandardPhantoms.h>
+#include <ODLpp/odlutils/Phantom.h>
 
 using namespace boost::python;
 using namespace Eigen;
 
 numeric::array phantom(const boost::python::object& size,
-                       RLCpp::PhantomType type = RLCpp::PhantomType::modifiedSheppLogan,
+                       ODLpp::PhantomType type = ODLpp::PhantomType::modifiedSheppLogan,
                        double edgeWidth = 0.0) {
     return copyOutput(phantom(copyInput<Vector2i>(size),
                               type,
@@ -32,7 +32,7 @@ char const* greet() {
 }
 
 // Expose classes and methods to Python
-BOOST_PYTHON_MODULE(PyUtils) {
+BOOST_PYTHON_MODULE(utils) {
     auto result = _import_array(); //Import numpy
     if (result < 0) {
         PyErr_Print();
@@ -46,9 +46,9 @@ BOOST_PYTHON_MODULE(PyUtils) {
 
     def("phantom", &phantom, phantom_overloads());
 
-    enum_<RLCpp::PhantomType>("PhantomType", "Enumeration of available phantoms")
-		.value("sheppLogan", RLCpp::PhantomType::sheppLogan)
-		.value("modifiedSheppLogan", RLCpp::PhantomType::modifiedSheppLogan)
-		.value("twoEllipses", RLCpp::PhantomType::twoEllipses)
-		.value("circle", RLCpp::PhantomType::circle);
+    enum_<ODLpp::PhantomType>("PhantomType", "Enumeration of available phantoms")
+		.value("sheppLogan", ODLpp::PhantomType::sheppLogan)
+		.value("modifiedSheppLogan", ODLpp::PhantomType::modifiedSheppLogan)
+		.value("twoEllipses", ODLpp::PhantomType::twoEllipses)
+		.value("circle", ODLpp::PhantomType::circle);
 }

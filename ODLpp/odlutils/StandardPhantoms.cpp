@@ -1,6 +1,6 @@
-#include <RLCpp/utils/Phantom.h>
-#include <RLCpp/utils/EigenUtils.h>
-
+#include <ODLpp/odlutils/StandardPhantoms.h>
+#include <ODLpp/odlutils/Phantom.h>
+#include <ODLpp/odlutils/EigenUtils.h>
 #include <stdexcept> // std::invalid_argument
 #include <vector>
 #include <iostream>
@@ -8,7 +8,7 @@
 
 using namespace Eigen;
 
-namespace RLCpp {
+namespace ODLpp {
 namespace {
 /**
  * The Shepp-Logan ellipse parameters, as defined in:
