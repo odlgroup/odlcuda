@@ -28,7 +28,7 @@ numeric::array phantom(const boost::python::object& size,
 BOOST_PYTHON_FUNCTION_OVERLOADS(phantom_overloads, phantom, 1, 3)
 
 char const* greet() {
-    return "hello, world";
+    return "Hello, world!";
 }
 
 // Expose classes and methods to Python
@@ -47,8 +47,8 @@ BOOST_PYTHON_MODULE(utils) {
     def("phantom", &phantom, phantom_overloads());
 
     enum_<ODLpp::PhantomType>("PhantomType", "Enumeration of available phantoms")
-		.value("sheppLogan", ODLpp::PhantomType::sheppLogan)
-		.value("modifiedSheppLogan", ODLpp::PhantomType::modifiedSheppLogan)
-		.value("twoEllipses", ODLpp::PhantomType::twoEllipses)
+		.value("shepp_logan", ODLpp::PhantomType::sheppLogan)
+		.value("modified_shepp_logan", ODLpp::PhantomType::modifiedSheppLogan)
+		.value("two_ellipses", ODLpp::PhantomType::twoEllipses)
 		.value("circle", ODLpp::PhantomType::circle);
 }

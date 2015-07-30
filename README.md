@@ -24,7 +24,7 @@ And then set the required variables, to build, run
 
     make
 
-To install the package to your python installation, run
+To install the package to your python installation, run (as root)
 
     make pyinstall
 
@@ -101,7 +101,7 @@ There are a few common errors encountered, this is the solution to some of these
 
 * If you get a error like
 
-        Error	5	error LNK2019: unresolved external symbol "__declspec(dllimport) struct _object * __cdecl boost::python::detail::init_module(struct PyModuleDef &,void (__cdecl*)(void))" (__imp_?init_module@detail@python@boost@@YAPEAU_object@@AEAUPyModuleDef@@P6AXXZ@Z) referenced in function PyInit_utils	C:\Programming\Projects\ODLpp_bin\RLcpp\utils.obj	PyUtils
+        Error	5	error LNK2019: unresolved external symbol "__declspec(dllimport) struct _object * __cdecl boost::python::detail::init_module(struct PyModuleDef &,void (__cdecl*)(void))" (__imp_?init_module@detail@python@boost@@YAPEAU_object@@AEAUPyModuleDef@@P6AXXZ@Z) referenced in function PyInit_utils	C:\Programming\Projects\ODLpp_bin\RLcpp\utils.obj	utils
 
     then it is likely that you are trying to build against unmatched python header files and boost python version
 
@@ -117,4 +117,4 @@ There are a few common errors encountered, this is the solution to some of these
 
         ImportError: No module named odlpp
 
-    It may be that you have not installed the package, run `make pyinstall` or equivalent.
+    It may be that you have not installed the package, run (as root) `make pyinstall` or equivalent.
