@@ -26,11 +26,11 @@ And then set the required variables, to build, run
 
 To install the package to your python installation, run
 
-    make PyInstall
+    make pyinstall
 
 #### Windows
 
-To build on windows, open the CMake gui, run configure-generate and set the required variables. Then open the project with Visual Studio and build `PyInstall`.
+To build on windows, open the CMake gui, run configure-generate and set the required variables. Then open the project with Visual Studio and build `pyinstall`.
 
 Code guidelines
 --------------------
@@ -117,4 +117,4 @@ There are a few common errors encountered, this is the solution to some of these
 
         ImportError: No module named odlpp
 
-    It may be that you have not installed the package, run `make PyInstall` or equivalent.
+    It may be that you have not installed the package, run `make pyinstall` or equivalent.

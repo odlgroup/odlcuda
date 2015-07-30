@@ -31,7 +31,7 @@ if (CUDA_ENABLED)
 endif()
 
 #TODO: LINUX?
-set(INSTALL_LIB "PyInstall")
+set(INSTALL_LIB "pyinstall")
 add_custom_target(${INSTALL_LIB} COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py ${TARGET_PY}/__init__.py)
 set_property(TARGET ${INSTALL_LIB} PROPERTY FOLDER python)
 
