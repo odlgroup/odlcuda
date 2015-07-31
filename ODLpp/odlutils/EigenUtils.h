@@ -4,7 +4,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
-namespace RLCpp {
+namespace ODLpp {
 
 /**
  * Calculates ray box intersection of box and a ray passing through x0 and x1.

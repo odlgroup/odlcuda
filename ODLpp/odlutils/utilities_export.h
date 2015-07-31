@@ -6,14 +6,14 @@
 #else
 #  ifndef UTILITIES_EXPORT
 #    ifdef _WIN32
-#      ifdef rlutils_EXPORTS
+#      ifdef odlutils_EXPORTS
         /* We are building this library */
 #        define UTILITIES_EXPORT __declspec(dllexport)
 #      else
           /* We are using this library */
 #        define UTILITIES_EXPORT __declspec(dllimport)
 #      endif
-#    else	
+#    else
 #	define UTILITIES_EXPORT
 #    endif
 #  endif

@@ -8,7 +8,7 @@ set(Headers
 set(Sources
 	Phantom.cpp
 	StandardPhantoms.cpp)
-	
+
 include_directories ("${PROJECT_SOURCE_DIR}")
 
-add_library(rlutils SHARED ${Headers} ${Sources})
+add_library(odlutils SHARED ${Headers} ${Sources})

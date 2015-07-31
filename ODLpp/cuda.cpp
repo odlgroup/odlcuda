@@ -12,7 +12,7 @@
 #include <numpy/arrayobject.h>
 
 #include <LCRUtils/python/numpy_utils.h>
-#include <RLcpp/DeviceVector.h>
+#include <ODLpp/DeviceVector.h>
 
 using namespace boost::python;
 
@@ -280,8 +280,8 @@ float sumVector(const CudaVectorImpl<float>& source) {
 }
 
 // Expose classes and methods to Python
-BOOST_PYTHON_MODULE(PyCuda) {
-    auto result = _import_array(); //Import numpy
+BOOST_PYTHON_MODULE(cuda) {
+    auto result = _import_array(); // Import numpy
     if (result < 0) {
         PyErr_Print();
         PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
@@ -290,21 +290,21 @@ BOOST_PYTHON_MODULE(PyCuda) {
     boost::python::numeric::array::set_module_and_type("numpy", "ndarray");
 
     def("conv", convolution);
-    def("forwardDiff", forwardDifference);
-    def("forwardDiffAdj", forwardDifferenceAdjoint);
-    def("forwardDiff2D", forwardDifference2D);
-    def("forwardDiff2DAdj", forwardDifference2DAdjoint);
-    def("maxVectorVector", maxVectorVector);
-    def("maxVectorScalar", maxVectorScalar);
-    def("divideVectorVector", divideVectorVector);
-    def("addScalar", addScalar);
+    def("forward_diff", forwardDifference);
+    def("forward_diff_adj", forwardDifferenceAdjoint);
+    def("forward_diff_2d", forwardDifference2D);
+    def("forward_diff_2d_adj", forwardDifference2DAdjoint);
+    def("max_vector_vector", maxVectorVector);
+    def("max_vector_scalar", maxVectorScalar);
+    def("divide_vector_vector", divideVectorVector);
+    def("add_scalar", addScalar);
     def("sign", signVector);
     def("sqrt", sqrtVector);
     def("abs", absVector);
     def("sum", sumVector);
 
-    //CudaRN
-    class_<CudaVectorImpl<float>>("CudaVectorImplFloat", "Documentation",
+    // CudaRn
+    class_<CudaVectorImpl<float>>("CudaVectorFloat", "Documentation",
                                   init<size_t>())
         .def(init<size_t, float>())
         .def("fromPointer", &CudaVectorImpl<float>::fromPointer)
@@ -312,15 +312,16 @@ BOOST_PYTHON_MODULE(PyCuda) {
         .def(self_ns::str(self_ns::self))
         .def("__getitem__", &CudaVectorImpl<float>::getItem)
         .def("__setitem__", &CudaVectorImpl<float>::setItem)
-        .def("getSlice", &CudaVectorImpl<float>::getSlice)
-        .def("setSlice", &CudaVectorImpl<float>::setSlice)
-        .def("dataPtr", &CudaVectorImpl<float>::dataPtr)
+        .def("getslice", &CudaVectorImpl<float>::getSlice)
+        .def("setslice", &CudaVectorImpl<float>::setSlice)
+        .def("data_ptr", &CudaVectorImpl<float>::dataPtr)
 				.def("linComb", &CudaVectorImpl<float>::linComb)
         .def("inner", &CudaVectorImpl<float>::inner)
         .def("norm", &CudaVectorImpl<float>::norm)
         .def("multiply", &CudaVectorImpl<float>::multiply);
 
-    class_<CudaVectorImpl<unsigned char>>("CudaVectorImplUChar", "Documentation",
+    // CudaEn with uchar
+    class_<CudaVectorImpl<unsigned char>>("CudaVectorUchar", "Documentation",
                                           init<size_t>())
         .def(init<size_t, unsigned char>())
         .def("fromPointer", &CudaVectorImpl<unsigned char>::fromPointer)
@@ -328,7 +329,7 @@ BOOST_PYTHON_MODULE(PyCuda) {
         .def(self_ns::str(self_ns::self))
         .def("__getitem__", &CudaVectorImpl<unsigned char>::getItem)
         .def("__setitem__", &CudaVectorImpl<unsigned char>::setItem)
-        .def("getSlice", &CudaVectorImpl<unsigned char>::getSlice)
-        .def("setSlice", &CudaVectorImpl<unsigned char>::setSlice)
-        .def("dataPtr", &CudaVectorImpl<unsigned char>::dataPtr);
+        .def("getslice", &CudaVectorImpl<unsigned char>::getSlice)
+        .def("setslice", &CudaVectorImpl<unsigned char>::setSlice)
+        .def("data_ptr", &CudaVectorImpl<unsigned char>::dataPtr);
 }

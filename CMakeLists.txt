@@ -1,6 +1,6 @@
-cmake_minimum_required (VERSION 2.6) 
+cmake_minimum_required (VERSION 2.6)
 
-project (RLcpp)
+project (odlpp)
 
 #Set binary dir
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
@@ -8,7 +8,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # add cmake find modules
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake) 
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 # Use folders in MSVC
 set_property(GLOBAL PROPERTY USE_FOLDERS true)
@@ -28,12 +28,12 @@ include_directories(SYSTEM ${EIGEN3_INCLUDE_DIR})
 option(CUDA_ENABLED "Enable CUDA" TRUE)
 if(CUDA_ENABLED)
 	find_package(CUDA QUIET REQUIRED)
- 
+
 	set(CUDA_COMPUTE "52" CACHE STRING "Cuda compute capability to compile for")
- 
+
 	# Pass options to NVCC
 	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_${CUDA_COMPUTE},code=sm_${CUDA_COMPUTE})
-	
+
 	# Enable fast math
 	option(CUDA_USE_FAST_MATH "Enable fast math in cuda (can decrease precision)" TRUE)
 	if(CUDA_USE_FAST_MATH)
@@ -81,17 +81,17 @@ if(PYTHON_ENABLED)
              REQUIRED)
 	include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
-	
+
 	# Find python
 	find_package(PythonLibs REQUIRED)
 	include_directories(${PYTHON_INCLUDE_DIRS})
-	
+
 	# Find numpy
 	find_package(Numpy REQUIRED)
 	include_directories(${PYTHON_NUMPY_INCLUDE_DIR})
-	
+
 	link_directories(${PYTHON_LIBRARIES})
 endif(PYTHON_ENABLED)
 
 # Add sub directories as needed
-add_subdirectory (RLcpp)
+add_subdirectory (ODLpp)
