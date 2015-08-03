@@ -280,7 +280,7 @@ float sumVector(const CudaVectorImpl<float>& source) {
 }
 
 // Expose classes and methods to Python
-BOOST_PYTHON_MODULE(cuda) {
+BOOST_PYTHON_MODULE(odlpp_cuda) {
     auto result = _import_array(); // Import numpy
     if (result < 0) {
         PyErr_Print();

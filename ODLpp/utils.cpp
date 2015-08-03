@@ -32,7 +32,7 @@ char const* greet() {
 }
 
 // Expose classes and methods to Python
-BOOST_PYTHON_MODULE(utils) {
+BOOST_PYTHON_MODULE(odlpp_utils) {
     auto result = _import_array(); //Import numpy
     if (result < 0) {
         PyErr_Print();
