@@ -307,8 +307,8 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     class_<CudaVectorImpl<float>>("CudaVectorFloat", "Documentation",
                                   init<size_t>())
         .def(init<size_t, float>())
-        .def("fromPointer", &CudaVectorImpl<float>::fromPointer)
-        .staticmethod("fromPointer")
+        .def("from_pointer", &CudaVectorImpl<float>::fromPointer)
+        .staticmethod("from_pointer")
         .def(self_ns::str(self_ns::self))
         .def("__getitem__", &CudaVectorImpl<float>::getItem)
         .def("__setitem__", &CudaVectorImpl<float>::setItem)
@@ -324,8 +324,8 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     class_<CudaVectorImpl<unsigned char>>("CudaVectorUchar", "Documentation",
                                           init<size_t>())
         .def(init<size_t, unsigned char>())
-        .def("fromPointer", &CudaVectorImpl<unsigned char>::fromPointer)
-        .staticmethod("fromPointer")
+        .def("from_pointer", &CudaVectorImpl<unsigned char>::fromPointer)
+        .staticmethod("from_pointer")
         .def(self_ns::str(self_ns::self))
         .def("__getitem__", &CudaVectorImpl<unsigned char>::getItem)
         .def("__setitem__", &CudaVectorImpl<unsigned char>::setItem)

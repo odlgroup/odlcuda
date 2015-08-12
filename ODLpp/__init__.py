@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with ODL.  If not, see <http://www.gnu.org/licenses/>.
 
-import odlpp_cuda as cuda
-import odlpp_utils as utils
+import odlpp_cuda
+import odlpp_utils
 
 # __all__ = ['']
