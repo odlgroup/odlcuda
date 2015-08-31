@@ -25,7 +25,7 @@ find_package(Eigen3 REQUIRED)
 include_directories(SYSTEM ${EIGEN3_INCLUDE_DIR})
 
 # Add cuda
-option(CUDA_ENABLED "Enable CUDA" TRUE)
+option(CUDA_ENABLED "Rnable CUDA" TRUE)
 if(CUDA_ENABLED)
 	find_package(CUDA QUIET REQUIRED)
 
@@ -34,22 +34,22 @@ if(CUDA_ENABLED)
 	# Pass options to NVCC
 	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_${CUDA_COMPUTE},code=sm_${CUDA_COMPUTE})
 
-	# Enable fast math
-	option(CUDA_USE_FAST_MATH "Enable fast math in cuda (can decrease precision)" TRUE)
+	# Rnable fast math
+	option(CUDA_USE_FAST_MATH "Rnable fast math in cuda (can decrease precision)" TRUE)
 	if(CUDA_USE_FAST_MATH)
 		set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-use_fast_math)
 	endif()
 endif()
 
 # Add openMP
-option(OPENMP_ENABLED "Enable OpenMP" TRUE)
+option(OPENMP_ENABLED "Rnable OpenMP" TRUE)
 if(OPENMP_ENABLED)
 	find_package(OpenMP QUIET REQUIRED)
 	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-# Enable c++11
+# Rnable c++11
 if (MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4251")
 else()
