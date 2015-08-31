@@ -33,7 +33,7 @@ struct CudaRNVectorImplMethods {
     static T getItemImpl(const DeviceVector<T>& v1, int index);
     static void setItemImpl(DeviceVector<T>& v1, int index, T value);
     static void getSliceImpl(const DeviceVector<T>& v1, int begin, int end, int step, T* target);
-		static void setSliceImpl(DeviceVector<T>& v1, int begin, int end, int step, const T* source, int num);
+    static void setSliceImpl(DeviceVector<T>& v1, int begin, int end, int step, const T* source, int num);
 
     //Algebra
     static void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b, const DeviceVector<T>& y);
@@ -315,7 +315,7 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
         .def("getslice", &CudaVectorImpl<float>::getSlice)
         .def("setslice", &CudaVectorImpl<float>::setSlice)
         .def("data_ptr", &CudaVectorImpl<float>::dataPtr)
-				.def("linComb", &CudaVectorImpl<float>::linComb)
+        .def("linComb", &CudaVectorImpl<float>::linComb)
         .def("inner", &CudaVectorImpl<float>::inner)
         .def("norm", &CudaVectorImpl<float>::norm)
         .def("multiply", &CudaVectorImpl<float>::multiply);
