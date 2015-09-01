@@ -228,9 +228,9 @@ struct CudaRNVectorImplMethods {
         return thrust::inner_product(v1.begin(), v1.end(), v2.begin(), 0.0);
     }
 
-    static void multiplyImpl(const DeviceVector<T>& v1, DeviceVector<T>& v2) {
+    static void multiplyImpl(DeviceVector<T>& z, const DeviceVector<T>& x, const DeviceVector<T>& y){
         using namespace thrust::placeholders;
-        thrust::transform(v1.begin(), v1.end(), v2.begin(), v2.begin(), _1 * _2);
+        thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), _1 * _2);
     }
 
     static void printData(const DeviceVector<T>& v1, std::ostream_iterator<T>& out, int numel) {

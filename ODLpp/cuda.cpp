@@ -42,7 +42,7 @@ struct CudaRNVectorImplMethods {
     static void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b, const DeviceVector<T>& y);
     static double normImpl(const DeviceVector<T>& v1);
     static double innerImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2);
-    static void multiplyImpl(const DeviceVector<T>& v1, DeviceVector<T>& v2);
+    static void multiplyImpl(DeviceVector<T>& z, const DeviceVector<T>& x, const DeviceVector<T>& y);
 
     //Copy methods
     static void printData(const DeviceVector<T>& v1, std::ostream_iterator<T>& out, int numel);
@@ -202,8 +202,8 @@ class CudaVectorImpl {
         return CudaRNVectorImplMethods<T>::normImpl(*this);
     }
 
-    void multiply(const CudaVectorImpl<T>& v1) {
-        CudaRNVectorImplMethods<T>::multiplyImpl(v1, *this);
+    void multiply(const CudaVectorImpl<T>& v1, const CudaVectorImpl<T>& v2) {
+        CudaRNVectorImplMethods<T>::multiplyImpl(*this, v1, v2);
     }
 
     friend std::ostream& operator<<(std::ostream& ss, const CudaVectorImpl& v) {
