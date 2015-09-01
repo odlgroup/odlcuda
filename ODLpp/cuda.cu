@@ -16,6 +16,7 @@
 
 // ODL
 #include <ODLpp/DeviceVector.h>
+#include <ODLpp/TypeMacro.h>
 
 // Utils
 #include <LCRUtils/cuda/thrustUtils.h>
@@ -170,42 +171,42 @@ struct CudaRNVectorImplMethods {
         using namespace thrust::placeholders;
 
 #if 1 //Efficient
-        if (a == 0.0f) {
-            if (b == 0.0f) { // z = 0
-                thrust::fill(z.begin(), z.end(), 0.0f);
-            } else if (b == 1.0f) { // z = y
+        if (a == T(0)) {
+            if (b == T(0)) { // z = 0
+                thrust::fill(z.begin(), z.end(), T(0));
+            } else if (b == T(1)) { // z = y
                 thrust::copy(y.begin(), y.end(), z.begin());
-            } else if (b == -1.0f) { // y = -y
+            } else if (b == -T(1)) { // y = -y
                 thrust::transform(y.begin(), y.end(), z.begin(), -_1);
             } else { // y = b*y
                 thrust::transform(y.begin(), y.end(), z.begin(), b * _1);
             }
-        } else if (a == 1.0f) {
-            if (b == 0.0f) { // z = x
+        } else if (a == T(1)) {
+            if (b == T(0)) { // z = x
                 thrust::copy(x.begin(), x.end(), z.begin());
-            } else if (b == 1.0f) { // z = x+y
+            } else if (b == T(1)) { // z = x+y
                 thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), _1 + _2);
-            } else if (b == -1.0f) { // z = x-y
+            } else if (b == -T(1)) { // z = x-y
                 thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), _1 - _2);
             } else { // z = x + b*y
                 thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), _1 + b * _2);
             }
-        } else if (a == -1.0f) {
-            if (b == 0.0f) { // z = -x
+        } else if (a == -T(1)) {
+            if (b == T(0)) { // z = -x
                 thrust::transform(x.begin(), x.end(), z.begin(), -_1);
-            } else if (b == 1.0f) { // z = -x+y
+            } else if (b == T(1)) { // z = -x+y
                 thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), -_1 + _2);
-            } else if (b == -1.0f) { // z = -x-y
+            } else if (b == -T(1)) { // z = -x-y
                 thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), -_1 - _2);
             } else { // z = -x + b*y
                 thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), -_1 + b * _2);
             }
         } else {
-            if (b == 0.0f) { // z = a*x
+            if (b == T(0)) { // z = a*x
                 thrust::transform(x.begin(), x.end(), z.begin(), a * _1);
-            } else if (b == 1.0f) { // z = a*x+y
+            } else if (b == T(1)) { // z = a*x+y
                 thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 + _2);
-            } else if (b == -1.0f) { // z = a*x-y
+            } else if (b == -T(1)) { // z = a*x-y
                 thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 - _2);
             } else { // z = a*x + b*y
                 thrust::transform(x.begin(), x.end(), y.begin(), z.begin(), a * _1 + b * _2);
@@ -234,8 +235,11 @@ struct CudaRNVectorImplMethods {
         thrust::copy(v1.begin(), v1.begin() + numel, out);
     }
 };
-template struct CudaRNVectorImplMethods<float>;
-template struct CudaRNVectorImplMethods<unsigned char>;
+
+//Instantiate the methods for each type
+#define X(T,name) template struct CudaRNVectorImplMethods<T>;
+ODLPP_FOR_EACH_TYPE
+#undef X
 
 //Reductions
 float sumImpl(const DeviceVector<float>& v) {

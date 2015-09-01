@@ -13,6 +13,7 @@
 
 #include <LCRUtils/python/numpy_utils.h>
 #include <ODLpp/DeviceVector.h>
+#include <ODLpp/TypeMacro.h>
 
 using namespace boost::python;
 
@@ -38,8 +39,8 @@ struct CudaRNVectorImplMethods {
     //Algebra
     static void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b, const DeviceVector<T>& y);
     static double normImpl(const DeviceVector<T>& v1);
-    static double innerImpl(const DeviceVector<float>& v1, const DeviceVector<float>& v2);
-    static void multiplyImpl(const DeviceVector<float>& v1, DeviceVector<float>& v2);
+    static double innerImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2);
+    static void multiplyImpl(const DeviceVector<T>& v1, DeviceVector<T>& v2);
 
     //Copy methods
     static void printData(const DeviceVector<T>& v1, std::ostream_iterator<T>& out, int numel);
@@ -279,6 +280,26 @@ float sumVector(const CudaVectorImpl<float>& source) {
     return sumImpl(source);
 }
 
+template <typename T>
+void instantiateCudaVectorImpl(const std::string& name)
+{
+    class_<CudaVectorImpl<T>>(name.c_str(), "Documentation",
+        init<size_t>())
+        .def(init<size_t, T>())
+        .def("from_pointer", &CudaVectorImpl<T>::fromPointer)
+        .staticmethod("from_pointer")
+        .def(self_ns::str(self_ns::self))
+        .def("__getitem__", &CudaVectorImpl<T>::getItem)
+        .def("__setitem__", &CudaVectorImpl<T>::setItem)
+        .def("getslice", &CudaVectorImpl<T>::getSlice)
+        .def("setslice", &CudaVectorImpl<T>::setSlice)
+        .def("data_ptr", &CudaVectorImpl<T>::dataPtr)
+        .def("linComb", &CudaVectorImpl<T>::linComb)
+        .def("inner", &CudaVectorImpl<T>::inner)
+        .def("norm", &CudaVectorImpl<T>::norm)
+        .def("multiply", &CudaVectorImpl<T>::multiply);
+}
+
 // Expose classes and methods to Python
 BOOST_PYTHON_MODULE(odlpp_cuda) {
     auto result = _import_array(); // Import numpy
@@ -303,33 +324,7 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     def("abs", absVector);
     def("sum", sumVector);
 
-    // CudaRn
-    class_<CudaVectorImpl<float>>("CudaVectorFloat", "Documentation",
-                                  init<size_t>())
-        .def(init<size_t, float>())
-        .def("from_pointer", &CudaVectorImpl<float>::fromPointer)
-        .staticmethod("from_pointer")
-        .def(self_ns::str(self_ns::self))
-        .def("__getitem__", &CudaVectorImpl<float>::getItem)
-        .def("__setitem__", &CudaVectorImpl<float>::setItem)
-        .def("getslice", &CudaVectorImpl<float>::getSlice)
-        .def("setslice", &CudaVectorImpl<float>::setSlice)
-        .def("data_ptr", &CudaVectorImpl<float>::dataPtr)
-        .def("linComb", &CudaVectorImpl<float>::linComb)
-        .def("inner", &CudaVectorImpl<float>::inner)
-        .def("norm", &CudaVectorImpl<float>::norm)
-        .def("multiply", &CudaVectorImpl<float>::multiply);
-
-    // CudaEn with uchar
-    class_<CudaVectorImpl<unsigned char>>("CudaVectorUchar", "Documentation",
-                                          init<size_t>())
-        .def(init<size_t, unsigned char>())
-        .def("from_pointer", &CudaVectorImpl<unsigned char>::fromPointer)
-        .staticmethod("from_pointer")
-        .def(self_ns::str(self_ns::self))
-        .def("__getitem__", &CudaVectorImpl<unsigned char>::getItem)
-        .def("__setitem__", &CudaVectorImpl<unsigned char>::setItem)
-        .def("getslice", &CudaVectorImpl<unsigned char>::getSlice)
-        .def("setslice", &CudaVectorImpl<unsigned char>::setSlice)
-        .def("data_ptr", &CudaVectorImpl<unsigned char>::dataPtr);
+#define X(T,name) instantiateCudaVectorImpl<T>(name);
+    ODLPP_FOR_EACH_TYPE
+#undef X
 }
