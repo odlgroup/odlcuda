@@ -7,12 +7,14 @@
 #include <cublas_v2.h>
 
 // thrust
+#include <LCRUtils/cuda/disableThrustWarnings.h>
 #include <thrust/iterator/reverse_iterator.h>
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>
 #include <thrust/inner_product.h>
 #include <thrust/adjacent_difference.h>
+#include <LCRUtils/cuda/enableThrustWarnings.h>
 
 // ODL
 #include <ODLpp/DeviceVector.h>
@@ -237,9 +239,19 @@ struct CudaRNVectorImplMethods {
 };
 
 //Instantiate the methods for each type
-#define X(T,name) template struct CudaRNVectorImplMethods<T>;
-ODLPP_FOR_EACH_TYPE
-#undef X
+template struct CudaRNVectorImplMethods<char>;
+template struct CudaRNVectorImplMethods<signed char>;
+template struct CudaRNVectorImplMethods<signed short>;
+template struct CudaRNVectorImplMethods<signed int>;
+template struct CudaRNVectorImplMethods<signed long>;
+template struct CudaRNVectorImplMethods<signed long long>;
+template struct CudaRNVectorImplMethods<unsigned char>;
+template struct CudaRNVectorImplMethods<unsigned short>;
+template struct CudaRNVectorImplMethods<unsigned int>;
+template struct CudaRNVectorImplMethods<unsigned long>;
+template struct CudaRNVectorImplMethods<unsigned long long>;
+template struct CudaRNVectorImplMethods<float>;
+template struct CudaRNVectorImplMethods<double>;
 
 //Reductions
 float sumImpl(const DeviceVector<float>& v) {
@@ -265,7 +277,7 @@ __global__ void convKernel(const float* source,
 }
 
 void convImpl(const DeviceVector<float>& source, const DeviceVector<float>& kernel, DeviceVector<float>& target) {
-    int len = source.size();
+    size_t len = source.size();
     unsigned dimBlock(256);
     unsigned dimGrid(1 + (len / dimBlock));
 

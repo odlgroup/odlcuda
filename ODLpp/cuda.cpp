@@ -2,6 +2,8 @@
 #include <numpy/numpyconfig.h>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
+#include <stdint.h>
+
 //Thrust bug...
 #define DEBUG 1
 #include <boost/python.hpp>
@@ -280,7 +282,7 @@ float sumVector(const CudaVectorImpl<float>& source) {
     return sumImpl(source);
 }
 
-template <typename T>
+template <typename T, bool overload=false>
 void instantiateCudaVectorImpl(const std::string& name)
 {
     class_<CudaVectorImpl<T>>(name.c_str(), "Documentation",
@@ -324,7 +326,23 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     def("abs", absVector);
     def("sum", sumVector);
 
-#define X(T,name) instantiateCudaVectorImpl<T>(name);
-    ODLPP_FOR_EACH_TYPE
-#undef X
+    //Instatiate according to numpy
+
+    //boolean
+    //instantiateCudaVectorImpl<long>("CudaVectorInt");
+    //instantiateCudaVectorImpl<int>("CudaVectorIntc");
+    //instantiateCudaVectorImpl<size_t>("CudaVectorIntp");
+    instantiateCudaVectorImpl<int8_t>("CudaVectorInt8");
+    instantiateCudaVectorImpl<int16_t>("CudaVectorInt16");
+    instantiateCudaVectorImpl<int32_t>("CudaVectorInt32");
+    instantiateCudaVectorImpl<int64_t>("CudaVectorInt64");
+    instantiateCudaVectorImpl<uint8_t>("CudaVectorUInt8");
+    instantiateCudaVectorImpl<uint16_t>("CudaVectorUInt16");
+    instantiateCudaVectorImpl<uint32_t>("CudaVectorUInt32");
+    instantiateCudaVectorImpl<uint64_t>("CudaVectorUInt64");
+    //instantiateCudaVectorImpl<double>("CudaVectorFloat");
+    //Half precision
+    instantiateCudaVectorImpl<float>("CudaVectorFloat32");
+    instantiateCudaVectorImpl<double>("CudaVectorFloat64");
+    //Complex
 }
