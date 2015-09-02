@@ -77,8 +77,8 @@ if(PYTHON_ENABLED)
 	set(Boost_USE_SHARED_LIBS   ON)
 	set(Boost_USE_MULTITHREADED ON)
 	find_package(Boost COMPONENTS
-                python
-             REQUIRED)
+                 python
+                 REQUIRED)
 	include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
 

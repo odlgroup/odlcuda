@@ -225,6 +225,19 @@ class CudaVectorImpl {
         return reinterpret_cast<uintptr_t>(CudaRNVectorImplMethods<T>::getRawPtr(*_impl));
     }
 
+    boost::python::object dtype() const {
+        PyArray_Descr* descr = PyArray_DescrNewFromType(getEnum<T>());
+				return boost::python::object(boost::python::handle<>(reinterpret_cast<PyObject*>(descr)));
+    }
+
+		size_t size() const {
+			return _size;
+		}
+
+		boost::python::tuple shape() const {
+			return boost::python::make_tuple(_size);
+		}
+
     const size_t _size;
     DeviceVectorPtr<T> _impl;
 };
@@ -282,24 +295,27 @@ float sumVector(const CudaVectorImpl<float>& source) {
     return sumImpl(source);
 }
 
-template <typename T, bool overload=false>
-void instantiateCudaVectorImpl(const std::string& name)
-{
-    class_<CudaVectorImpl<T>>(name.c_str(), "Documentation",
-        init<size_t>())
-        .def(init<size_t, T>())
-        .def("from_pointer", &CudaVectorImpl<T>::fromPointer)
-        .staticmethod("from_pointer")
-        .def(self_ns::str(self_ns::self))
-        .def("__getitem__", &CudaVectorImpl<T>::getItem)
-        .def("__setitem__", &CudaVectorImpl<T>::setItem)
-        .def("getslice", &CudaVectorImpl<T>::getSlice)
-        .def("setslice", &CudaVectorImpl<T>::setSlice)
-        .def("data_ptr", &CudaVectorImpl<T>::dataPtr)
-        .def("linComb", &CudaVectorImpl<T>::linComb)
-        .def("inner", &CudaVectorImpl<T>::inner)
-        .def("norm", &CudaVectorImpl<T>::norm)
-        .def("multiply", &CudaVectorImpl<T>::multiply);
+template <typename T, bool overload = false>
+void instantiateCudaVectorImpl(const std::string& name) {
+	class_<CudaVectorImpl<T>>(name.c_str(), "Documentation",
+		init<size_t>())
+		.def(init<size_t, T>())
+		.def("from_pointer", &CudaVectorImpl<T>::fromPointer)
+		.staticmethod("from_pointer")
+		.def(self_ns::str(self_ns::self))
+		.def("__getitem__", &CudaVectorImpl<T>::getItem)
+		.def("__setitem__", &CudaVectorImpl<T>::setItem)
+		.def("getslice", &CudaVectorImpl<T>::getSlice)
+		.def("setslice", &CudaVectorImpl<T>::setSlice)
+		.def("data_ptr", &CudaVectorImpl<T>::dataPtr)
+		.def("linComb", &CudaVectorImpl<T>::linComb)
+		.def("inner", &CudaVectorImpl<T>::inner)
+		.def("norm", &CudaVectorImpl<T>::norm)
+		.def("multiply", &CudaVectorImpl<T>::multiply)
+		.add_property("dtype", &CudaVectorImpl<T>::dtype)
+		.add_property("shape", &CudaVectorImpl<T>::shape)
+		.add_property("size", &CudaVectorImpl<T>::size)
+	  .def("__len__", &CudaVectorImpl<T>::size);
 }
 
 // Expose classes and methods to Python
