@@ -153,19 +153,43 @@ class CudaVectorImpl {
           _impl(impl) {
     }
     
-    CudaVectorImpl(const CudaVectorImpl& other)
-        : _size(other._size),
-          _impl(CudaVectorImplMethods<T>::makeThrustVector(*(other._impl))){
-    }
-
     static CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size) {
         return CudaVectorImpl<T>{size, CudaVectorImplMethods<T>::makeWrapperVector((T*)ptr, size)};
     }
 
-    void validateIndex(ptrdiff_t index) const {
-        if (index < 0 || index >= _size)
-            throw std::out_of_range("index out of range");
+    CudaVectorImpl<T> copy() {
+        return CudaVectorImpl<T>{_size, CudaVectorImplMethods<T>::makeThrustVector(*_impl)};
     }
+
+    friend std::ostream& operator<<(std::ostream& ss, const CudaVectorImpl& v) {
+        ss << "CudaVectorImpl" << "<" << typeid(T).name() << ">: ";
+        auto outputIter = std::ostream_iterator<T>(ss, " ");
+        CudaVectorImplMethods<T>::printData(*v._impl, outputIter, std::min<int>(100, v._size));
+        return ss;
+    }
+
+    std::string repr() const {
+        std::stringstream ss;
+        ss << *this;
+        return ss.str();
+    }
+
+    uintptr_t dataPtr() {
+        return reinterpret_cast<uintptr_t>(CudaVectorImplMethods<T>::getRawPtr(*_impl));
+    }
+
+    boost::python::object dtype() const {
+        PyArray_Descr* descr = PyArray_DescrNewFromType(getEnum<T>());
+				return boost::python::object(boost::python::handle<>(reinterpret_cast<PyObject*>(descr)));
+    }
+
+		size_t size() const {
+			return _size;
+		}
+
+		boost::python::tuple shape() const {
+			return boost::python::make_tuple(_size);
+		}
 
     T getItem(ptrdiff_t index) const {
         if (index < 0) index += _size; //Handle negative indexes like python
@@ -202,12 +226,12 @@ class CudaVectorImpl {
         }
     }
 
-    void linComb(T a, const CudaVectorImpl<T>& x, T b, const CudaVectorImpl<T>& y) {
-        CudaVectorImplMethods<T>::linCombImpl(*this, a, x, b, y);
-    }
-
     bool allEqual(const CudaVectorImpl<T>& v2) const {
         return CudaVectorImplMethods<T>::allEqualImpl(*this, v2);
+    }
+
+    void linComb(T a, const CudaVectorImpl<T>& x, T b, const CudaVectorImpl<T>& y) {
+        CudaVectorImplMethods<T>::linCombImpl(*this, a, x, b, y);
     }
 
     double inner(const CudaVectorImpl<T>& v2) const {
@@ -226,21 +250,9 @@ class CudaVectorImpl {
         CudaVectorImplMethods<T>::multiplyImpl(*this, v1, v2);
     }
 
-    CudaVectorImpl<T> copy() const {
-        return {*this};
-    }
-
-    friend std::ostream& operator<<(std::ostream& ss, const CudaVectorImpl& v) {
-        ss << "CudaVectorImpl" << "<" << typeid(T).name() << ">: ";
-        auto outputIter = std::ostream_iterator<T>(ss, " ");
-        CudaVectorImplMethods<T>::printData(*v._impl, outputIter, std::min<int>(100, v._size));
-        return ss;
-    }
-
-    std::string repr() const {
-        std::stringstream ss;
-        ss << *this;
-        return ss.str();
+    void validateIndex(ptrdiff_t index) const {
+        if (index < 0 || index >= _size)
+            throw std::out_of_range("index out of range");
     }
 
     operator DeviceVector<T>&() {
@@ -250,23 +262,6 @@ class CudaVectorImpl {
     operator DeviceVector<T> const&() const {
         return *_impl;
     }
-
-    uintptr_t dataPtr() {
-        return reinterpret_cast<uintptr_t>(CudaVectorImplMethods<T>::getRawPtr(*_impl));
-    }
-
-    boost::python::object dtype() const {
-        PyArray_Descr* descr = PyArray_DescrNewFromType(getEnum<T>());
-				return boost::python::object(boost::python::handle<>(reinterpret_cast<PyObject*>(descr)));
-    }
-
-		size_t size() const {
-			return _size;
-		}
-
-		boost::python::tuple shape() const {
-			return boost::python::make_tuple(_size);
-		}
 
     const size_t _size;
     DeviceVectorPtr<T> _impl;
@@ -331,24 +326,24 @@ void instantiateCudaVectorImpl(const std::string& name) {
     .def(init<size_t, T>())
     .def("from_pointer", &CudaVectorImpl<T>::fromPointer)
     .staticmethod("from_pointer")
-    .def(self_ns::str(self_ns::self))
     .def("copy", &CudaVectorImpl<T>::copy)
-    .def("__getitem__", &CudaVectorImpl<T>::getItem)
-    .def("__setitem__", &CudaVectorImpl<T>::setItem)
-    .def("getslice", &CudaVectorImpl<T>::getSlice)
-    .def("setslice", &CudaVectorImpl<T>::setSlice)
+    .def(self_ns::str(self_ns::self))
+    .def("__repr__", &CudaVectorImpl<T>::repr)
     .def("data_ptr", &CudaVectorImpl<T>::dataPtr)
-    .def("lincomb", &CudaVectorImpl<T>::linComb)
-    .def("equals", &CudaVectorImpl<T>::allEqual)
-    .def("inner", &CudaVectorImpl<T>::inner)
-    .def("dist", &CudaVectorImpl<T>::dist)
-    .def("norm", &CudaVectorImpl<T>::norm)
-    .def("multiply", &CudaVectorImpl<T>::multiply)
     .add_property("dtype", &CudaVectorImpl<T>::dtype)
     .add_property("shape", &CudaVectorImpl<T>::shape)
     .add_property("size", &CudaVectorImpl<T>::size)
     .def("__len__", &CudaVectorImpl<T>::size)
-    .def("__repr__", &CudaVectorImpl<T>::repr);
+    .def("equals", &CudaVectorImpl<T>::allEqual)
+    .def("__getitem__", &CudaVectorImpl<T>::getItem)
+    .def("__setitem__", &CudaVectorImpl<T>::setItem)
+    .def("getslice", &CudaVectorImpl<T>::getSlice)
+    .def("setslice", &CudaVectorImpl<T>::setSlice)
+    .def("lincomb", &CudaVectorImpl<T>::linComb)
+    .def("inner", &CudaVectorImpl<T>::inner)
+    .def("dist", &CudaVectorImpl<T>::dist)
+    .def("norm", &CudaVectorImpl<T>::norm)
+    .def("multiply", &CudaVectorImpl<T>::multiply);
 }
 
 // Expose classes and methods to Python
