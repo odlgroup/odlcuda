@@ -3,6 +3,7 @@
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 #include <stdint.h>
+#include <sstream>
 
 //Thrust bug...
 #define DEBUG 1
@@ -22,29 +23,32 @@ using namespace boost::python;
 //Externally (CUDA) compiled
 
 template <typename T>
-struct CudaRNVectorImplMethods {
+struct CudaVectorImplMethods {
     // Creation
     static DeviceVectorPtr<T> makeThrustVector(size_t size);
     static DeviceVectorPtr<T> makeThrustVector(size_t size, T value);
     static DeviceVectorPtr<T> makeWrapperVector(T* data, size_t size);
 
-    //Get ptr
+    // Get ptr
     static T* getRawPtr(DeviceVector<T>& ptr);
     static const T* getRawPtr(const DeviceVector<T>& ptr);
 
-    //Getters and setters
+    // Getters and setters
     static T getItemImpl(const DeviceVector<T>& v1, int index);
     static void setItemImpl(DeviceVector<T>& v1, int index, T value);
     static void getSliceImpl(const DeviceVector<T>& v1, int begin, int end, int step, T* target);
     static void setSliceImpl(DeviceVector<T>& v1, int begin, int end, int step, const T* source, int num);
 
-    //Algebra
+    // Algebra
     static void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b, const DeviceVector<T>& y);
     static double normImpl(const DeviceVector<T>& v1);
     static double innerImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2);
     static void multiplyImpl(DeviceVector<T>& z, const DeviceVector<T>& x, const DeviceVector<T>& y);
+    static double distImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2);
+    // Comparison
+    static bool allEqualImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2);
 
-    //Copy methods
+    // Copy methods
     static void printData(const DeviceVector<T>& v1, std::ostream_iterator<T>& out, int numel);
 };
 
@@ -133,12 +137,12 @@ class CudaVectorImpl {
   public:
     CudaVectorImpl(size_t size)
         : _size(size),
-          _impl(CudaRNVectorImplMethods<T>::makeThrustVector(size)) {
+          _impl(CudaVectorImplMethods<T>::makeThrustVector(size)) {
     }
 
     CudaVectorImpl(size_t size, T value)
         : _size(size),
-          _impl(CudaRNVectorImplMethods<T>::makeThrustVector(size, value)) {
+          _impl(CudaVectorImplMethods<T>::makeThrustVector(size, value)) {
     }
 
     CudaVectorImpl(size_t size, DeviceVectorPtr<T> impl)
@@ -147,7 +151,7 @@ class CudaVectorImpl {
     }
 
     static CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size) {
-        return CudaVectorImpl<T>{size, CudaRNVectorImplMethods<T>::makeWrapperVector((T*)ptr, size)};
+        return CudaVectorImpl<T>{size, CudaVectorImplMethods<T>::makeWrapperVector((T*)ptr, size)};
     }
 
     void validateIndex(ptrdiff_t index) const {
@@ -158,13 +162,13 @@ class CudaVectorImpl {
     T getItem(ptrdiff_t index) const {
         if (index < 0) index += _size; //Handle negative indexes like python
         validateIndex(index);
-        return CudaRNVectorImplMethods<T>::getItemImpl(*_impl, index);
+        return CudaVectorImplMethods<T>::getItemImpl(*_impl, index);
     }
 
     void setItem(ptrdiff_t index, T value) {
         if (index < 0) index += _size; //Handle negative indexes like python
         validateIndex(index);
-        CudaRNVectorImplMethods<T>::setItemImpl(*_impl, index, value);
+        CudaVectorImplMethods<T>::setItemImpl(*_impl, index, value);
     }
 
     numeric::array getSlice(const slice index) const {
@@ -172,7 +176,7 @@ class CudaVectorImpl {
 
         if (sh.numel > 0) {
             numeric::array arr = makeArray<T>(sh.numel);
-            CudaRNVectorImplMethods<T>::getSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<T>(arr));
+            CudaVectorImplMethods<T>::getSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<T>(arr));
             return arr;
         } else {
             return makeArray<T>(0);
@@ -186,31 +190,45 @@ class CudaVectorImpl {
             throw std::out_of_range("Size of array does not match slice");
 
         if (sh.numel > 0) {
-            CudaRNVectorImplMethods<T>::setSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<T>(arr), sh.numel);
+            CudaVectorImplMethods<T>::setSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<T>(arr), sh.numel);
         }
     }
 
     void linComb(T a, const CudaVectorImpl<T>& x, T b, const CudaVectorImpl<T>& y) {
-        CudaRNVectorImplMethods<T>::linCombImpl(*this, a, x, b, y);
+        CudaVectorImplMethods<T>::linCombImpl(*this, a, x, b, y);
+    }
+
+    bool allEqual(const CudaVectorImpl<T>& v2) const {
+        return CudaVectorImplMethods<T>::allEqualImpl(*this, v2);
     }
 
     double inner(const CudaVectorImpl<T>& v2) const {
-        return CudaRNVectorImplMethods<T>::innerImpl(*this, v2);
+        return CudaVectorImplMethods<T>::innerImpl(*this, v2);
+    }
+
+    double dist(const CudaVectorImpl<T>& v2) const {
+        return CudaVectorImplMethods<T>::distImpl(*this, v2);
     }
 
     double norm() const {
-        return CudaRNVectorImplMethods<T>::normImpl(*this);
+        return CudaVectorImplMethods<T>::normImpl(*this);
     }
 
     void multiply(const CudaVectorImpl<T>& v1, const CudaVectorImpl<T>& v2) {
-        CudaRNVectorImplMethods<T>::multiplyImpl(*this, v1, v2);
+        CudaVectorImplMethods<T>::multiplyImpl(*this, v1, v2);
     }
 
     friend std::ostream& operator<<(std::ostream& ss, const CudaVectorImpl& v) {
-        ss << "CudaVectorImpl" << typeid(T).name() << ">: ";
+        ss << "CudaVectorImpl" << "<" << typeid(T).name() << ">: ";
         auto outputIter = std::ostream_iterator<T>(ss, " ");
-        CudaRNVectorImplMethods<T>::printData(*v._impl, outputIter, std::min<int>(100, v._size));
+        CudaVectorImplMethods<T>::printData(*v._impl, outputIter, std::min<int>(100, v._size));
         return ss;
+    }
+
+    std::string repr() const {
+        std::stringstream ss;
+        ss << *this;
+        return ss.str();
     }
 
     operator DeviceVector<T>&() {
@@ -222,7 +240,7 @@ class CudaVectorImpl {
     }
 
     uintptr_t dataPtr() {
-        return reinterpret_cast<uintptr_t>(CudaRNVectorImplMethods<T>::getRawPtr(*_impl));
+        return reinterpret_cast<uintptr_t>(CudaVectorImplMethods<T>::getRawPtr(*_impl));
     }
 
     boost::python::object dtype() const {
@@ -298,24 +316,27 @@ float sumVector(const CudaVectorImpl<float>& source) {
 template <typename T, bool overload = false>
 void instantiateCudaVectorImpl(const std::string& name) {
 	class_<CudaVectorImpl<T>>(name.c_str(), "Documentation",
-		init<size_t>())
-		.def(init<size_t, T>())
-		.def("from_pointer", &CudaVectorImpl<T>::fromPointer)
-		.staticmethod("from_pointer")
-		.def(self_ns::str(self_ns::self))
-		.def("__getitem__", &CudaVectorImpl<T>::getItem)
-		.def("__setitem__", &CudaVectorImpl<T>::setItem)
-		.def("getslice", &CudaVectorImpl<T>::getSlice)
-		.def("setslice", &CudaVectorImpl<T>::setSlice)
-		.def("data_ptr", &CudaVectorImpl<T>::dataPtr)
-		.def("linComb", &CudaVectorImpl<T>::linComb)
-		.def("inner", &CudaVectorImpl<T>::inner)
-		.def("norm", &CudaVectorImpl<T>::norm)
-		.def("multiply", &CudaVectorImpl<T>::multiply)
-		.add_property("dtype", &CudaVectorImpl<T>::dtype)
-		.add_property("shape", &CudaVectorImpl<T>::shape)
-		.add_property("size", &CudaVectorImpl<T>::size)
-	  .def("__len__", &CudaVectorImpl<T>::size);
+    init<size_t>())
+    .def(init<size_t, T>())
+    .def("from_pointer", &CudaVectorImpl<T>::fromPointer)
+    .staticmethod("from_pointer")
+    .def(self_ns::str(self_ns::self))
+    .def("__getitem__", &CudaVectorImpl<T>::getItem)
+    .def("__setitem__", &CudaVectorImpl<T>::setItem)
+    .def("getslice", &CudaVectorImpl<T>::getSlice)
+    .def("setslice", &CudaVectorImpl<T>::setSlice)
+    .def("data_ptr", &CudaVectorImpl<T>::dataPtr)
+    .def("lincomb", &CudaVectorImpl<T>::linComb)
+    .def("equals", &CudaVectorImpl<T>::allEqual)
+    .def("inner", &CudaVectorImpl<T>::inner)
+    .def("dist", &CudaVectorImpl<T>::dist)
+    .def("norm", &CudaVectorImpl<T>::norm)
+    .def("multiply", &CudaVectorImpl<T>::multiply)
+    .add_property("dtype", &CudaVectorImpl<T>::dtype)
+    .add_property("shape", &CudaVectorImpl<T>::shape)
+    .add_property("size", &CudaVectorImpl<T>::size)
+    .def("__len__", &CudaVectorImpl<T>::size)
+    .def("__repr__", &CudaVectorImpl<T>::repr);
 }
 
 // Expose classes and methods to Python

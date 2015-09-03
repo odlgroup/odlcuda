@@ -13,6 +13,7 @@
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>
 #include <thrust/inner_product.h>
+#include <thrust/equal.h>
 #include <thrust/adjacent_difference.h>
 #include <LCRUtils/cuda/enableThrustWarnings.h>
 
@@ -122,7 +123,14 @@ void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, int step) {
 }
 
 template <typename T>
-struct CudaRNVectorImplMethods {
+struct DistanceFunctor {
+  __host__ __device__ double operator()(const thrust::tuple<T,T>& f) const { 
+    return (thrust::get<0>(f) - thrust::get<1>(f))*(thrust::get<0>(f) - thrust::get<1>(f)); 
+  }
+};
+
+template <typename T>
+struct CudaVectorImplMethods {
     static DeviceVectorPtr<T> makeThrustVector(size_t size) {
         return std::make_shared<ThrustDeviceVector<T>>(size);
     }
@@ -219,9 +227,19 @@ struct CudaRNVectorImplMethods {
 #endif
     }
 
+    static bool allEqualImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2) {
+        return thrust::equal(v1.begin(), v1.end(), v2.begin());
+    }
+
     static double normImpl(const DeviceVector<T>& v1) {
         using namespace thrust::placeholders;
         return sqrt(thrust::transform_reduce(v1.begin(), v1.end(), _1 * _1, 0.0, thrust::plus<double>{}));
+    }
+
+    static double distImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2) {
+      auto first = thrust::make_zip_iterator(thrust::make_tuple(v1.begin(), v2.begin()));
+      auto last = first + v1.size();
+        return sqrt(thrust::transform_reduce(first, last, DistanceFunctor<T>{}, 0.0, thrust::plus<double>{}));
     }
 
     static double innerImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2) {
@@ -239,19 +257,19 @@ struct CudaRNVectorImplMethods {
 };
 
 //Instantiate the methods for each type
-template struct CudaRNVectorImplMethods<char>;
-template struct CudaRNVectorImplMethods<signed char>;
-template struct CudaRNVectorImplMethods<signed short>;
-template struct CudaRNVectorImplMethods<signed int>;
-template struct CudaRNVectorImplMethods<signed long>;
-template struct CudaRNVectorImplMethods<signed long long>;
-template struct CudaRNVectorImplMethods<unsigned char>;
-template struct CudaRNVectorImplMethods<unsigned short>;
-template struct CudaRNVectorImplMethods<unsigned int>;
-template struct CudaRNVectorImplMethods<unsigned long>;
-template struct CudaRNVectorImplMethods<unsigned long long>;
-template struct CudaRNVectorImplMethods<float>;
-template struct CudaRNVectorImplMethods<double>;
+template struct CudaVectorImplMethods<char>;
+template struct CudaVectorImplMethods<signed char>;
+template struct CudaVectorImplMethods<signed short>;
+template struct CudaVectorImplMethods<signed int>;
+template struct CudaVectorImplMethods<signed long>;
+template struct CudaVectorImplMethods<signed long long>;
+template struct CudaVectorImplMethods<unsigned char>;
+template struct CudaVectorImplMethods<unsigned short>;
+template struct CudaVectorImplMethods<unsigned int>;
+template struct CudaVectorImplMethods<unsigned long>;
+template struct CudaVectorImplMethods<unsigned long long>;
+template struct CudaVectorImplMethods<float>;
+template struct CudaVectorImplMethods<double>;
 
 //Reductions
 float sumImpl(const DeviceVector<float>& v) {
