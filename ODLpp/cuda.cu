@@ -65,6 +65,9 @@ class ThrustDeviceVector : public DeviceVector<T> {
 
     ThrustDeviceVector(size_t size, T value)
         : _data(size, value) {}
+        
+    ThrustDeviceVector(const DeviceVector<T>& other)
+        : _data(other.begin(), other.end()){}
 
     T* data() override {
         return thrust::raw_pointer_cast(_data.data());
@@ -136,6 +139,9 @@ struct CudaVectorImplMethods {
     }
     static DeviceVectorPtr<T> makeThrustVector(size_t size, T value) {
         return std::make_shared<ThrustDeviceVector<T>>(size, value);
+    }
+    static DeviceVectorPtr<T> makeThrustVector(const DeviceVector<T>& other) {
+        return std::make_shared<ThrustDeviceVector<T>>(other);
     }
     static DeviceVectorPtr<T> makeWrapperVector(T* data, size_t size) {
         return std::make_shared<WrapperDeviceVector<T>>(data, size);

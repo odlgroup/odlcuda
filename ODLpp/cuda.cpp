@@ -27,6 +27,7 @@ struct CudaVectorImplMethods {
     // Creation
     static DeviceVectorPtr<T> makeThrustVector(size_t size);
     static DeviceVectorPtr<T> makeThrustVector(size_t size, T value);
+    static DeviceVectorPtr<T> makeThrustVector(const DeviceVector<T>& other);
     static DeviceVectorPtr<T> makeWrapperVector(T* data, size_t size);
 
     // Get ptr
@@ -45,11 +46,13 @@ struct CudaVectorImplMethods {
     static double innerImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2);
     static void multiplyImpl(DeviceVector<T>& z, const DeviceVector<T>& x, const DeviceVector<T>& y);
     static double distImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2);
+
     // Comparison
     static bool allEqualImpl(const DeviceVector<T>& v1, const DeviceVector<T>& v2);
 
     // Copy methods
     static void printData(const DeviceVector<T>& v1, std::ostream_iterator<T>& out, int numel);
+    
 };
 
 //Transformations
@@ -145,9 +148,14 @@ class CudaVectorImpl {
           _impl(CudaVectorImplMethods<T>::makeThrustVector(size, value)) {
     }
 
-    CudaVectorImpl(size_t size, DeviceVectorPtr<T> impl)
+    CudaVectorImpl(size_t size, const DeviceVectorPtr<T>& impl)
         : _size(size),
           _impl(impl) {
+    }
+    
+    CudaVectorImpl(const CudaVectorImpl& other)
+        : _size(other._size),
+          _impl(CudaVectorImplMethods<T>::makeThrustVector(*(other._impl))){
     }
 
     static CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size) {
@@ -216,6 +224,10 @@ class CudaVectorImpl {
 
     void multiply(const CudaVectorImpl<T>& v1, const CudaVectorImpl<T>& v2) {
         CudaVectorImplMethods<T>::multiplyImpl(*this, v1, v2);
+    }
+
+    CudaVectorImpl<T> copy() const {
+        return {*this};
     }
 
     friend std::ostream& operator<<(std::ostream& ss, const CudaVectorImpl& v) {
@@ -313,14 +325,14 @@ float sumVector(const CudaVectorImpl<float>& source) {
     return sumImpl(source);
 }
 
-template <typename T, bool overload = false>
+template <typename T>
 void instantiateCudaVectorImpl(const std::string& name) {
-	class_<CudaVectorImpl<T>>(name.c_str(), "Documentation",
-    init<size_t>())
+    class_<CudaVectorImpl<T>>(name.c_str(), "Documentation", init<size_t>())
     .def(init<size_t, T>())
     .def("from_pointer", &CudaVectorImpl<T>::fromPointer)
     .staticmethod("from_pointer")
     .def(self_ns::str(self_ns::self))
+    .def("copy", &CudaVectorImpl<T>::copy)
     .def("__getitem__", &CudaVectorImpl<T>::getItem)
     .def("__setitem__", &CudaVectorImpl<T>::setItem)
     .def("getslice", &CudaVectorImpl<T>::getSlice)
