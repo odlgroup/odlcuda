@@ -1,4 +1,5 @@
-import os import ycm_core
+import os 
+import ycm_core
 from clang_helpers import PrepareClangFlags
 
 # Set this to the absolute path to the folder (NOT the file!) containing the
