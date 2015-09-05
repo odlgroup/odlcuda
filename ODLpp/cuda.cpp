@@ -3,7 +3,6 @@
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 #include <stdint.h>
-#include <sstream>
 
 // Thrust bug...
 #define DEBUG 1
@@ -115,8 +114,7 @@ void divideVectorVector(const CudaVectorImpl<float>& dividend,
 }
 
 void addScalar(const CudaVectorImpl<float>& source, float scalar,
-  >>>>>>> 2ed86801895fa1377393c964d79f3a6e02b1cafe
-             CudaVectorImpl<float>& target) {
+               CudaVectorImpl<float>& target) {
     addScalarImpl(source, scalar, target);
 }
 
