@@ -1,12 +1,14 @@
 #include <ODLpp/odlutils/StandardPhantoms.h>
 #include <ODLpp/odlutils/Phantom.h>
 #include <ODLpp/odlutils/EigenUtils.h>
-#include <stdexcept> // std::invalid_argument
+#include <stdexcept>  // std::invalid_argument
 #include <vector>
 #include <iostream>
 #include <cmath>
 
+#ifndef M_PI
 #define M_PI 3.14159265359
+#endif
 
 using namespace Eigen;
 
@@ -22,11 +24,13 @@ std::vector<Ellipse> sheppLoganEllipses() {
     std::vector<Ellipse> ellipses;
     ellipses.emplace_back(Vector2d(0.0, 0.0), 0.69, 0.92, 0.0, 2.0);
     ellipses.emplace_back(Vector2d(0.0, -0.0184), 0.6624, 0.874, 0.0, -0.98);
-    ellipses.emplace_back(Vector2d(0.22, 0.0), 0.11, 0.31, -18 * degToRad, -0.02);
-    ellipses.emplace_back(Vector2d(-0.22, 0.0), 0.16, 0.41, 18 * degToRad, -0.02);
+    ellipses.emplace_back(Vector2d(0.22, 0.0), 0.11, 0.31, -18 * degToRad,
+                          -0.02);
+    ellipses.emplace_back(Vector2d(-0.22, 0.0), 0.16, 0.41, 18 * degToRad,
+                          -0.02);
     ellipses.emplace_back(Vector2d(0.0, 0.35), 0.21, 0.25, 0.0, 0.01);
-	ellipses.emplace_back(Vector2d(0.0, 0.1), 0.046, 0.046, 0.0, 0.01);
-	ellipses.emplace_back(Vector2d(0.0, -0.1), 0.046, 0.046, 0.0, 0.01);
+    ellipses.emplace_back(Vector2d(0.0, 0.1), 0.046, 0.046, 0.0, 0.01);
+    ellipses.emplace_back(Vector2d(0.0, -0.1), 0.046, 0.046, 0.0, 0.01);
     ellipses.emplace_back(Vector2d(-0.08, -0.605), 0.046, 0.023, 0.0, 0.01);
     ellipses.emplace_back(Vector2d(0.0, -0.605), 0.023, 0.023, 0.0, 0.01);
     ellipses.emplace_back(Vector2d(0.06, -0.605), 0.023, 0.046, 0.0, 0.01);
@@ -40,11 +44,13 @@ std::vector<Ellipse> modifiedSheppLoganEllipses() {
     std::vector<Ellipse> ellipses;
     ellipses.emplace_back(Vector2d(0.0, 0.0), 0.69, 0.92, 0.0, 1.0);
     ellipses.emplace_back(Vector2d(0.0, -0.0184), 0.6624, 0.874, 0.0, -0.8);
-    ellipses.emplace_back(Vector2d(0.22, 0.0), 0.11, 0.31, -18 * degToRad, -0.2);
-    ellipses.emplace_back(Vector2d(-0.22, 0.0), 0.16, 0.41, 18 * degToRad, -0.2);
+    ellipses.emplace_back(Vector2d(0.22, 0.0), 0.11, 0.31, -18 * degToRad,
+                          -0.2);
+    ellipses.emplace_back(Vector2d(-0.22, 0.0), 0.16, 0.41, 18 * degToRad,
+                          -0.2);
     ellipses.emplace_back(Vector2d(0.0, 0.35), 0.21, 0.25, 0.0, 0.1);
     ellipses.emplace_back(Vector2d(0.0, 0.1), 0.046, 0.046, 0.0, 0.1);
-	ellipses.emplace_back(Vector2d(0.0, -0.1), 0.046, 0.046, 0.0, 0.1);
+    ellipses.emplace_back(Vector2d(0.0, -0.1), 0.046, 0.046, 0.0, 0.1);
     ellipses.emplace_back(Vector2d(-0.08, -0.605), 0.046, 0.023, 0.0, 0.1);
     ellipses.emplace_back(Vector2d(0.0, -0.605), 0.023, 0.023, 0.0, 0.1);
     ellipses.emplace_back(Vector2d(0.06, -0.605), 0.023, 0.046, 0.0, 0.1);
@@ -73,16 +79,16 @@ std::vector<Ellipse> circle() {
 
 std::vector<Ellipse> getPhantomParameters(PhantomType type) {
     switch (type) {
-    case PhantomType::sheppLogan:
-        return sheppLoganEllipses();
-    case PhantomType::modifiedSheppLogan:
-        return modifiedSheppLoganEllipses();
-    case PhantomType::twoEllipses:
-        return twoEllipsesEllipses();
-    case PhantomType::circle:
-        return circle();
-    default:
-        throw std::invalid_argument("Invalid type name");
+        case PhantomType::sheppLogan:
+            return sheppLoganEllipses();
+        case PhantomType::modifiedSheppLogan:
+            return modifiedSheppLoganEllipses();
+        case PhantomType::twoEllipses:
+            return twoEllipsesEllipses();
+        case PhantomType::circle:
+            return circle();
+        default:
+            throw std::invalid_argument("Invalid type name");
     }
 }
 }
