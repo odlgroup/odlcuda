@@ -16,7 +16,7 @@
 #include <LCRUtils/python/numpy_utils.h>
 #include <ODLpp/DeviceVector.h>
 #include <ODLpp/TypeMacro.h>
-#include <ODLpp/CudaVectorImpl.h>
+#include <ODLpp/CudaVector.h>
 
 using namespace boost::python;
 
@@ -135,24 +135,24 @@ void absVector(CudaVectorImpl<float>& source, CudaVectorImpl<float>& target) {
 float sumVector(const CudaVectorImpl<float>& source) { return sumImpl(source); }
 
 template <typename T>
-void instantiateCudaVectorImpl(const std::string& name) {
+void instantiateCudaVector(const std::string& name) {
     class_<CudaVectorImpl<T>>(name.c_str(), "Documentation", init<size_t>())
         .def(init<size_t, T>())
-        .def("from_pointer", &CudaVectorImpl<T>::fromPointer)
+        .def("from_pointer", &fromPointer<T>)
         .staticmethod("from_pointer")
         .def("copy", &CudaVectorImpl<T>::copy)
         .def(self_ns::str(self_ns::self))
-        .def("__repr__", &CudaVectorImpl<T>::repr)
+        .def("__repr__", &repr<T>)
         .def("data_ptr", &CudaVectorImpl<T>::dataPtr)
-        .add_property("dtype", &CudaVectorImpl<T>::dtype)
-        .add_property("shape", &CudaVectorImpl<T>::shape)
+        .add_property("dtype", &dtype<T>)
+        .add_property("shape", &shape<T>)
         .add_property("size", &CudaVectorImpl<T>::size)
         .def("__len__", &CudaVectorImpl<T>::size)
         .def("equals", &CudaVectorImpl<T>::allEqual)
         .def("__getitem__", &CudaVectorImpl<T>::getItem)
         .def("__setitem__", &CudaVectorImpl<T>::setItem)
-        .def("getslice", &CudaVectorImpl<T>::getSlice)
-        .def("setslice", &CudaVectorImpl<T>::setSlice)
+        .def("getslice", &getSlice<T>)
+        .def("setslice", &setSlice<T>)
         .def("lincomb", &CudaVectorImpl<T>::linComb)
         .def("inner", &CudaVectorImpl<T>::inner)
         .def("dist", &CudaVectorImpl<T>::dist)
@@ -186,20 +186,20 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     // Instatiate according to numpy
 
     // boolean
-    // instantiateCudaVectorImpl<long>("CudaVectorInt");
-    // instantiateCudaVectorImpl<int>("CudaVectorIntc");
-    // instantiateCudaVectorImpl<size_t>("CudaVectorIntp");
-    instantiateCudaVectorImpl<int8_t>("CudaVectorInt8");
-    instantiateCudaVectorImpl<int16_t>("CudaVectorInt16");
-    instantiateCudaVectorImpl<int32_t>("CudaVectorInt32");
-    instantiateCudaVectorImpl<int64_t>("CudaVectorInt64");
-    instantiateCudaVectorImpl<uint8_t>("CudaVectorUInt8");
-    instantiateCudaVectorImpl<uint16_t>("CudaVectorUInt16");
-    instantiateCudaVectorImpl<uint32_t>("CudaVectorUInt32");
-    instantiateCudaVectorImpl<uint64_t>("CudaVectorUInt64");
-    // instantiateCudaVectorImpl<double>("CudaVectorFloat");
+    // instantiateCudaVector<long>("CudaVectorInt");
+    // instantiateCudaVector<int>("CudaVectorIntc");
+    // instantiateCudaVector<size_t>("CudaVectorIntp");
+    instantiateCudaVector<int8_t>("CudaVectorInt8");
+    instantiateCudaVector<int16_t>("CudaVectorInt16");
+    instantiateCudaVector<int32_t>("CudaVectorInt32");
+    instantiateCudaVector<int64_t>("CudaVectorInt64");
+    instantiateCudaVector<uint8_t>("CudaVectorUInt8");
+    instantiateCudaVector<uint16_t>("CudaVectorUInt16");
+    instantiateCudaVector<uint32_t>("CudaVectorUInt32");
+    instantiateCudaVector<uint64_t>("CudaVectorUInt64");
+    // instantiateCudaVector<double>("CudaVectorFloat");
     // Half precision
-    instantiateCudaVectorImpl<float>("CudaVectorFloat32");
-    instantiateCudaVectorImpl<double>("CudaVectorFloat64");
+    instantiateCudaVector<float>("CudaVectorFloat32");
+    instantiateCudaVector<double>("CudaVectorFloat64");
     // Complex
 }

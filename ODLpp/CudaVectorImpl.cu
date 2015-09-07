@@ -16,81 +16,14 @@
 #include <thrust/adjacent_difference.h>
 #include <LCRUtils/cuda/enableThrustWarnings.h>
 
-// Thrust bug...
-#define DEBUG 1
-#include <boost/python.hpp>
-#include <boost/python/slice.hpp>
 #include <iostream>
-#define _DEBUG 1
-
-#include <numpy/numpyconfig.h>
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <numpy/arrayobject.h>
 
 // ODL
 #include <ODLpp/DeviceVectorImpl.h>
-#include <ODLpp/TypeMacro.h>
 #include <ODLpp/CudaVectorImpl.h>
 
 // Utils
 #include <LCRUtils/cuda/thrustUtils.h>
-
-struct sliceHelper {
-    sliceHelper(const slice& index, ptrdiff_t n) : arraySize(n) {
-        extract<ptrdiff_t> stepIn(index.step());
-        if (stepIn.check())
-            step = stepIn();
-        else
-            step = 1;
-
-        if (step == 0) throw std::invalid_argument("step = 0 is not valid");
-
-        extract<ptrdiff_t> startIn(index.start());
-        if (startIn.check()) {
-            if (step > 0) {
-                start = startIn();
-                if (start < 0) start += n;
-            } else {
-                start = startIn() + 1;
-                if (start <= 0) start += n;
-            }
-        } else if (step > 0)
-            start = 0;
-        else
-            start = n;
-
-        extract<ptrdiff_t> stopIn(index.stop());
-        if (stopIn.check()) {
-            if (step > 0) {
-                stop = stopIn();
-                if (stop < 0) stop += n;
-            } else {
-                stop = stopIn() + 1;
-                if (stop <= 0) stop += n;
-            }
-        } else if (step > 0)
-            stop = n;
-        else
-            stop = 0;
-
-        if (start == stop)
-            numel = 0;
-        else if (step > 0)
-            numel = std::max<ptrdiff_t>(0, 1 + (stop - start - 1) / step);
-        else
-            numel =
-                std::max<ptrdiff_t>(0, 1 + (start - stop - 1) / std::abs(step));
-
-        if (start < 0 || stop > arraySize)
-            throw std::out_of_range("Slice index out of range");
-    }
-
-    friend std::ostream& operator<<(std::ostream& ss, const sliceHelper& sh) {
-        return ss << "Slice, start: " << sh.start << ", stop: " << sh.stop
-                  << ", step: " << sh.step << ", numel: " << sh.numel;
-    }
-    ptrdiff_t start, stop, step, numel, arraySize;
-};
 
 template <typename I1, typename I2>
 void stridedGetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, int step) {
@@ -112,8 +45,8 @@ void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, int step) {
     }
 }
 template <typename T>
-void getSliceImpl(const DeviceVector<T>& v1, int start, int stop, int step,
-                  T* target) {
+void CudaVectorImpl<T>::getSliceImpl(const DeviceVector<T>& v1, int start, int stop, int step,
+                  T* target) const {
     if (step > 0) {
         stridedGetImpl(v1.begin() + start, v1.begin() + stop, target, step);
     } else {
@@ -124,7 +57,7 @@ void getSliceImpl(const DeviceVector<T>& v1, int start, int stop, int step,
     }
 }
 template <typename T>
-void setSliceImpl(DeviceVector<T>& v1, int start, int stop, int step,
+void CudaVectorImpl<T>::setSliceImpl(DeviceVector<T>& v1, int start, int stop, int step,
                   const T* source, int num) {
     if (step > 0) {
         stridedSetImpl(source, source + num, v1.begin() + start,
@@ -150,9 +83,8 @@ CudaVectorImpl<T>::CudaVectorImpl(size_t size, DeviceVectorPtr<T> impl)
     : _size(size), _impl(impl) {}
 
 template <typename T>
-CudaVectorImpl<T> CudaVectorImpl<T>::fromPointer(uintptr_t ptr, size_t size) {
-    return {size, std::make_shared<WrapperDeviceVector<T>>(
-                      reinterpret_cast<T*>(ptr), size)};
+DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(uintptr_t ptr, size_t size) {
+    return std::make_shared<WrapperDeviceVector<T>>(reinterpret_cast<T*>(ptr), size);
 }
 
 template <typename T>
@@ -173,34 +105,6 @@ void CudaVectorImpl<T>::setItem(ptrdiff_t index, T value) {
     if (index < 0) index += _size;  // Handle negative indexes like python
     validateIndex(index);
     _impl->operator[](index) = value;
-}
-
-template <typename T>
-boost::python::numeric::array CudaVectorImpl<T>::getSlice(
-    const boost::python::slice index) const {
-    sliceHelper sh(index, _size);
-    _import_array();
-    if (sh.numel > 0) {
-        numeric::array arr = makeArray<T>(sh.numel);
-        getSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<T>(arr));
-        return arr;
-    } else {
-        return makeArray<T>(0);
-    }
-}
-
-template <typename T>
-void CudaVectorImpl<T>::setSlice(const boost::python::slice index,
-                                 const boost::python::numeric::array& arr) {
-    sliceHelper sh(index, _size);
-
-    if (sh.numel != len(arr))
-        throw std::out_of_range("Size of array does not match slice");
-
-    if (sh.numel > 0) {
-        setSliceImpl(*_impl, sh.start, sh.stop, sh.step, getDataPtr<T>(arr),
-                     sh.numel);
-    }
 }
 
 template <typename T>
@@ -283,7 +187,7 @@ template <typename T>
 double CudaVectorImpl<T>::dist(const CudaVectorImpl<T>& other) const {
     auto first = thrust::make_zip_iterator(
         thrust::make_tuple(this->_impl->begin(), other._impl->begin()));
-    auto last = first + this->size();
+    auto last = first + this->_size;
     return sqrt(thrust::transform_reduce(first, last, DistanceFunctor<T>{}, 0.0,
                                          thrust::plus<double>{}));
 }
@@ -312,8 +216,8 @@ void CudaVectorImpl<T>::multiply(const CudaVectorImpl<T>& x,
 
 template <typename T>
 CudaVectorImpl<T> CudaVectorImpl<T>::copy() const {
-    return CudaVectorImpl<T>{_size,
-                             std::make_shared<ThrustDeviceVector<T>>(*_impl)};
+    return CudaVectorImpl<T>(_size,
+                             std::make_shared<ThrustDeviceVector<T>>(*_impl));
 }
 
 template <typename T>
