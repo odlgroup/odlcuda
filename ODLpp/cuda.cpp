@@ -158,7 +158,8 @@ void instantiateCudaVector(const std::string& name) {
         .def("inner", &CudaVectorImpl<T>::inner)
         .def("dist", &CudaVectorImpl<T>::dist)
         .def("norm", &CudaVectorImpl<T>::norm)
-        .def("multiply", &CudaVectorImpl<T>::multiply);
+        .def("multiply", &CudaVectorImpl<T>::multiply)
+        .def("fill", &CudaVectorImpl<T>::fill);
 }
 
 // Expose classes and methods to Python

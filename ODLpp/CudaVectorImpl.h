@@ -28,6 +28,7 @@ class CudaVectorImpl {
     // Convenience methods
     CudaVectorImpl<T> copy() const;
     bool allEqual(const CudaVectorImpl<T>& v2) const;
+    void fill(T value);
 
     // Implicit conversion to the data container
     operator DeviceVector<T>&();

@@ -227,6 +227,11 @@ bool CudaVectorImpl<T>::allEqual(const CudaVectorImpl<T>& other) const {
 }
 
 template <typename T>
+void CudaVectorImpl<T>::fill(T value){
+    thrust::fill(this->_impl->begin(), this->_impl->end(), value);
+}
+
+template <typename T>
 void CudaVectorImpl<T>::printData(std::ostream_iterator<T>& out,
                                   int numel) const {
     thrust::copy(this->_impl->begin(), this->_impl->begin() + numel, out);
