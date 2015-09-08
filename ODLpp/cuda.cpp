@@ -151,6 +151,7 @@ void instantiateCudaVector(const std::string& name) {
         .def("equals", &CudaVectorImpl<T>::allEqual)
         .def("__getitem__", &CudaVectorImpl<T>::getItem)
         .def("__setitem__", &CudaVectorImpl<T>::setItem)
+        .def("copy_device_to_host", &copyDeviceToHost<T>)
         .def("getslice", &getSlice<T>)
         .def("setslice", &setSlice<T>)
         .def("lincomb", &CudaVectorImpl<T>::linComb)

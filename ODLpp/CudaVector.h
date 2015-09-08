@@ -31,11 +31,25 @@ boost::python::numeric::array getSlice(CudaVectorImpl<T>& vector,
     sliceHelper sh(index, vector._size);
     _import_array();
     if (sh.numel > 0) {
-        numeric::array arr = makeArray<T>(sh.numel);
-        vector.getSliceImpl(*vector._impl, sh.start, sh.stop, sh.step, getDataPtr<T>(arr));
+        boost::python::numeric::array arr = makeArray<T>(sh.numel);
+        copyDeviceToHost<T>(vector, index, arr);
         return arr;
     } else {
         return makeArray<T>(0);
+    }
+}
+
+template <typename T>
+void copyDeviceToHost(CudaVectorImpl<T>& vector,
+                 const boost::python::slice index,
+                 boost::python::numeric::array& target) {
+    sliceHelper sh(index, vector._size);
+
+    if (sh.numel != len(target))
+        throw std::out_of_range("Size of array does not match slice");
+
+    if (sh.numel > 0) {
+        vector.getSliceImpl(*vector._impl, sh.start, sh.stop, sh.step, getDataPtr<T>(target));
     }
 }
 
