@@ -21,14 +21,21 @@
 using namespace boost::python;
 
 template <typename T>
-CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size) {
-    return CudaVectorImpl<T>(size, CudaVectorImpl<T>::fromPointer(ptr, size));
+CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size, size_t stride) {
+    return CudaVectorImpl<T>(CudaVectorImpl<T>::fromPointer(ptr, size, stride));
 }
 
 template <typename T>
-boost::python::numeric::array getSlice(CudaVectorImpl<T>& vector,
-                                       const boost::python::slice index) {
-    sliceHelper sh(index, vector._size);
+CudaVectorImpl<T> getSliceView(CudaVectorImpl<T>& vector,
+                               const boost::python::slice index) {
+    sliceHelper sh(index, vector.size());
+    return fromPointer<T>(vector.dataPtr() + vector.stride() * sh.start * sizeof(T), sh.numel, sh.step * vector.stride());
+}
+
+template <typename T>
+boost::python::numeric::array getSliceToHost(CudaVectorImpl<T>& vector,
+                                             const boost::python::slice index) {
+    sliceHelper sh(index, vector.size());
     _import_array();
     if (sh.numel > 0) {
         boost::python::numeric::array arr = makeArray<T>(sh.numel);
@@ -41,9 +48,9 @@ boost::python::numeric::array getSlice(CudaVectorImpl<T>& vector,
 
 template <typename T>
 void copyDeviceToHost(CudaVectorImpl<T>& vector,
-                 const boost::python::slice index,
-                 boost::python::numeric::array& target) {
-    sliceHelper sh(index, vector._size);
+                      const boost::python::slice index,
+                      boost::python::numeric::array& target) {
+    sliceHelper sh(index, vector.size());
 
     if (sh.numel != len(target))
         throw std::out_of_range("Size of array does not match slice");
@@ -57,7 +64,7 @@ template <typename T>
 void setSlice(CudaVectorImpl<T>& vector,
               const boost::python::slice index,
               const boost::python::numeric::array& arr) {
-    sliceHelper sh(index, vector._size);
+    sliceHelper sh(index, vector.size());
 
     if (sh.numel != len(arr))
         throw std::out_of_range("Size of array does not match slice");
@@ -72,7 +79,7 @@ template <typename T>
 std::ostream& operator<<(std::ostream& ss, const CudaVectorImpl<T>& v) {
     ss << "CudaVectorImpl<" << typeid(T).name() << ">: ";
     auto outputIter = std::ostream_iterator<T>(ss, " ");
-    v.printData(outputIter, std::min<int>(100, v._size));
+    v.printData(outputIter, std::min<int>(100, v.size()));
     return ss;
 }
 
@@ -92,5 +99,5 @@ boost::python::object dtype(const CudaVectorImpl<T>& v) {
 
 template <typename T>
 boost::python::tuple shape(const CudaVectorImpl<T>& v) {
-    return boost::python::make_tuple(v._size);
+    return boost::python::make_tuple(v.size());
 }

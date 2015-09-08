@@ -71,38 +71,37 @@ void CudaVectorImpl<T>::setSliceImpl(DeviceVector<T>& v1, int start, int stop, i
 }
 template <typename T>
 CudaVectorImpl<T>::CudaVectorImpl(size_t size)
-    : _size(size), _impl(std::make_shared<ThrustDeviceVector<T>>(size)) {}
+    : _impl(std::make_shared<ThrustDeviceVector<T>>(size)) {}
 
 template <typename T>
 CudaVectorImpl<T>::CudaVectorImpl(size_t size, T value)
-    : _size(size),
-      _impl(std::make_shared<ThrustDeviceVector<T>>(size, value)) {}
+    : _impl(std::make_shared<ThrustDeviceVector<T>>(size, value)) {}
 
 template <typename T>
-CudaVectorImpl<T>::CudaVectorImpl(size_t size, DeviceVectorPtr<T> impl)
-    : _size(size), _impl(impl) {}
+CudaVectorImpl<T>::CudaVectorImpl(DeviceVectorPtr<T> impl)
+    : _impl(impl) {}
 
 template <typename T>
-DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(uintptr_t ptr, size_t size) {
-    return std::make_shared<WrapperDeviceVector<T>>(reinterpret_cast<T*>(ptr), size);
+DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(uintptr_t ptr, size_t size, size_t stride) {
+    return std::make_shared<WrapperDeviceVector<T>>(reinterpret_cast<T*>(ptr), size, stride);
 }
 
 template <typename T>
 void CudaVectorImpl<T>::validateIndex(ptrdiff_t index) const {
-    if (index < 0 || index >= _size)
+    if (index < 0 || index >= size())
         throw std::out_of_range("index out of range");
 }
 
 template <typename T>
 T CudaVectorImpl<T>::getItem(ptrdiff_t index) const {
-    if (index < 0) index += _size;  // Handle negative indexes like python
+    if (index < 0) index += size();  // Handle negative indexes like python
     validateIndex(index);
     return _impl->operator[](index);
 }
 
 template <typename T>
 void CudaVectorImpl<T>::setItem(ptrdiff_t index, T value) {
-    if (index < 0) index += _size;  // Handle negative indexes like python
+    if (index < 0) index += size();  // Handle negative indexes like python
     validateIndex(index);
     _impl->operator[](index) = value;
 }
@@ -187,7 +186,7 @@ template <typename T>
 double CudaVectorImpl<T>::dist(const CudaVectorImpl<T>& other) const {
     auto first = thrust::make_zip_iterator(
         thrust::make_tuple(this->_impl->begin(), other._impl->begin()));
-    auto last = first + this->_size;
+    auto last = first + this->size();
     return sqrt(thrust::transform_reduce(first, last, DistanceFunctor<T>{}, 0.0,
                                          thrust::plus<double>{}));
 }
@@ -216,8 +215,8 @@ void CudaVectorImpl<T>::multiply(const CudaVectorImpl<T>& x,
 
 template <typename T>
 CudaVectorImpl<T> CudaVectorImpl<T>::copy() const {
-    return CudaVectorImpl<T>(_size,
-                             std::make_shared<ThrustDeviceVector<T>>(*_impl));
+    DeviceVectorPtr<T> data_cpy = std::make_shared<ThrustDeviceVector<T>>(*_impl);
+    return CudaVectorImpl<T>(data_cpy);
 }
 
 template <typename T>
@@ -250,6 +249,16 @@ CudaVectorImpl<T>::operator const DeviceVector<T>&() const {
 template <typename T>
 uintptr_t CudaVectorImpl<T>::dataPtr() const {
     return reinterpret_cast<uintptr_t>(_impl->data());
+}
+
+template <typename T>
+size_t CudaVectorImpl<T>::stride() const {
+    return _impl->stride();
+}
+
+template <typename T>
+size_t CudaVectorImpl<T>::size() const {
+    return _impl->size();
 }
 
 // Instantiate the methods for each type

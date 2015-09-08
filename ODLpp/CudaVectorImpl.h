@@ -10,9 +10,9 @@ class CudaVectorImpl {
    public:
     CudaVectorImpl(size_t size);
     CudaVectorImpl(size_t size, T value);
-    CudaVectorImpl(size_t size, DeviceVectorPtr<T> impl);
+    CudaVectorImpl(DeviceVectorPtr<T> impl);
 
-    static DeviceVectorPtr<T> fromPointer(uintptr_t ptr, size_t size);
+    static DeviceVectorPtr<T> fromPointer(uintptr_t ptr, size_t size, size_t stride);
 
     T getItem(ptrdiff_t index) const;
     void setItem(ptrdiff_t index, T value);
@@ -36,14 +36,14 @@ class CudaVectorImpl {
 
     // Accessors for data
     uintptr_t dataPtr() const;
-    size_t size() const { return _size; }
+    size_t stride() const;
+    size_t size() const;
 
     // Raw copy
     void getSliceImpl(const DeviceVector<T>& v1, int start, int stop, int step, T* host_target) const;
     void setSliceImpl(DeviceVector<T>& v1, int start, int stop, int step, const T* host_source, int num);
 
     // Members
-    const size_t _size;
     DeviceVectorPtr<T> _impl;
 
     void validateIndex(ptrdiff_t index) const;
