@@ -45,8 +45,8 @@ void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, int step) {
     }
 }
 template <typename T>
-void CudaVectorImpl<T>::getSliceImpl(const DeviceVector<T>& v1, int start, int stop, int step,
-                  T* target) const {
+void CudaVectorImpl<T>::getSliceImpl(const DeviceVector<T>& v1, int start,
+                                     int stop, int step, T* target) const {
     if (step > 0) {
         stridedGetImpl(v1.begin() + start, v1.begin() + stop, target, step);
     } else {
@@ -57,8 +57,8 @@ void CudaVectorImpl<T>::getSliceImpl(const DeviceVector<T>& v1, int start, int s
     }
 }
 template <typename T>
-void CudaVectorImpl<T>::setSliceImpl(DeviceVector<T>& v1, int start, int stop, int step,
-                  const T* source, int num) {
+void CudaVectorImpl<T>::setSliceImpl(DeviceVector<T>& v1, int start, int stop,
+                                     int step, const T* source, int num) {
     if (step > 0) {
         stridedSetImpl(source, source + num, v1.begin() + start,
                        v1.begin() + stop, step);
@@ -82,8 +82,10 @@ CudaVectorImpl<T>::CudaVectorImpl(DeviceVectorPtr<T> impl)
     : _impl(impl) {}
 
 template <typename T>
-DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(uintptr_t ptr, size_t size, size_t stride) {
-    return std::make_shared<WrapperDeviceVector<T>>(reinterpret_cast<T*>(ptr), size, stride);
+DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(uintptr_t ptr, size_t size,
+                                                  size_t stride) {
+    return std::make_shared<WrapperDeviceVector<T>>(reinterpret_cast<T*>(ptr),
+                                                    size, stride);
 }
 
 template <typename T>
@@ -106,9 +108,9 @@ void CudaVectorImpl<T>::setItem(ptrdiff_t index, T value) {
     _impl->operator[](index) = value;
 }
 
-template <typename T>
-void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b,
-                 const DeviceVector<T>& y) {
+template <typename T, typename Scalar>
+void linCombImpl(DeviceVector<T>& z, Scalar a, const DeviceVector<T>& x,
+                 Scalar b, const DeviceVector<T>& y) {
     namespace ph = thrust::placeholders;
 
 #if 1  // Efficient
@@ -169,7 +171,7 @@ void linCombImpl(DeviceVector<T>& z, T a, const DeviceVector<T>& x, T b,
 }
 
 template <typename T>
-void CudaVectorImpl<T>::linComb(T a, const CudaVectorImpl<T>& x, T b,
+void CudaVectorImpl<T>::linComb(Scalar a, const CudaVectorImpl<T>& x, Scalar b,
                                 const CudaVectorImpl<T>& y) {
     linCombImpl(*this->_impl, a, *x._impl, b, *y._impl);
 }
@@ -215,7 +217,8 @@ void CudaVectorImpl<T>::multiply(const CudaVectorImpl<T>& x,
 
 template <typename T>
 CudaVectorImpl<T> CudaVectorImpl<T>::copy() const {
-    DeviceVectorPtr<T> data_cpy = std::make_shared<ThrustDeviceVector<T>>(*_impl);
+    DeviceVectorPtr<T> data_cpy =
+        std::make_shared<ThrustDeviceVector<T>>(*_impl);
     return CudaVectorImpl<T>(data_cpy);
 }
 
@@ -226,7 +229,7 @@ bool CudaVectorImpl<T>::allEqual(const CudaVectorImpl<T>& other) const {
 }
 
 template <typename T>
-void CudaVectorImpl<T>::fill(T value){
+void CudaVectorImpl<T>::fill(T value) {
     thrust::fill(this->_impl->begin(), this->_impl->end(), value);
 }
 
