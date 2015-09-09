@@ -22,3 +22,6 @@
 
 # Build folder
 build*/
+
+# Python bytecode
+*.pyc
