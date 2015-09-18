@@ -21,7 +21,7 @@
 using namespace boost::python;
 
 template <typename T>
-CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size, size_t stride) {
+CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size, ptrdiff_t stride) {
     return CudaVectorImpl<T>(CudaVectorImpl<T>::fromPointer(ptr, size, stride));
 }
 

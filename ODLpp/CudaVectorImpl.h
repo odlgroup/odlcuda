@@ -12,7 +12,7 @@ class CudaVectorImpl {
     CudaVectorImpl(size_t size, T value);
     CudaVectorImpl(DeviceVectorPtr<T> impl);
 
-    static DeviceVectorPtr<T> fromPointer(uintptr_t ptr, size_t size, size_t stride);
+    static DeviceVectorPtr<T> fromPointer(uintptr_t ptr, size_t size, ptrdiff_t stride);
 
     T getItem(ptrdiff_t index) const;
     void setItem(ptrdiff_t index, T value);
@@ -36,17 +36,17 @@ class CudaVectorImpl {
 
     // Accessors for data
     uintptr_t dataPtr() const;
-    size_t stride() const;
+    ptrdiff_t stride() const;
     size_t size() const;
 
     // Raw copy
-    void getSliceImpl(const DeviceVector<T>& v1, int start, int stop, int step, T* host_target) const;
-    void setSliceImpl(DeviceVector<T>& v1, int start, int stop, int step, const T* host_source, int num);
+    void getSliceImpl(const DeviceVector<T>& v1, size_t start, size_t stop, ptrdiff_t step, T* host_target) const;
+    void setSliceImpl(DeviceVector<T>& v1, size_t start, size_t stop, ptrdiff_t step, const T* host_source, size_t num);
 
     // Members
     DeviceVectorPtr<T> _impl;
 
     void validateIndex(ptrdiff_t index) const;
     // Copy to ostream
-    void printData(std::ostream_iterator<T>& out, int numel) const;
+    void printData(std::ostream_iterator<T>& out, size_t numel) const;
 };

@@ -20,7 +20,7 @@ class DeviceVector {
     virtual T* data() = 0;
     virtual T const* data() const = 0;
     virtual size_t size() const = 0;
-    virtual size_t stride() const = 0;
+    virtual ptrdiff_t stride() const = 0;
 
     typename strided_range<thrust::device_ptr<T>>::iterator begin() {
         auto begin_data = thrust::device_pointer_cast<T>(data());
@@ -67,7 +67,7 @@ class ThrustDeviceVector : public DeviceVector<T> {
     }
 
     size_t size() const override { return _data.size(); }
-    size_t stride() const override { return 1; }
+    ptrdiff_t stride() const override { return 1; }
 };
 
 template <typename T>
@@ -75,10 +75,10 @@ class WrapperDeviceVector : public DeviceVector<T> {
   private:
     T* const _data;
     const size_t _size;
-    const size_t _stride;
+    const ptrdiff_t _stride;
 
   public:
-    WrapperDeviceVector(T* data, size_t size, size_t stride) : _data(data), _size(size), _stride(stride) {}
+    WrapperDeviceVector(T* data, size_t size, ptrdiff_t stride) : _data(data), _size(size), _stride(stride) {}
 
     T* data() override { return _data; }
 
@@ -86,5 +86,5 @@ class WrapperDeviceVector : public DeviceVector<T> {
 
     size_t size() const override { return _size; }
 
-    size_t stride() const override { return _stride; }
+    ptrdiff_t stride() const override { return _stride; }
 };
