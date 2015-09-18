@@ -21,6 +21,7 @@
 
 // Utils
 #include <LCRUtils/cuda/thrustUtils.h>
+#include <LCRUtils/utils/cast.h>
 
 // Reductions
 float sumImpl(const DeviceVector<float>& v) {
@@ -28,7 +29,7 @@ float sumImpl(const DeviceVector<float>& v) {
 }
 
 __global__ void convKernel(const float* source, const float* kernel,
-                           float* target, int len) {
+                           float* target, const int len) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (idx >= len) return;
@@ -44,13 +45,14 @@ __global__ void convKernel(const float* source, const float* kernel,
 }
 
 void convImpl(const DeviceVector<float>& source,
-              const DeviceVector<float>& kernel, DeviceVector<float>& target) {
+              const DeviceVector<float>& kernel, 
+              DeviceVector<float>& target) {
     size_t len = source.size();
-    unsigned dimBlock(256);
-    unsigned dimGrid(1 + (len / dimBlock));
+    unsigned dimBlock = 256;
+    unsigned dimGrid = narrow_cast<unsigned>(1 + (len / dimBlock));
 
     convKernel << <dimGrid, dimBlock>>>
-        (source.data(), kernel.data(), target.data(), len);
+        (source.data(), kernel.data(), target.data(), narrow_cast<int>(len));
 }
 
 // Functions
@@ -62,9 +64,10 @@ void absImpl(const DeviceVector<float>& source, DeviceVector<float>& target) {
                       AbsoluteValueFunctor{});
 }
 
-__global__ void forwardDifferenceKernel(const int len, const float* source,
+__global__ void forwardDifferenceKernel(const int len,
+                                        const float* source,
                                         float* target) {
-    for (auto idx = blockIdx.x * blockDim.x + threadIdx.x + 1; idx < len - 1;
+    for (int idx = blockIdx.x * blockDim.x + threadIdx.x + 1; idx < len - 1;
          idx += blockDim.x * gridDim.x) {
         target[idx] = source[idx + 1] - source[idx];
     }
@@ -73,16 +76,16 @@ void forwardDifferenceImpl(const DeviceVector<float>& source,
                            DeviceVector<float>& target) {
     size_t len = source.size();
     unsigned dimBlock(256);
-    unsigned dimGrid(std::min<unsigned>(128, 1 + (len / dimBlock)));
+    unsigned dimGrid(std::min<unsigned>(128, narrow_cast<unsigned>(1 + (len / dimBlock))));
 
     forwardDifferenceKernel << <dimBlock, dimGrid>>>
-        (len, source.data(), target.data());
+        (narrow_cast<int>(len), source.data(), target.data());
 }
 
 __global__ void forwardDifferenceAdjointKernel(const int len,
                                                const float* source,
                                                float* target) {
-    for (auto idx = blockIdx.x * blockDim.x + threadIdx.x + 1; idx < len - 1;
+    for (int idx = blockIdx.x * blockDim.x + threadIdx.x + 1; idx < len - 1;
          idx += blockDim.x * gridDim.x) {
         target[idx] = -source[idx] + source[idx - 1];
     }
@@ -91,10 +94,10 @@ void forwardDifferenceAdjointImpl(const DeviceVector<float>& source,
                                   DeviceVector<float>& target) {
     size_t len = source.size();
     unsigned dimBlock(256);
-    unsigned dimGrid(std::min<unsigned>(128u, 1 + (len / dimBlock)));
+    unsigned dimGrid(std::min<unsigned>(128u, narrow_cast<unsigned>(1 + (len / dimBlock))));
 
     forwardDifferenceAdjointKernel << <dimBlock, dimGrid>>>
-        (len, source.data(), target.data());
+        (narrow_cast<int>(len), source.data(), target.data());
 }
 
 void maxVectorVectorImpl(const DeviceVector<float>& v1,
@@ -131,14 +134,15 @@ void addScalarImpl(const DeviceVector<float>& source, float scalar,
                       thrust::plus<float>{});
 }
 
+template <typename T>
 struct SignFunctor {
-    __host__ __device__ float operator()(const float& f) {
-        return (0.0f < f) - (f < 0.0f);
+    __host__ __device__ float operator()(const T& f) {
+        return static_cast<T>((0.0f < f) - (f < 0.0f));
     }
 };
 void signImpl(const DeviceVector<float>& source, DeviceVector<float>& target) {
     thrust::transform(source.begin(), source.end(), target.begin(),
-                      SignFunctor{});
+                      SignFunctor<float>{});
 }
 struct SqrtFunctor {
     __host__ __device__ float operator()(const float& f) {

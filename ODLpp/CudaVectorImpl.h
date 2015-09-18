@@ -2,23 +2,42 @@
 
 #include <stdint.h>
 #include <sstream>
+#include <type_traits>
 
 #include <ODLpp/DeviceVector.h>
 
+template <typename T, typename Enable = void>
+struct CudaVectorScalar;
+
+template <typename T>
+struct CudaVectorScalar<
+    T, typename std::enable_if<std::is_integral<T>::value>::type> {
+    typedef typename std::make_signed<T>::type Scalar;
+};
+
+template <typename T>
+struct CudaVectorScalar<
+    T, typename std::enable_if<!std::is_integral<T>::value>::type> {
+    typedef T Scalar;
+};
+
 template <typename T>
 class CudaVectorImpl {
-   public:
+  public:
+    typedef typename CudaVectorScalar<T>::Scalar Scalar;
+
     CudaVectorImpl(size_t size);
     CudaVectorImpl(size_t size, T value);
     CudaVectorImpl(DeviceVectorPtr<T> impl);
 
-    static DeviceVectorPtr<T> fromPointer(uintptr_t ptr, size_t size, ptrdiff_t stride);
+    static DeviceVectorPtr<T> fromPointer(uintptr_t ptr, size_t size,
+                                          ptrdiff_t stride);
 
     T getItem(ptrdiff_t index) const;
     void setItem(ptrdiff_t index, T value);
 
     // numerical methods
-    void linComb(T a, const CudaVectorImpl<T>& x, T b,
+    void linComb(Scalar a, const CudaVectorImpl<T>& x, Scalar b,
                  const CudaVectorImpl<T>& y);
     double dist(const CudaVectorImpl<T>& other) const;
     double norm() const;

@@ -21,6 +21,7 @@
 // ODL
 #include <ODLpp/DeviceVectorImpl.h>
 #include <ODLpp/CudaVectorImpl.h>
+#include <ODLpp/TypeMacro.h>
 
 // Utils
 #include <LCRUtils/cuda/thrustUtils.h>
@@ -45,8 +46,8 @@ void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, ptrdiff_t st
     }
 }
 template <typename T>
-void CudaVectorImpl<T>::getSliceImpl(const DeviceVector<T>& v1, size_t start, size_t stop, ptrdiff_t step,
-                                     T* target) const {
+void CudaVectorImpl<T>::getSliceImpl(const DeviceVector<T>& v1, size_t start,
+                                     size_t stop, ptrdiff_t step, T* target) const {
     if (step > 0) {
         stridedGetImpl(v1.begin() + start, v1.begin() + stop, target, step);
     } else {
@@ -57,8 +58,8 @@ void CudaVectorImpl<T>::getSliceImpl(const DeviceVector<T>& v1, size_t start, si
     }
 }
 template <typename T>
-void CudaVectorImpl<T>::setSliceImpl(DeviceVector<T>& v1, size_t start, size_t stop, ptrdiff_t step,
-                                     const T* source, size_t num) {
+void CudaVectorImpl<T>::setSliceImpl(DeviceVector<T>& v1, size_t start, size_t stop,
+                                     ptrdiff_t step, const T* source, size_t num) {
     if (step > 0) {
         stridedSetImpl(source, source + num, v1.begin() + start,
                        v1.begin() + stop, step);
@@ -83,12 +84,14 @@ CudaVectorImpl<T>::CudaVectorImpl(DeviceVectorPtr<T> impl)
 
 template <typename T>
 DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(uintptr_t ptr, size_t size, ptrdiff_t stride) {
-    return std::make_shared<WrapperDeviceVector<T>>(reinterpret_cast<T*>(ptr), size, stride);
+
+    return std::make_shared<WrapperDeviceVector<T>>(reinterpret_cast<T*>(ptr),
+                                                    size, stride);
 }
 
 template <typename T>
 void CudaVectorImpl<T>::validateIndex(ptrdiff_t index) const {
-    if (index < 0 || index >= size())
+    if (index < 0 || index >= static_cast<ptrdiff_t>(size()))
         throw std::out_of_range("index out of range");
 }
 
@@ -106,43 +109,43 @@ void CudaVectorImpl<T>::setItem(ptrdiff_t index, T value) {
     _impl->operator[](index) = value;
 }
 
-template <typename T>
+template <typename T, typename Scalar>
 void linCombImpl(DeviceVector<T>& z,
-                 T a, const DeviceVector<T>& x,
-                 T b, const DeviceVector<T>& y) {
+                 Scalar a, const DeviceVector<T>& x,
+                 Scalar b, const DeviceVector<T>& y) {
     namespace ph = thrust::placeholders;
 
 #if 1 // Efficient
-    if (a == T(0)) {
-        if (b == T(0)) { // z = 0
+    if (a == Scalar(0)) {
+        if (b == Scalar(0)) { // z = 0
             thrust::fill(z.begin(), z.end(), T(0));
-        } else if (b == T(1)) { // z = y
+        } else if (b == Scalar(1)) { // z = y
             thrust::copy(y.begin(), y.end(), z.begin());
-        } else if (b == -T(1)) { // y = -y
-            thrust::transform(y.begin(), y.end(), z.begin(), thrust::negate<T>{});
+        } else if (b == -Scalar(1)) { // y = -y
+            thrust::transform(y.begin(), y.end(), z.begin(), -ph::_1);
         } else { // y = b*y
             thrust::transform(y.begin(), y.end(), z.begin(), b * ph::_1);
         }
-    } else if (a == T(1)) {
-        if (b == T(0)) { // z = x
+    } else if (a == Scalar(1)) {
+        if (b == Scalar(0)) { // z = x
             thrust::copy(x.begin(), x.end(), z.begin());
-        } else if (b == T(1)) { // z = x+y
+        } else if (b == Scalar(1)) { // z = x+y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               thrust::plus<T>{});
-        } else if (b == -T(1)) { // z = x-y
+        } else if (b == -Scalar(1)) { // z = x-y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               thrust::minus<T>{});
         } else { // z = x + b*y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               ph::_1 + b * ph::_2);
         }
-    } else if (a == -T(1)) {
-        if (b == T(0)) { // z = -x
+    } else if (a == -Scalar(1)) {
+        if (b == Scalar(0)) { // z = -x
             thrust::transform(x.begin(), x.end(), z.begin(), -ph::_1);
-        } else if (b == T(1)) { // z = -x+y
+        } else if (b == Scalar(1)) { // z = -x+y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               -ph::_1 + ph::_2);
-        } else if (b == -T(1)) { // z = -x-y
+        } else if (b == -Scalar(1)) { // z = -x-y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               -ph::_1 - ph::_2);
         } else { // z = -x + b*y
@@ -150,12 +153,12 @@ void linCombImpl(DeviceVector<T>& z,
                               -ph::_1 + b * ph::_2);
         }
     } else {
-        if (b == T(0)) { // z = a*x
+        if (b == Scalar(0)) { // z = a*x
             thrust::transform(x.begin(), x.end(), z.begin(), a * ph::_1);
-        } else if (b == T(1)) { // z = a*x+y
+        } else if (b == Scalar(1)) { // z = a*x+y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               a * ph::_1 + ph::_2);
-        } else if (b == -T(1)) { // z = a*x-y
+        } else if (b == -Scalar(1)) { // z = a*x-y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               a * ph::_1 - ph::_2);
         } else { // z = a*x + b*y
@@ -170,16 +173,16 @@ void linCombImpl(DeviceVector<T>& z,
 }
 
 template <typename T>
-void CudaVectorImpl<T>::linComb(T a, const CudaVectorImpl<T>& x, T b,
-                                const CudaVectorImpl<T>& y) {
+void CudaVectorImpl<T>::linComb(Scalar a, const CudaVectorImpl<T>& x,
+                                Scalar b, const CudaVectorImpl<T>& y) {
     linCombImpl(*this->_impl, a, *x._impl, b, *y._impl);
 }
 
 template <typename T>
 struct DistanceFunctor {
     __host__ __device__ double operator()(const thrust::tuple<T, T>& f) const {
-        return (thrust::get<0>(f) - thrust::get<1>(f)) *
-               (thrust::get<0>(f) - thrust::get<1>(f));
+        return static_cast<double>((thrust::get<0>(f) - thrust::get<1>(f)) *
+                                   (thrust::get<0>(f) - thrust::get<1>(f)));
     }
 };
 
@@ -215,7 +218,8 @@ void CudaVectorImpl<T>::multiply(const CudaVectorImpl<T>& x,
 
 template <typename T>
 CudaVectorImpl<T> CudaVectorImpl<T>::copy() const {
-    DeviceVectorPtr<T> data_cpy = std::make_shared<ThrustDeviceVector<T>>(*_impl);
+    DeviceVectorPtr<T> data_cpy =
+        std::make_shared<ThrustDeviceVector<T>>(*_impl);
     return CudaVectorImpl<T>(data_cpy);
 }
 
@@ -262,16 +266,6 @@ size_t CudaVectorImpl<T>::size() const {
 }
 
 // Instantiate the methods for each type
-template struct CudaVectorImpl<char>;
-template struct CudaVectorImpl<signed char>;
-template struct CudaVectorImpl<signed short>;
-template struct CudaVectorImpl<signed int>;
-template struct CudaVectorImpl<signed long>;
-template struct CudaVectorImpl<signed long long>;
-template struct CudaVectorImpl<unsigned char>;
-template struct CudaVectorImpl<unsigned short>;
-template struct CudaVectorImpl<unsigned int>;
-template struct CudaVectorImpl<unsigned long>;
-template struct CudaVectorImpl<unsigned long long>;
-template struct CudaVectorImpl<float>;
-template struct CudaVectorImpl<double>;
+#define X(type, name) template struct CudaVectorImpl<type>;
+ODLPP_FOR_EACH_TYPE
+#undef X

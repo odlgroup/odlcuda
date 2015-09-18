@@ -187,22 +187,7 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     def("sum", sumVector);
 
     // Instatiate according to numpy
-
-    // boolean
-    // instantiateCudaVector<long>("CudaVectorInt");
-    // instantiateCudaVector<int>("CudaVectorIntc");
-    // instantiateCudaVector<size_t>("CudaVectorIntp");
-    instantiateCudaVector<int8_t>("CudaVectorInt8");
-    instantiateCudaVector<int16_t>("CudaVectorInt16");
-    instantiateCudaVector<int32_t>("CudaVectorInt32");
-    instantiateCudaVector<int64_t>("CudaVectorInt64");
-    instantiateCudaVector<uint8_t>("CudaVectorUInt8");
-    instantiateCudaVector<uint16_t>("CudaVectorUInt16");
-    instantiateCudaVector<uint32_t>("CudaVectorUInt32");
-    instantiateCudaVector<uint64_t>("CudaVectorUInt64");
-    // instantiateCudaVector<double>("CudaVectorFloat");
-    // Half precision
-    instantiateCudaVector<float>("CudaVectorFloat32");
-    instantiateCudaVector<double>("CudaVectorFloat64");
-    // Complex
+#define X(type, name) instantiateCudaVector<type>(name);
+    ODLPP_FOR_EACH_TYPE
+#undef X
 }
