@@ -147,6 +147,8 @@ void instantiateCudaVector(const std::string& name) {
         .add_property("dtype", &dtype<T>)
         .add_property("shape", &shape<T>)
         .add_property("size", &CudaVectorImpl<T>::size)
+        .add_property("itemsize", &itemsize<T>)
+        .add_property("nbytes", &nbytes<T>)
         .def("__len__", &CudaVectorImpl<T>::size)
         .def("equals", &CudaVectorImpl<T>::allEqual)
         .def("__getitem__", &CudaVectorImpl<T>::getItem)
@@ -186,7 +188,7 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     def("abs", absVector);
     def("sum", sumVector);
 
-    // Instatiate according to numpy
+// Instatiate according to numpy
 #define X(type, name) instantiateCudaVector<type>(name);
     ODLPP_FOR_EACH_TYPE
 #undef X
