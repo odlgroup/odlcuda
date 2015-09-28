@@ -4,44 +4,55 @@
 #include <sstream>
 #include <type_traits>
 
+#include <ODLpp/TypeMacro.h>
 #include <ODLpp/DeviceVector.h>
 
+//The scalar type used for multiplication
 template <typename T, typename Enable = void>
-struct CudaVectorScalar;
-
-template <typename T>
-struct CudaVectorScalar<
-    T, typename std::enable_if<std::is_integral<T>::value>::type> {
-    typedef typename std::make_signed<T>::type Scalar;
+struct CudaVectorTraits {
+    using Scalar = T;
+    using Float = double;
+    using RealFloat = double;
 };
 
 template <typename T>
-struct CudaVectorScalar<
-    T, typename std::enable_if<!std::is_integral<T>::value>::type> {
-    typedef T Scalar;
+struct CudaVectorTraits<T, typename std::enable_if<std::is_integral<T>::value>::type> {
+    using Scalar = typename std::make_signed<T>::type;
+    using Float = double;
+    using RealFloat = double;
+};
+
+template <typename T>
+struct CudaVectorTraits<T, typename std::enable_if<std::is_same<T, float>::value>::type> {
+    using Scalar = float;
+    using Float = float;
+    using RealFloat = float;
 };
 
 template <typename T>
 class CudaVectorImpl {
   public:
-    typedef typename CudaVectorScalar<T>::Scalar Scalar;
+    using Scalar = typename CudaVectorTraits<T>::Scalar;
+    using Float = typename CudaVectorTraits<T>::Float;
+    using RealFloat = typename CudaVectorTraits<T>::RealFloat;
 
     CudaVectorImpl(size_t size);
     CudaVectorImpl(size_t size, T value);
     CudaVectorImpl(DeviceVectorPtr<T> impl);
 
-    static DeviceVectorPtr<T> fromPointer(uintptr_t ptr, size_t size,
+    static DeviceVectorPtr<T> fromPointer(uintptr_t ptr,
+                                          size_t size,
                                           ptrdiff_t stride);
 
     T getItem(ptrdiff_t index) const;
     void setItem(ptrdiff_t index, T value);
 
     // numerical methods
-    void linComb(Scalar a, const CudaVectorImpl<T>& x, Scalar b,
-                 const CudaVectorImpl<T>& y);
-    double dist(const CudaVectorImpl<T>& other) const;
-    double norm() const;
-    double inner(const CudaVectorImpl<T>& v2) const;
+    void linComb(Scalar a, const CudaVectorImpl<T>& x,
+                 Scalar b, const CudaVectorImpl<T>& y);
+    RealFloat dist(const CudaVectorImpl<T>& other) const;
+    RealFloat norm() const;
+    Float inner(const CudaVectorImpl<T>& v2) const;
     void multiply(const CudaVectorImpl<T>& v1, const CudaVectorImpl<T>& v2);
 
     // Convenience methods

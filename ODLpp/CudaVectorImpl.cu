@@ -178,42 +178,51 @@ void CudaVectorImpl<T>::linComb(Scalar a, const CudaVectorImpl<T>& x,
     linCombImpl(*this->_impl, a, *x._impl, b, *y._impl);
 }
 
-template <typename T>
+template <typename T, typename Scalar>
 struct DistanceFunctor {
     __host__ __device__ double operator()(const thrust::tuple<T, T>& f) const {
-        return static_cast<double>((thrust::get<0>(f) - thrust::get<1>(f)) *
+        return static_cast<Scalar>((thrust::get<0>(f) - thrust::get<1>(f)) *
                                    (thrust::get<0>(f) - thrust::get<1>(f)));
     }
 };
 
 template <typename T>
-double CudaVectorImpl<T>::dist(const CudaVectorImpl<T>& other) const {
+CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist(const CudaVectorImpl<T>& other) const {
     auto first = thrust::make_zip_iterator(
         thrust::make_tuple(this->_impl->begin(), other._impl->begin()));
     auto last = first + this->size();
-    return sqrt(thrust::transform_reduce(first, last, DistanceFunctor<T>{}, 0.0,
-                                         thrust::plus<double>{}));
+    return sqrt(thrust::transform_reduce(first, last,
+                                         DistanceFunctor<T, CudaVectorImpl<T>::RealFloat>{},
+                                         CudaVectorImpl<T>::RealFloat(0),
+                                         thrust::plus<CudaVectorImpl<T>::RealFloat>{}));
 }
 
 template <typename T>
-double CudaVectorImpl<T>::norm() const {
+CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm() const {
     namespace ph = thrust::placeholders;
     return sqrt(thrust::transform_reduce(this->_impl->begin(),
-                                         this->_impl->end(), ph::_1 * ph::_1,
-                                         0.0, thrust::plus<double>{}));
+                                         this->_impl->end(),
+                                         ph::_1 * ph::_1,
+                                         CudaVectorImpl<T>::Float(0),
+                                         thrust::plus<CudaVectorImpl<T>::RealFloat>{}));
 }
 
 template <typename T>
-double CudaVectorImpl<T>::inner(const CudaVectorImpl<T>& other) const {
-    return thrust::inner_product(this->_impl->begin(), this->_impl->end(),
-                                 other._impl->begin(), 0.0);
+CudaVectorImpl<T>::Float CudaVectorImpl<T>::inner(const CudaVectorImpl<T>& other) const {
+    return thrust::inner_product(this->_impl->begin(),
+                                 this->_impl->end(),
+                                 other._impl->begin(),
+                                 CudaVectorImpl<T>::Float(0));
 }
 
 template <typename T>
 void CudaVectorImpl<T>::multiply(const CudaVectorImpl<T>& x,
                                  const CudaVectorImpl<T>& y) {
-    thrust::transform(x._impl->begin(), x._impl->end(), y._impl->begin(),
-                      this->_impl->begin(), thrust::multiplies<T>{});
+    thrust::transform(x._impl->begin(),
+                      x._impl->end(),
+                      y._impl->begin(),
+                      this->_impl->begin(),
+                      thrust::multiplies<T>{});
 }
 
 template <typename T>
@@ -225,7 +234,8 @@ CudaVectorImpl<T> CudaVectorImpl<T>::copy() const {
 
 template <typename T>
 bool CudaVectorImpl<T>::allEqual(const CudaVectorImpl<T>& other) const {
-    return thrust::equal(this->_impl->begin(), this->_impl->end(),
+    return thrust::equal(this->_impl->begin(),
+                         this->_impl->end(),
                          other._impl->begin());
 }
 

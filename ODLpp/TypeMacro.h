@@ -1,6 +1,6 @@
 #pragma once
 
-#if 1
+#if 0
 //full compile
 #define ODLPP_FOR_EACH_TYPE \
     X(int8_t, "CudaVectorInt8") \
@@ -13,8 +13,10 @@
     X(uint64_t, "CudaVectorUInt64") \
     X(float, "CudaVectorFloat32") \
     X(double, "CudaVectorFloat64")
-#else 
+#else
+
 //debug type compile
 #define ODLPP_FOR_EACH_TYPE \
+    X(uint8_t, "CudaVectorUInt8") \
     X(float, "CudaVectorFloat32")
 #endif

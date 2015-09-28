@@ -15,6 +15,7 @@
 
 #include <LCRUtils/python/numpy_utils.h>
 #include <ODLpp/DeviceVector.h>
+#include <ODLpp/UFunc.h>
 #include <ODLpp/TypeMacro.h>
 #include <ODLpp/CudaVector.h>
 
@@ -136,36 +137,40 @@ float sumVector(const CudaVectorImpl<float>& source) { return sumImpl(source); }
 
 template <typename T>
 void instantiateCudaVector(const std::string& name) {
-    class_<CudaVectorImpl<T>>(name.c_str(), "Documentation", init<size_t>())
-        .def(init<size_t, T>())
-        .def("from_pointer", &fromPointer<T>)
-        .staticmethod("from_pointer")
-        .def("copy", &CudaVectorImpl<T>::copy)
-        .def(self_ns::str(self_ns::self))
-        .def("__repr__", &repr<T>)
-        .def("data_ptr", &CudaVectorImpl<T>::dataPtr)
-        .add_property("dtype", &dtype<T>)
-        .add_property("shape", &shape<T>)
-        .add_property("size", &CudaVectorImpl<T>::size)
-        .def("__len__", &CudaVectorImpl<T>::size)
-        .def("equals", &CudaVectorImpl<T>::allEqual)
-        .def("__getitem__", &CudaVectorImpl<T>::getItem)
-        .def("__setitem__", &CudaVectorImpl<T>::setItem)
-        .def("copy_device_to_host", &copyDeviceToHost<T>)
-        .def("get_to_host", &getSliceToHost<T>)
-        .def("getslice", &getSliceView<T>)
-        .def("setslice", &setSlice<T>)
-        .def("lincomb", &CudaVectorImpl<T>::linComb)
-        .def("inner", &CudaVectorImpl<T>::inner)
-        .def("dist", &CudaVectorImpl<T>::dist)
-        .def("norm", &CudaVectorImpl<T>::norm)
-        .def("multiply", &CudaVectorImpl<T>::multiply)
-        .def("fill", &CudaVectorImpl<T>::fill);
+    auto cls = class_<CudaVectorImpl<T>>(name.c_str(), "Documentation", init<size_t>())
+                   .def(init<size_t, T>())
+                   .def("from_pointer", &fromPointer<T>)
+                   .staticmethod("from_pointer")
+                   .def("copy", &CudaVectorImpl<T>::copy)
+                   .def(self_ns::str(self_ns::self))
+                   .def("__repr__", &repr<T>)
+                   .def("data_ptr", &CudaVectorImpl<T>::dataPtr)
+                   .add_property("dtype", &dtype<T>)
+                   .add_property("shape", &shape<T>)
+                   .add_property("size", &CudaVectorImpl<T>::size)
+                   .def("__len__", &CudaVectorImpl<T>::size)
+                   .def("equals", &CudaVectorImpl<T>::allEqual)
+                   .def("__getitem__", &CudaVectorImpl<T>::getItem)
+                   .def("__setitem__", &CudaVectorImpl<T>::setItem)
+                   .def("copy_device_to_host", &copyDeviceToHost<T>)
+                   .def("get_to_host", &getSliceToHost<T>)
+                   .def("getslice", &getSliceView<T>)
+                   .def("setslice", &setSlice<T>)
+                   .def("lincomb", &CudaVectorImpl<T>::linComb)
+                   .def("inner", &CudaVectorImpl<T>::inner)
+                   .def("dist", &CudaVectorImpl<T>::dist)
+                   .def("norm", &CudaVectorImpl<T>::norm)
+                   .def("multiply", &CudaVectorImpl<T>::multiply)
+                   .def("fill", &CudaVectorImpl<T>::fill);
+
+#define X(fun) cls.def(#fun, &UFunc<T, T>::##fun);
+    ODLPP_FOR_EACH_UFUNC
+#undef X
 }
 
 // Expose classes and methods to Python
 BOOST_PYTHON_MODULE(odlpp_cuda) {
-    auto result = _import_array();  // Import numpy
+    auto result = _import_array(); // Import numpy
     if (result != 0) {
         PyErr_Print();
         throw std::invalid_argument("numpy.core.multiarray failed to import");
@@ -186,7 +191,7 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     def("abs", absVector);
     def("sum", sumVector);
 
-    // Instatiate according to numpy
+// Instatiate according to numpy
 #define X(type, name) instantiateCudaVector<type>(name);
     ODLPP_FOR_EACH_TYPE
 #undef X

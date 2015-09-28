@@ -24,13 +24,12 @@ if (CUDA_ENABLED)
 	set(LIB_NAME "odlpp_cuda")
 	set(PYTHON_LIBS ${PYTHON_LIBS} ${LIB_NAME})
 	cuda_include_directories ("${PROJECT_SOURCE_DIR}")
-    CUDA_ADD_LIBRARY(${LIB_NAME} SHARED "cuda.cpp" "cuda.cu" "DeviceVector.h" "DeviceVectorImpl.h" "CudaVector.h" "CudaVectorImpl.h" "CudaVectorImpl.cu" "SliceHelper.h" "TypeMacro.h")
+    CUDA_ADD_LIBRARY(${LIB_NAME} SHARED "cuda.cpp" "cuda.cu" "DeviceVector.h" "DeviceVectorImpl.h" "CudaVector.h" "CudaVectorImpl.h" "CudaVectorImpl.cu" "SliceHelper.h" "TypeMacro.h" "UFunc.h" "UFunc.cu")
 	# CUDA_ADD_CUBLAS_TO_TARGET( ${LIB_NAME} ) possibly needed
 	set_property(TARGET ${LIB_NAME} PROPERTY FOLDER python)
 	target_link_libraries(${LIB_NAME} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
 endif()
 
-#TODO: LINUX?
 set(INSTALL_LIB "pyinstall")
 add_custom_target(${INSTALL_LIB} COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py ${TARGET_PY}/__init__.py)
 set_property(TARGET ${INSTALL_LIB} PROPERTY FOLDER python)
