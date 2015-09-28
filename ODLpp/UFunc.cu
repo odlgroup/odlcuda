@@ -20,15 +20,7 @@
 
 // clang-format off
 
-#define ODLPP_FOR_EACH_FLOAT_UFUNC \
-    X(sin, sinf) \
-    X(cos, cosf) \
-    X(arcsin, asinf) \
-    X(arccos, acosf) \
-    X(log, logf) \
-    X(exp, expf) \
-    X(abs, fabsf) \
-    X(sqrt, sqrtf)
+
 
 // Instantiate the methods for each type
 template <typename Tin, typename Tout, typename F>
@@ -36,24 +28,32 @@ void apply_transform(const CudaVectorImpl<Tin>& in, CudaVectorImpl<Tout>& out, F
     thrust::transform(in._impl->begin(), in._impl->end(), out._impl->begin(), f);
 }
 
-struct functorsign{
+struct functor_sign{
     __device__ float operator()(float t) const {
         return static_cast<float>((t > 0.0f) - (t < 0.0f));
     }
 };
-void ufuncsign(const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {
-    apply_transform(in, out, functorsign{});
+void ufunc_sign(const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {
+    apply_transform(in, out, functor_sign{});
 }
 
-#define X(fun, impl)                                                                                \
-struct functor##fun{                                                                                \
-    __device__ float operator()(float t) const {                                                    \
-        return impl##(t);                                                                           \
-    }                                                                                               \
-};                                                                                                  \
-void ufunc##fun##(const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {                    \
-    apply_transform(in, out, functor##fun{});                                                       \
+#define ODL_DEFINE_FLOAT_UFUNC(fun, impl)                                                       \
+struct functor_##fun{                                                                           \
+    __device__ float operator()(float t) const {                                                \
+        return impl## (t);                                                                      \
+    }                                                                                           \
+};                                                                                              \
+void ufunc_##fun (const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {                \
+    apply_transform(in, out, functor_##fun{});                                                  \
 }
 
-ODLPP_FOR_EACH_FLOAT_UFUNC
-#undef X
+ODL_DEFINE_FLOAT_UFUNC(sin, sinf)
+ODL_DEFINE_FLOAT_UFUNC(cos, cosf)
+ODL_DEFINE_FLOAT_UFUNC(arcsin, asinf)
+ODL_DEFINE_FLOAT_UFUNC(arccos, acosf)
+ODL_DEFINE_FLOAT_UFUNC(log, logf)
+ODL_DEFINE_FLOAT_UFUNC(exp, expf)
+ODL_DEFINE_FLOAT_UFUNC(abs, fabsf)
+ODL_DEFINE_FLOAT_UFUNC(sqrt, sqrtf)
+
+#undef ODL_DEFINE_FLOAT_UFUNC

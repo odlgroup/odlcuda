@@ -140,7 +140,7 @@ void instantiateCudaVector(const std::string& name) {
                    .def("multiply", &CudaVectorImpl<T>::multiply)
                    .def("fill", &CudaVectorImpl<T>::fill);
 
-#define X(fun) cls.def(#fun, &ufunc##fun##<T,T>);
+#define X(fun) cls.def(#fun, &ufunc_##fun<T,T>);
     ODLPP_FOR_EACH_UFUNC
 #undef X
 }

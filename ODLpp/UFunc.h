@@ -22,11 +22,11 @@
     X(sqrt)
 
 //Default to an error message
-#define X(fun) template <typename Tin, typename Tout> void ufunc##fun##(const CudaVectorImpl<Tin>& in, CudaVectorImpl<Tout>& out) { throw std::domain_error("##fun UFunc not supported with this type"); }
+#define X(fun) template <typename Tin, typename Tout> void ufunc_##fun (const CudaVectorImpl<Tin>& in, CudaVectorImpl<Tout>& out) { throw std::domain_error("##fun UFunc not supported with this type"); }
 ODLPP_FOR_EACH_UFUNC
 #undef X
 
 //Implementations for floats
-#define X(fun) template <> void ufunc##fun##(const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out);
+#define X(fun) template <> void ufunc_##fun (const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out);
 ODLPP_FOR_EACH_UFUNC
 #undef X
