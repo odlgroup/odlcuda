@@ -27,6 +27,6 @@ ODLPP_FOR_EACH_UFUNC
 #undef X
 
 //Implementations for floats
-#define X(fun) template <> void ufunc_##fun (const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out);
+#define X(fun) template <> extern void ufunc_##fun (const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out);
 ODLPP_FOR_EACH_UFUNC
 #undef X
