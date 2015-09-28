@@ -9,32 +9,24 @@
 
 // clang-format off
 
+//List of all Ufuncs
 #define ODLPP_FOR_EACH_UFUNC \
     X(sin) \
     X(cos) \
-    X(asin) \
-    X(acos) \
+    X(arcsin) \
+    X(arccos) \
     X(log) \
-    X(exp)
+    X(exp) \
+    X(abs) \
+    X(sign) \
+    X(sqrt)
 
-#define ODLPP_FOR_EACH_FLOAT_UFUNC \
-    X(sin, sinf) \
-    X(cos, cosf) \
-    X(asin, asinf) \
-    X(acos, acosf) \
-    X(log, logf) \
-    X(exp, expf)
-
-template <typename Tin, typename Tout>
-struct UFunc {
-#define X(fun, impl) void fun##(const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {throw std::domain_error("this UFunc not supported with this type");}
-    ODLPP_FOR_EACH_UFUNC
+//Default to an error message
+#define X(fun) template <typename Tin, typename Tout> void ufunc##fun##(const CudaVectorImpl<Tin>& in, CudaVectorImpl<Tout>& out) { throw std::domain_error("##fun UFunc not supported with this type"); }
+ODLPP_FOR_EACH_UFUNC
 #undef X
-};
 
-template <>
-struct UFunc<float, float> {
-#define X(fun, impl) void fun##(const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out);
-    ODLPP_FOR_EACH_FLOAT_UFUNC
+//Implementations for floats
+#define X(fun) template <> void ufunc##fun##(const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out);
+ODLPP_FOR_EACH_UFUNC
 #undef X
-};

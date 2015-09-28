@@ -23,12 +23,6 @@ using namespace boost::python;
 
 // Externally (CUDA) compiled
 
-// Transformations
-extern void absImpl(const DeviceVector<float>& source,
-                    DeviceVector<float>& target);
-extern void negImpl(const DeviceVector<float>& source,
-                    DeviceVector<float>& target);
-
 // Reductions
 extern float sumImpl(const DeviceVector<float>& v);
 
@@ -60,12 +54,7 @@ extern void divideVectorVectorImpl(const DeviceVector<float>& dividend,
                                    const DeviceVector<float>& divisor,
                                    DeviceVector<float>& quotient);
 
-extern void addScalarImpl(const DeviceVector<float>& v1, float scalar,
-                          DeviceVector<float>& target);
-extern void signImpl(const DeviceVector<float>& v1,
-                     DeviceVector<float>& target);
-extern void sqrtImpl(const DeviceVector<float>& v1,
-                     DeviceVector<float>& target);
+extern void addScalarImpl(const DeviceVector<float>& v1, float scalar, DeviceVector<float>& out);
 
 // Functions
 void convolution(const CudaVectorImpl<float>& source,
@@ -119,20 +108,6 @@ void addScalar(const CudaVectorImpl<float>& source, float scalar,
     addScalarImpl(source, scalar, target);
 }
 
-void signVector(const CudaVectorImpl<float>& source,
-                CudaVectorImpl<float>& target) {
-    signImpl(source, target);
-}
-
-void sqrtVector(const CudaVectorImpl<float>& source,
-                CudaVectorImpl<float>& target) {
-    sqrtImpl(source, target);
-}
-
-void absVector(CudaVectorImpl<float>& source, CudaVectorImpl<float>& target) {
-    absImpl(source, target);
-}
-
 float sumVector(const CudaVectorImpl<float>& source) { return sumImpl(source); }
 
 template <typename T>
@@ -165,7 +140,7 @@ void instantiateCudaVector(const std::string& name) {
                    .def("multiply", &CudaVectorImpl<T>::multiply)
                    .def("fill", &CudaVectorImpl<T>::fill);
 
-#define X(fun) cls.def(#fun, &UFunc<T, T>::##fun);
+#define X(fun) cls.def(#fun, &ufunc##fun##<T,T>);
     ODLPP_FOR_EACH_UFUNC
 #undef X
 }
@@ -188,9 +163,6 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     def("max_vector_scalar", maxVectorScalar);
     def("divide_vector_vector", divideVectorVector);
     def("add_scalar", addScalar);
-    def("sign", signVector);
-    def("sqrt", sqrtVector);
-    def("abs", absVector);
     def("sum", sumVector);
 
 // Instatiate according to numpy

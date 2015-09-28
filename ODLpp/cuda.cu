@@ -55,15 +55,6 @@ void convImpl(const DeviceVector<float>& source,
         (source.data(), kernel.data(), target.data(), narrow_cast<int>(len));
 }
 
-// Functions
-struct AbsoluteValueFunctor {
-    __host__ __device__ float operator()(const float& f) { return fabs(f); }
-};
-void absImpl(const DeviceVector<float>& source, DeviceVector<float>& target) {
-    thrust::transform(source.begin(), source.end(), target.begin(),
-                      AbsoluteValueFunctor{});
-}
-
 __global__ void forwardDifferenceKernel(const int len,
                                         const float* source,
                                         float* target) {
@@ -132,26 +123,6 @@ void addScalarImpl(const DeviceVector<float>& source, float scalar,
     auto scalarIter = thrust::make_constant_iterator(scalar);
     thrust::transform(source.begin(), source.end(), scalarIter, target.begin(),
                       thrust::plus<float>{});
-}
-
-template <typename T>
-struct SignFunctor {
-    __host__ __device__ float operator()(const T& f) {
-        return static_cast<T>((0.0f < f) - (f < 0.0f));
-    }
-};
-void signImpl(const DeviceVector<float>& source, DeviceVector<float>& target) {
-    thrust::transform(source.begin(), source.end(), target.begin(),
-                      SignFunctor<float>{});
-}
-struct SqrtFunctor {
-    __host__ __device__ float operator()(const float& f) {
-        return f > 0.0f ? sqrtf(f) : 0.0f;
-    }
-};
-void sqrtImpl(const DeviceVector<float>& source, DeviceVector<float>& target) {
-    thrust::transform(source.begin(), source.end(), target.begin(),
-                      SqrtFunctor{});
 }
 
 __global__ void forwardDifference2DKernel(const int cols, const int rows,
