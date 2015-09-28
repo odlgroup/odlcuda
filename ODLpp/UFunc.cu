@@ -29,6 +29,7 @@ struct functor_sign {
         return static_cast<float>((t > 0.0f) - (t < 0.0f));
     }
 };
+template <>
 void ufunc_sign(const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {
     apply_transform(in, out, functor_sign{});
 }
@@ -40,7 +41,7 @@ struct functor_##fun{                                                           
         return impl(t);                                                                         \
     }                                                                                           \
 };                                                                                              \
-void ufunc_##fun (const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {                \
+template <> void ufunc_##fun (const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {    \
     apply_transform(in, out, functor_##fun{});                                                  \
 }
 
