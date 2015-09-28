@@ -30,11 +30,12 @@ CudaVectorImpl<T> getSliceView(CudaVectorImpl<T>& vector,
                                const boost::python::slice index) {
     sliceHelper sh(index, vector.size());
     uintptr_t input_data_begin = vector.dataPtr();
-    uintptr_t output_data_begin = input_data_begin + vector.stride() * sh.start * sizeof(T);
-    if (sh.step < 0)
-        output_data_begin -= sizeof(T);
+    uintptr_t output_data_begin =
+        input_data_begin + vector.stride() * sh.start * sizeof(T);
+    if (sh.step < 0) output_data_begin -= sizeof(T);
 
-    return fromPointer<T>(output_data_begin, sh.numel, sh.step * vector.stride());
+    return fromPointer<T>(output_data_begin, sh.numel,
+                          sh.step * vector.stride());
 }
 
 template <typename T>
@@ -47,7 +48,8 @@ void copyDeviceToHost(CudaVectorImpl<T>& vector,
         throw std::out_of_range("Size of array does not match slice");
 
     if (sh.numel > 0) {
-        vector.getSliceImpl(*vector._impl, sh.start, sh.stop, sh.step, getDataPtr<T>(target));
+        vector.getSliceImpl(*vector._impl, sh.start, sh.stop, sh.step,
+                            getDataPtr<T>(target));
     }
 }
 
@@ -66,8 +68,7 @@ boost::python::numeric::array getSliceToHost(CudaVectorImpl<T>& vector,
 }
 
 template <typename T>
-void setSlice(CudaVectorImpl<T>& vector,
-              const boost::python::slice index,
+void setSlice(CudaVectorImpl<T>& vector, const boost::python::slice index,
               const boost::python::numeric::array& arr) {
     sliceHelper sh(index, vector.size());
 
@@ -75,8 +76,8 @@ void setSlice(CudaVectorImpl<T>& vector,
         throw std::out_of_range("Size of array does not match slice");
 
     if (sh.numel > 0) {
-        vector.setSliceImpl(*vector._impl, sh.start, sh.stop, sh.step, getDataPtr<T>(arr),
-                            sh.numel);
+        vector.setSliceImpl(*vector._impl, sh.start, sh.stop, sh.step,
+                            getDataPtr<T>(arr), sh.numel);
     }
 }
 
@@ -100,6 +101,16 @@ boost::python::object dtype(const CudaVectorImpl<T>& v) {
     PyArray_Descr* descr = PyArray_DescrNewFromType(getEnum<T>());
     return boost::python::object(
         boost::python::handle<>(reinterpret_cast<PyObject*>(descr)));
+}
+
+template <typename T>
+size_t nbytes(const CudaVectorImpl<T>& vector) {
+    return vector.size() * sizeof(T);
+}
+
+template <typename T>
+size_t itemsize(const CudaVectorImpl<T>& vector) {
+    return sizeof(T);
 }
 
 template <typename T>
