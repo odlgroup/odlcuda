@@ -40,7 +40,7 @@ void ufunc_sign(const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {
 #define ODL_DEFINE_FLOAT_UFUNC(fun, impl)                                                       \
 struct functor_##fun{                                                                           \
     __device__ float operator()(float t) const {                                                \
-        return impl## (t);                                                                      \
+    return impl(t);                                                                             \
     }                                                                                           \
 };                                                                                              \
 void ufunc_##fun (const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {                \
