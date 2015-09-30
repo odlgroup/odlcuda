@@ -56,6 +56,16 @@ extern void divideVectorVectorImpl(const DeviceVector<float>& dividend,
 
 extern void addScalarImpl(const DeviceVector<float>& v1, float scalar, DeviceVector<float>& out);
 
+extern void gaussianBlurImpl(const DeviceVector<float>& image,
+                             DeviceVector<float>& out,
+                             DeviceVector<float>& temporary,
+                             const int image_width,
+                             const int image_height,
+                             const float sigma_x,
+                             const float sigma_y,
+                             const int kernel_width,
+                             const int kernel_height);
+
 // Functions
 void convolution(const CudaVectorImpl<float>& source,
                  const CudaVectorImpl<float>& kernel,
@@ -108,6 +118,26 @@ void addScalar(const CudaVectorImpl<float>& source, float scalar,
     addScalarImpl(source, scalar, target);
 }
 
+extern void gaussianBlur(const CudaVectorImpl<float>& image,
+                         CudaVectorImpl<float>& temporary,
+                         CudaVectorImpl<float>& out,
+                         const int image_width,
+                         const int image_height,
+                         const float sigma_x,
+                         const float sigma_y,
+                         const int kernel_width,
+                         const int kernel_height) {
+    gaussianBlurImpl(image,
+                     temporary,
+                     out,
+                     image_width,
+                     image_height,
+                     sigma_x,
+                     sigma_y,
+                     kernel_width,
+                     kernel_height);
+}
+
 float sumVector(const CudaVectorImpl<float>& source) { return sumImpl(source); }
 
 template <typename T>
@@ -140,7 +170,7 @@ void instantiateCudaVector(const std::string& name) {
                    .def("multiply", &CudaVectorImpl<T>::multiply)
                    .def("fill", &CudaVectorImpl<T>::fill);
 
-#define X(fun) cls.def(#fun, &ufunc_##fun<T,T>);
+#define X(fun) cls.def(#fun, &ufunc_##fun<T, T>);
     ODLPP_FOR_EACH_UFUNC
 #undef X
 }
@@ -164,6 +194,7 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     def("divide_vector_vector", divideVectorVector);
     def("add_scalar", addScalar);
     def("sum", sumVector);
+    def("gaussianBlur", gaussianBlur);
 
 // Instatiate according to numpy
 #define X(type, name) instantiateCudaVector<type>(name);
