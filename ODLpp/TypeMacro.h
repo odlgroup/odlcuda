@@ -1,6 +1,6 @@
 #pragma once
 
-#if 0
+#if 1
 //full compile
 #define ODLPP_FOR_EACH_TYPE \
     X(int8_t, "CudaVectorInt8") \
