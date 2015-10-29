@@ -54,6 +54,7 @@ class CudaVectorImpl {
     RealFloat norm() const;
     Float inner(const CudaVectorImpl<T>& v2) const;
     void multiply(const CudaVectorImpl<T>& v1, const CudaVectorImpl<T>& v2);
+    void divide(const CudaVectorImpl<T>& v1, const CudaVectorImpl<T>& v2);
 
     // Convenience methods
     CudaVectorImpl<T> copy() const;

@@ -226,6 +226,16 @@ void CudaVectorImpl<T>::multiply(const CudaVectorImpl<T>& x,
 }
 
 template <typename T>
+void CudaVectorImpl<T>::divide(const CudaVectorImpl<T>& x,
+                               const CudaVectorImpl<T>& y) {
+    thrust::transform(x._impl->begin(),
+                      x._impl->end(),
+                      y._impl->begin(),
+                      this->_impl->begin(),
+                      thrust::divides<T>{});
+}
+
+template <typename T>
 CudaVectorImpl<T> CudaVectorImpl<T>::copy() const {
     DeviceVectorPtr<T> data_cpy =
         std::make_shared<ThrustDeviceVector<T>>(*_impl);

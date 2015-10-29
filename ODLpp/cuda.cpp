@@ -156,7 +156,7 @@ void instantiateCudaVector(const std::string& name) {
                    .add_property("itemsize", &itemsize<T>)
                    .add_property("nbytes", &nbytes<T>)
                    .def("__len__", &CudaVectorImpl<T>::size)
-                   .def("equals", &CudaVectorImpl<T>::allEqual)
+                   .def("__eq__", &CudaVectorImpl<T>::allEqual)
                    .def("__getitem__", &CudaVectorImpl<T>::getItem)
                    .def("__setitem__", &CudaVectorImpl<T>::setItem)
                    .def("copy_device_to_host", &copyDeviceToHost<T>)
@@ -168,6 +168,7 @@ void instantiateCudaVector(const std::string& name) {
                    .def("dist", &CudaVectorImpl<T>::dist)
                    .def("norm", &CudaVectorImpl<T>::norm)
                    .def("multiply", &CudaVectorImpl<T>::multiply)
+                   .def("divide", &CudaVectorImpl<T>::divide)
                    .def("fill", &CudaVectorImpl<T>::fill);
 
 #define X(fun) cls.def(#fun, &ufunc_##fun<T, T>);
