@@ -118,3 +118,17 @@ There are a few common errors encountered, this is the solution to some of these
         ImportError: No module named odlpp
 
     It may be that you have not installed the package, run (as root) `make pyinstall` or equivalent.
+    
+License
+-------
+
+GPL Version 3. See LICENSE file.
+
+If you would like to get the code under a different license, please contact the
+developers.
+
+Main developers
+---------------
+
+- Jonas Adler (jonas-<ätt>-kth-<dot>-se)
+- Holger Kohr (kohr-<ätt>-kth-<dot>-se)
