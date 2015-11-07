@@ -95,4 +95,4 @@ endif(PYTHON_ENABLED)
 
 # Add sub directories as needed
 add_subdirectory (ODLpp)
-add_subdirectory (LCRUtils)
+add_subdirectory (odl_cpp_utils)

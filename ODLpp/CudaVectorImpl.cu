@@ -7,14 +7,14 @@
 #include <cublas_v2.h>
 
 // thrust
-#include <LCRUtils/cuda/disableThrustWarnings.h>
+#include <odl_cpp_utils/cuda/disableThrustWarnings.h>
 #include <thrust/iterator/reverse_iterator.h>
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>
 #include <thrust/inner_product.h>
 #include <thrust/adjacent_difference.h>
-#include <LCRUtils/cuda/enableThrustWarnings.h>
+#include <odl_cpp_utils/cuda/enableThrustWarnings.h>
 
 #include <iostream>
 
@@ -24,7 +24,7 @@
 #include <ODLpp/TypeMacro.h>
 
 // Utils
-#include <LCRUtils/cuda/thrustUtils.h>
+#include <odl_cpp_utils/cuda/thrustUtils.h>
 
 template <typename I1, typename I2>
 void stridedGetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, ptrdiff_t step) {

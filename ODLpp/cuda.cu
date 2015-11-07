@@ -7,23 +7,23 @@
 #include <cublas_v2.h>
 
 // thrust
-#include <LCRUtils/cuda/disableThrustWarnings.h>
+#include <odl_cpp_utils/cuda/disableThrustWarnings.h>
 #include <thrust/iterator/reverse_iterator.h>
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>
 #include <thrust/adjacent_difference.h>
-#include <LCRUtils/cuda/enableThrustWarnings.h>
+#include <odl_cpp_utils/cuda/enableThrustWarnings.h>
 
 // ODL
 #include <ODLpp/DeviceVectorImpl.h>
 #include <ODLpp/TypeMacro.h>
 
 // Utils
-#include <LCRUtils/cuda/thrustUtils.h>
-#include <LCRUtils/utils/cast.h>
-#include <LCRUtils/cuda/cutil_math.h>
-#include <LCRUtils/cuda/errcheck.h>
+#include <odl_cpp_utils/cuda/thrustUtils.h>
+#include <odl_cpp_utils/utils/cast.h>
+#include <odl_cpp_utils/cuda/cutil_math.h>
+#include <odl_cpp_utils/cuda/errcheck.h>
 
 // Reductions
 float sumImpl(const DeviceVector<float>& v) {

@@ -4,9 +4,9 @@
 #include <cublas_v2.h>
 
 // thrust
-#include <LCRUtils/cuda/disableThrustWarnings.h>
+#include <odl_cpp_utils/cuda/disableThrustWarnings.h>
 #include <thrust/transform.h>
-#include <LCRUtils/cuda/enableThrustWarnings.h>
+#include <odl_cpp_utils/cuda/enableThrustWarnings.h>
 
 #include <iostream>
 

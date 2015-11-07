@@ -9,7 +9,7 @@
 #include <vector>
 #include <Eigen/Dense>
 
-#include <LCRUtils/python/numpy_eigen.h>
+#include <odl_cpp_utils/python/numpy_eigen.h>
 
 #include <ODLpp/odlutils/StandardPhantoms.h>
 #include <ODLpp/odlutils/Phantom.h>

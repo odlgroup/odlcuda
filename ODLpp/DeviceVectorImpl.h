@@ -3,15 +3,15 @@
 #include <memory>
 
 // thrust
-#include <LCRUtils/cuda/disableThrustWarnings.h>
+#include <odl_cpp_utils/cuda/disableThrustWarnings.h>
 #include <thrust/device_vector.h>
-#include <LCRUtils/cuda/enableThrustWarnings.h>
+#include <odl_cpp_utils/cuda/enableThrustWarnings.h>
 
 // ODL
 #include <ODLpp/DeviceVector.h>
 
 // Utils
-#include <LCRUtils/cuda/thrustUtils.h>
+#include <odl_cpp_utils/cuda/thrustUtils.h>
 
 template <typename T>
 class DeviceVector {

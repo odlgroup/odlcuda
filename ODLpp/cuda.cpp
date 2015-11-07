@@ -13,7 +13,7 @@
 #include <thrust/device_vector.h>
 #include <numpy/arrayobject.h>
 
-#include <LCRUtils/python/numpy_utils.h>
+#include <odl_cpp_utils/python/numpy_utils.h>
 #include <ODLpp/DeviceVector.h>
 #include <ODLpp/UFunc.h>
 #include <ODLpp/TypeMacro.h>
