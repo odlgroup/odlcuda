@@ -67,27 +67,23 @@ else()
 endif()
 
 # Python bindings
-option(PYTHON_ENABLED "Create python bindings" TRUE)
+set(Boost_USE_SHARED_LIBS   ON)
+set(Boost_USE_MULTITHREADED ON)
+find_package(Boost COMPONENTS
+             python
+             REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
 
-if(PYTHON_ENABLED)
-	set(Boost_USE_SHARED_LIBS   ON)
-	set(Boost_USE_MULTITHREADED ON)
-	find_package(Boost COMPONENTS
-                 python
-                 REQUIRED)
-	include_directories(${Boost_INCLUDE_DIRS})
-	link_directories(${Boost_LIBRARY_DIRS})
+# Find python
+find_package(PythonLibs REQUIRED)
+include_directories(${PYTHON_INCLUDE_DIRS})
 
-	# Find python
-	find_package(PythonLibs REQUIRED)
-	include_directories(${PYTHON_INCLUDE_DIRS})
+# Find numpy
+find_package(Numpy REQUIRED)
+include_directories(${PYTHON_NUMPY_INCLUDE_DIR})
 
-	# Find numpy
-	find_package(Numpy REQUIRED)
-	include_directories(${PYTHON_NUMPY_INCLUDE_DIR})
-
-	link_directories(${PYTHON_LIBRARIES})
-endif(PYTHON_ENABLED)
+link_directories(${PYTHON_LIBRARIES})
 
 # Add sub directories as needed
 add_subdirectory (odlpp)
