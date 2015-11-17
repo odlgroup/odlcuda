@@ -23,5 +23,9 @@
 # Build folder
 build*/
 
+# Temporary vim files
+*.swp
+*.swo
+
 # Python bytecode
 *.pyc
