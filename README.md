@@ -58,11 +58,6 @@ Current external dependencies are
 #####Python
 The building block of ODL, ODLpp needs access to both python and numpy header files and compiled files to link against.
 
-#####Eigen
-A C++ template library for linear algebra: matrices, vectors, numerical solvers, and related algorithms. The version tested for is the dev-branch, but any 3.* should work.
-
-[Eigen webpage](http://eigen.tuxfamily.org)
-
 #####Boost
 General library with C++ code. This project specifically uses [Boost.Python](http://www.boost.org/doc/libs/1_58_0/libs/python/doc/index.html) to handle the python bindings.
 
