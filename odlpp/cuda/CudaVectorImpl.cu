@@ -19,9 +19,9 @@
 #include <iostream>
 
 // ODL
-#include <ODLpp/DeviceVectorImpl.h>
-#include <ODLpp/CudaVectorImpl.h>
-#include <ODLpp/TypeMacro.h>
+#include <odlpp/cuda/DeviceVectorImpl.h>
+#include <odlpp/cuda/CudaVectorImpl.h>
+#include <odlpp/cuda/TypeMacro.h>
 
 // Utils
 #include <odl_cpp_utils/cuda/thrustUtils.h>
@@ -37,7 +37,8 @@ void stridedGetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, ptrdiff_t step) {
 }
 
 template <typename I1, typename I2>
-void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, ptrdiff_t step) {
+void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd,
+                    ptrdiff_t step) {
     if (step == 1) {
         thrust::copy(fromBegin, fromEnd, toBegin);
     } else {
@@ -47,7 +48,8 @@ void stridedSetImpl(I1 fromBegin, I1 fromEnd, I2 toBegin, I2 toEnd, ptrdiff_t st
 }
 template <typename T>
 void CudaVectorImpl<T>::getSliceImpl(const DeviceVector<T>& v1, size_t start,
-                                     size_t stop, ptrdiff_t step, T* target) const {
+                                     size_t stop, ptrdiff_t step,
+                                     T* target) const {
     if (step > 0) {
         stridedGetImpl(v1.begin() + start, v1.begin() + stop, target, step);
     } else {
@@ -58,8 +60,9 @@ void CudaVectorImpl<T>::getSliceImpl(const DeviceVector<T>& v1, size_t start,
     }
 }
 template <typename T>
-void CudaVectorImpl<T>::setSliceImpl(DeviceVector<T>& v1, size_t start, size_t stop,
-                                     ptrdiff_t step, const T* source, size_t num) {
+void CudaVectorImpl<T>::setSliceImpl(DeviceVector<T>& v1, size_t start,
+                                     size_t stop, ptrdiff_t step,
+                                     const T* source, size_t num) {
     if (step > 0) {
         stridedSetImpl(source, source + num, v1.begin() + start,
                        v1.begin() + stop, step);
@@ -83,8 +86,8 @@ CudaVectorImpl<T>::CudaVectorImpl(DeviceVectorPtr<T> impl)
     : _impl(impl) {}
 
 template <typename T>
-DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(uintptr_t ptr, size_t size, ptrdiff_t stride) {
-
+DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(uintptr_t ptr, size_t size,
+                                                  ptrdiff_t stride) {
     return std::make_shared<WrapperDeviceVector<T>>(reinterpret_cast<T*>(ptr),
                                                     size, stride);
 }
@@ -97,84 +100,83 @@ void CudaVectorImpl<T>::validateIndex(ptrdiff_t index) const {
 
 template <typename T>
 T CudaVectorImpl<T>::getItem(ptrdiff_t index) const {
-    if (index < 0) index += size(); // Handle negative indexes like python
+    if (index < 0) index += size();  // Handle negative indexes like python
     validateIndex(index);
     return _impl->operator[](index);
 }
 
 template <typename T>
 void CudaVectorImpl<T>::setItem(ptrdiff_t index, T value) {
-    if (index < 0) index += size(); // Handle negative indexes like python
+    if (index < 0) index += size();  // Handle negative indexes like python
     validateIndex(index);
     _impl->operator[](index) = value;
 }
 
 template <typename T, typename Scalar>
-void linCombImpl(DeviceVector<T>& z,
-                 Scalar a, const DeviceVector<T>& x,
+void linCombImpl(DeviceVector<T>& z, Scalar a, const DeviceVector<T>& x,
                  Scalar b, const DeviceVector<T>& y) {
     namespace ph = thrust::placeholders;
 
-#if 1 // Efficient
+#if 1  // Efficient
     if (a == Scalar(0)) {
-        if (b == Scalar(0)) { // z = 0
+        if (b == Scalar(0)) {  // z = 0
             thrust::fill(z.begin(), z.end(), T(0));
-        } else if (b == Scalar(1)) { // z = y
+        } else if (b == Scalar(1)) {  // z = y
             thrust::copy(y.begin(), y.end(), z.begin());
-        } else if (b == -Scalar(1)) { // y = -y
+        } else if (b == -Scalar(1)) {  // y = -y
             thrust::transform(y.begin(), y.end(), z.begin(), -ph::_1);
-        } else { // y = b*y
+        } else {  // y = b*y
             thrust::transform(y.begin(), y.end(), z.begin(), b * ph::_1);
         }
     } else if (a == Scalar(1)) {
-        if (b == Scalar(0)) { // z = x
+        if (b == Scalar(0)) {  // z = x
             thrust::copy(x.begin(), x.end(), z.begin());
-        } else if (b == Scalar(1)) { // z = x+y
+        } else if (b == Scalar(1)) {  // z = x+y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               thrust::plus<T>{});
-        } else if (b == -Scalar(1)) { // z = x-y
+        } else if (b == -Scalar(1)) {  // z = x-y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               thrust::minus<T>{});
-        } else { // z = x + b*y
+        } else {  // z = x + b*y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               ph::_1 + b * ph::_2);
         }
     } else if (a == -Scalar(1)) {
-        if (b == Scalar(0)) { // z = -x
+        if (b == Scalar(0)) {  // z = -x
             thrust::transform(x.begin(), x.end(), z.begin(), -ph::_1);
-        } else if (b == Scalar(1)) { // z = -x+y
+        } else if (b == Scalar(1)) {  // z = -x+y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               -ph::_1 + ph::_2);
-        } else if (b == -Scalar(1)) { // z = -x-y
+        } else if (b == -Scalar(1)) {  // z = -x-y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               -ph::_1 - ph::_2);
-        } else { // z = -x + b*y
+        } else {  // z = -x + b*y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               -ph::_1 + b * ph::_2);
         }
     } else {
-        if (b == Scalar(0)) { // z = a*x
+        if (b == Scalar(0)) {  // z = a*x
             thrust::transform(x.begin(), x.end(), z.begin(), a * ph::_1);
-        } else if (b == Scalar(1)) { // z = a*x+y
+        } else if (b == Scalar(1)) {  // z = a*x+y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               a * ph::_1 + ph::_2);
-        } else if (b == -Scalar(1)) { // z = a*x-y
+        } else if (b == -Scalar(1)) {  // z = a*x-y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               a * ph::_1 - ph::_2);
-        } else { // z = a*x + b*y
+        } else {  // z = a*x + b*y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               a * ph::_1 + b * ph::_2);
         }
     }
-#else // Basic
+#else  // Basic
     thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                       a * ph::_1 + b * ph::_2);
 #endif
 }
 
 template <typename T>
-void CudaVectorImpl<T>::linComb(Scalar a, const CudaVectorImpl<T>& x,
-                                Scalar b, const CudaVectorImpl<T>& y) {
+void CudaVectorImpl<T>::linComb(Scalar a, const CudaVectorImpl<T>& x, Scalar b,
+                                const CudaVectorImpl<T>& y) {
     linCombImpl(*this->_impl, a, *x._impl, b, *y._impl);
 }
 
@@ -187,30 +189,30 @@ struct DistanceFunctor {
 };
 
 template <typename T>
-CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist(const CudaVectorImpl<T>& other) const {
+CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist(
+    const CudaVectorImpl<T>& other) const {
     auto first = thrust::make_zip_iterator(
         thrust::make_tuple(this->_impl->begin(), other._impl->begin()));
     auto last = first + this->size();
-    return sqrt(thrust::transform_reduce(first, last,
-                                         DistanceFunctor<T, CudaVectorImpl<T>::RealFloat>{},
-                                         CudaVectorImpl<T>::RealFloat(0),
-                                         thrust::plus<CudaVectorImpl<T>::RealFloat>{}));
+    return sqrt(thrust::transform_reduce(
+        first, last, DistanceFunctor<T, CudaVectorImpl<T>::RealFloat>{},
+        CudaVectorImpl<T>::RealFloat(0),
+        thrust::plus<CudaVectorImpl<T>::RealFloat>{}));
 }
 
 template <typename T>
 CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm() const {
     namespace ph = thrust::placeholders;
-    return sqrt(thrust::transform_reduce(this->_impl->begin(),
-                                         this->_impl->end(),
-                                         ph::_1 * ph::_1,
-                                         CudaVectorImpl<T>::Float(0),
-                                         thrust::plus<CudaVectorImpl<T>::RealFloat>{}));
+    return sqrt(
+        thrust::transform_reduce(this->_impl->begin(), this->_impl->end(),
+                                 ph::_1 * ph::_1, CudaVectorImpl<T>::Float(0),
+                                 thrust::plus<CudaVectorImpl<T>::RealFloat>{}));
 }
 
 template <typename T>
-CudaVectorImpl<T>::Float CudaVectorImpl<T>::inner(const CudaVectorImpl<T>& other) const {
-    return thrust::inner_product(this->_impl->begin(),
-                                 this->_impl->end(),
+CudaVectorImpl<T>::Float CudaVectorImpl<T>::inner(
+    const CudaVectorImpl<T>& other) const {
+    return thrust::inner_product(this->_impl->begin(), this->_impl->end(),
                                  other._impl->begin(),
                                  CudaVectorImpl<T>::Float(0));
 }
@@ -218,21 +220,15 @@ CudaVectorImpl<T>::Float CudaVectorImpl<T>::inner(const CudaVectorImpl<T>& other
 template <typename T>
 void CudaVectorImpl<T>::multiply(const CudaVectorImpl<T>& x,
                                  const CudaVectorImpl<T>& y) {
-    thrust::transform(x._impl->begin(),
-                      x._impl->end(),
-                      y._impl->begin(),
-                      this->_impl->begin(),
-                      thrust::multiplies<T>{});
+    thrust::transform(x._impl->begin(), x._impl->end(), y._impl->begin(),
+                      this->_impl->begin(), thrust::multiplies<T>{});
 }
 
 template <typename T>
 void CudaVectorImpl<T>::divide(const CudaVectorImpl<T>& x,
                                const CudaVectorImpl<T>& y) {
-    thrust::transform(x._impl->begin(),
-                      x._impl->end(),
-                      y._impl->begin(),
-                      this->_impl->begin(),
-                      thrust::divides<T>{});
+    thrust::transform(x._impl->begin(), x._impl->end(), y._impl->begin(),
+                      this->_impl->begin(), thrust::divides<T>{});
 }
 
 template <typename T>
@@ -244,8 +240,7 @@ CudaVectorImpl<T> CudaVectorImpl<T>::copy() const {
 
 template <typename T>
 bool CudaVectorImpl<T>::allEqual(const CudaVectorImpl<T>& other) const {
-    return thrust::equal(this->_impl->begin(),
-                         this->_impl->end(),
+    return thrust::equal(this->_impl->begin(), this->_impl->end(),
                          other._impl->begin());
 }
 

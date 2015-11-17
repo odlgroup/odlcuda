@@ -1,3 +1,5 @@
+#pragma once
+
 struct sliceHelper {
     sliceHelper(const slice& index, ptrdiff_t n) : arraySize(n) {
         extract<ptrdiff_t> stepIn(index.step());
@@ -13,13 +15,11 @@ struct sliceHelper {
             if (step > 0) {
                 start = startIn();
                 if (start < 0) start += n;
-            }
-            else {
+            } else {
                 start = startIn() + 1;
                 if (start <= 0) start += n;
             }
-        }
-        else if (step > 0)
+        } else if (step > 0)
             start = 0;
         else
             start = n;
@@ -29,13 +29,11 @@ struct sliceHelper {
             if (step > 0) {
                 stop = stopIn();
                 if (stop < 0) stop += n;
-            }
-            else {
+            } else {
                 stop = stopIn() + 1;
                 if (stop <= 0) stop += n;
             }
-        }
-        else if (step > 0)
+        } else if (step > 0)
             stop = n;
         else
             stop = 0;
@@ -46,7 +44,7 @@ struct sliceHelper {
             numel = std::max<ptrdiff_t>(0, 1 + (stop - start - 1) / step);
         else
             numel =
-            std::max<ptrdiff_t>(0, 1 + (start - stop - 1) / std::abs(step));
+                std::max<ptrdiff_t>(0, 1 + (start - stop - 1) / std::abs(step));
 
         if (start < 0 || stop > arraySize)
             throw std::out_of_range("Slice index out of range");
@@ -54,7 +52,7 @@ struct sliceHelper {
 
     friend std::ostream& operator<<(std::ostream& ss, const sliceHelper& sh) {
         return ss << "Slice, start: " << sh.start << ", stop: " << sh.stop
-            << ", step: " << sh.step << ", numel: " << sh.numel;
+                  << ", step: " << sh.step << ", numel: " << sh.numel;
     }
     ptrdiff_t start, stop, step, numel, arraySize;
 };

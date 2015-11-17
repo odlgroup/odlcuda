@@ -4,8 +4,8 @@
 #include <sstream>
 #include <type_traits>
 
-#include <ODLpp/DeviceVector.h>
-#include <ODLpp/CudaVectorImpl.h>
+#include <odlpp/cuda/DeviceVector.h>
+#include <odlpp/cuda/CudaVectorImpl.h>
 
 // clang-format off
 

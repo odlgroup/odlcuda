@@ -20,10 +20,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 enable_testing ()
 add_definitions(-DCTEST_OUTPUT_ON_FAILURE)
 
-# Add eigen
-find_package(Eigen3 REQUIRED)
-include_directories(SYSTEM ${EIGEN3_INCLUDE_DIR})
-
 # Add cuda
 option(CUDA_ENABLED "Enable CUDA" TRUE)
 if(CUDA_ENABLED)
@@ -94,5 +90,5 @@ if(PYTHON_ENABLED)
 endif(PYTHON_ENABLED)
 
 # Add sub directories as needed
-add_subdirectory (ODLpp)
+add_subdirectory (odlpp)
 add_subdirectory (odl_cpp_utils)

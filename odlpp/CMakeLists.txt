@@ -1,7 +1,3 @@
-include_directories ("${PROJECT_SOURCE_DIR}")
-
-add_subdirectory(odlutils)
-
 if (WIN32)
 	set(FILESTART "")
 	set(FILETYPE "dll")
@@ -14,21 +10,9 @@ else(WIN32)
 	set(TARGET_PY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 endif(WIN32)
 
-set(LIB_NAME "odlpp_utils")
-set(PYTHON_LIBS ${PYTHON_LIBS} ${LIB_NAME})
-add_library(${LIB_NAME} SHARED utils.cpp)
-set_property(TARGET ${LIB_NAME} PROPERTY FOLDER python)
-target_link_libraries(${LIB_NAME} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} odlutils)
-
-if (CUDA_ENABLED)
-	set(LIB_NAME "odlpp_cuda")
-	set(PYTHON_LIBS ${PYTHON_LIBS} ${LIB_NAME})
-	cuda_include_directories ("${PROJECT_SOURCE_DIR}")
-    CUDA_ADD_LIBRARY(${LIB_NAME} SHARED "cuda.cpp" "cuda.cu" "DeviceVector.h" "DeviceVectorImpl.h" "CudaVector.h" "CudaVectorImpl.h" "CudaVectorImpl.cu" "SliceHelper.h" "TypeMacro.h" "UFunc.h" "UFunc.cu")
-	# CUDA_ADD_CUBLAS_TO_TARGET( ${LIB_NAME} ) possibly needed
-	set_property(TARGET ${LIB_NAME} PROPERTY FOLDER python)
-	target_link_libraries(${LIB_NAME} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
-endif()
+if(CUDA_ENABLED)
+    set(PYTHON_LIBS ${PYTHON_LIBS} "odlpp_cuda")
+endif(CUDA_ENABLED)
 
 set(INSTALL_LIB "pyinstall")
 add_custom_target(${INSTALL_LIB} COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py ${TARGET_PY}/__init__.py)
@@ -42,3 +26,5 @@ endforeach()
 add_custom_command(TARGET ${INSTALL_LIB} COMMAND cd ${TARGET_PY} && python ${CMAKE_CURRENT_SOURCE_DIR}/setup.py install)
 
 add_dependencies(${INSTALL_LIB} ${PYTHON_LIBS})
+
+add_subdirectory(cuda)

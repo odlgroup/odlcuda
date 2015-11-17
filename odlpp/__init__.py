@@ -16,6 +16,5 @@
 # along with ODL.  If not, see <http://www.gnu.org/licenses/>.
 
 import odlpp_cuda
-import odlpp_utils
 
 # __all__ = ['']

@@ -11,17 +11,19 @@
 #include <iostream>
 
 // ODL
-#include <ODLpp/UFunc.h>
-#include <ODLpp/DeviceVectorImpl.h>
-#include <ODLpp/CudaVectorImpl.h>
+#include <odlpp/cuda/UFunc.h>
+#include <odlpp/cuda/DeviceVectorImpl.h>
+#include <odlpp/cuda/CudaVectorImpl.h>
 
 // Utils
 #include <math.h>
 
 // Instantiate the methods for each type
 template <typename Tin, typename Tout, typename F>
-void apply_transform(const CudaVectorImpl<Tin>& in, CudaVectorImpl<Tout>& out, F f) {
-    thrust::transform(in._impl->begin(), in._impl->end(), out._impl->begin(), f);
+void apply_transform(const CudaVectorImpl<Tin>& in, CudaVectorImpl<Tout>& out,
+                     F f) {
+    thrust::transform(in._impl->begin(), in._impl->end(), out._impl->begin(),
+                      f);
 }
 
 struct functor_sign {

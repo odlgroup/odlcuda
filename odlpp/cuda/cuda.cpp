@@ -14,10 +14,10 @@
 #include <numpy/arrayobject.h>
 
 #include <odl_cpp_utils/python/numpy_utils.h>
-#include <ODLpp/DeviceVector.h>
-#include <ODLpp/UFunc.h>
-#include <ODLpp/TypeMacro.h>
-#include <ODLpp/CudaVector.h>
+#include <odlpp/cuda/DeviceVector.h>
+#include <odlpp/cuda/UFunc.h>
+#include <odlpp/cuda/TypeMacro.h>
+#include <odlpp/cuda/CudaVector.h>
 
 using namespace boost::python;
 
@@ -54,17 +54,15 @@ extern void divideVectorVectorImpl(const DeviceVector<float>& dividend,
                                    const DeviceVector<float>& divisor,
                                    DeviceVector<float>& quotient);
 
-extern void addScalarImpl(const DeviceVector<float>& v1, float scalar, DeviceVector<float>& out);
+extern void addScalarImpl(const DeviceVector<float>& v1, float scalar,
+                          DeviceVector<float>& out);
 
 extern void gaussianBlurImpl(const DeviceVector<float>& image,
                              DeviceVector<float>& out,
                              DeviceVector<float>& temporary,
-                             const int image_width,
-                             const int image_height,
-                             const float sigma_x,
-                             const float sigma_y,
-                             const int kernel_width,
-                             const int kernel_height);
+                             const int image_width, const int image_height,
+                             const float sigma_x, const float sigma_y,
+                             const int kernel_width, const int kernel_height);
 
 // Functions
 void convolution(const CudaVectorImpl<float>& source,
@@ -120,56 +118,47 @@ void addScalar(const CudaVectorImpl<float>& source, float scalar,
 
 extern void gaussianBlur(const CudaVectorImpl<float>& image,
                          CudaVectorImpl<float>& temporary,
-                         CudaVectorImpl<float>& out,
-                         const int image_width,
-                         const int image_height,
-                         const float sigma_x,
-                         const float sigma_y,
-                         const int kernel_width,
+                         CudaVectorImpl<float>& out, const int image_width,
+                         const int image_height, const float sigma_x,
+                         const float sigma_y, const int kernel_width,
                          const int kernel_height) {
-    gaussianBlurImpl(image,
-                     temporary,
-                     out,
-                     image_width,
-                     image_height,
-                     sigma_x,
-                     sigma_y,
-                     kernel_width,
-                     kernel_height);
+    gaussianBlurImpl(image, temporary, out, image_width, image_height, sigma_x,
+                     sigma_y, kernel_width, kernel_height);
 }
 
 float sumVector(const CudaVectorImpl<float>& source) { return sumImpl(source); }
 
 template <typename T>
 void instantiateCudaVector(const std::string& name) {
-    auto cls = class_<CudaVectorImpl<T>>(name.c_str(), "Documentation", init<size_t>())
-                   .def(init<size_t, T>())
-                   .def("from_pointer", &fromPointer<T>)
-                   .staticmethod("from_pointer")
-                   .def("copy", &CudaVectorImpl<T>::copy)
-                   .def(self_ns::str(self_ns::self))
-                   .def("__repr__", &repr<T>)
-                   .def("data_ptr", &CudaVectorImpl<T>::dataPtr)
-                   .add_property("dtype", &dtype<T>)
-                   .add_property("shape", &shape<T>)
-                   .add_property("size", &CudaVectorImpl<T>::size)
-                   .add_property("itemsize", &itemsize<T>)
-                   .add_property("nbytes", &nbytes<T>)
-                   .def("__len__", &CudaVectorImpl<T>::size)
-                   .def("__eq__", &CudaVectorImpl<T>::allEqual)
-                   .def("__getitem__", &CudaVectorImpl<T>::getItem)
-                   .def("__setitem__", &CudaVectorImpl<T>::setItem)
-                   .def("copy_device_to_host", &copyDeviceToHost<T>)
-                   .def("get_to_host", &getSliceToHost<T>)
-                   .def("getslice", &getSliceView<T>)
-                   .def("setslice", &setSlice<T>)
-                   .def("lincomb", &CudaVectorImpl<T>::linComb)
-                   .def("inner", &CudaVectorImpl<T>::inner)
-                   .def("dist", &CudaVectorImpl<T>::dist)
-                   .def("norm", &CudaVectorImpl<T>::norm)
-                   .def("multiply", &CudaVectorImpl<T>::multiply)
-                   .def("divide", &CudaVectorImpl<T>::divide)
-                   .def("fill", &CudaVectorImpl<T>::fill);
+    auto cls =
+        class_<CudaVectorImpl<T>>(name.c_str(), "Documentation", init<size_t>())
+            .def(init<size_t, T>())
+            .def("from_pointer", &fromPointer<T>)
+            .staticmethod("from_pointer")
+            .def("copy", &CudaVectorImpl<T>::copy)
+            .def(self_ns::str(self_ns::self))
+            .def("__repr__", &repr<T>)
+            .def("data_ptr", &CudaVectorImpl<T>::dataPtr)
+            .add_property("dtype", &dtype<T>)
+            .add_property("shape", &shape<T>)
+            .add_property("size", &CudaVectorImpl<T>::size)
+            .add_property("itemsize", &itemsize<T>)
+            .add_property("nbytes", &nbytes<T>)
+            .def("__len__", &CudaVectorImpl<T>::size)
+            .def("__eq__", &CudaVectorImpl<T>::allEqual)
+            .def("__getitem__", &CudaVectorImpl<T>::getItem)
+            .def("__setitem__", &CudaVectorImpl<T>::setItem)
+            .def("copy_device_to_host", &copyDeviceToHost<T>)
+            .def("get_to_host", &getSliceToHost<T>)
+            .def("getslice", &getSliceView<T>)
+            .def("setslice", &setSlice<T>)
+            .def("lincomb", &CudaVectorImpl<T>::linComb)
+            .def("inner", &CudaVectorImpl<T>::inner)
+            .def("dist", &CudaVectorImpl<T>::dist)
+            .def("norm", &CudaVectorImpl<T>::norm)
+            .def("multiply", &CudaVectorImpl<T>::multiply)
+            .def("divide", &CudaVectorImpl<T>::divide)
+            .def("fill", &CudaVectorImpl<T>::fill);
 
 #define X(fun) cls.def(#fun, &ufunc_##fun<T, T>);
     ODLPP_FOR_EACH_UFUNC
@@ -178,7 +167,7 @@ void instantiateCudaVector(const std::string& name) {
 
 // Expose classes and methods to Python
 BOOST_PYTHON_MODULE(odlpp_cuda) {
-    auto result = _import_array(); // Import numpy
+    auto result = _import_array();  // Import numpy
     if (result != 0) {
         PyErr_Print();
         throw std::invalid_argument("numpy.core.multiarray failed to import");
