@@ -48,7 +48,7 @@ endif()
 # Enable c++11
 if (MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4251 /bigobj")
-    if (MSVC_VERSION == 1700)
+    if (MSVC_VERSION STREQUAL "1700")
         add_definitions(-DODL_MSVC_2012)
     endif()
 else()
