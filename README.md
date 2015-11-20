@@ -20,11 +20,9 @@ Start by going the the directory where you want your binaries and run,
 
     cmake-gui PATH_TO_SOURCE
 
-And then set the required variables, to build, run
+Set the required variables.
 
-    make
-
-To install the package to your python installation, run (as root)
+To build and install the package to your python installation, run (as root)
 
     make pyinstall
 
@@ -82,17 +80,31 @@ Troublefinding
 There are a few common errors encountered, this is the solution to some of these
 
 ## Installation
-* If, when compiling, you get a error like
+* When compiling if, you get a error like
 
         NumpyConfig.h not found
 
     then it is likely that the variable `PYTHON_NUMPY_INCLUDE_DIR` is not correctly set.
 
-* If, when compiling, you get an error that begins with
+* Compiling
+
+        error C1083: Cannot open include file: 'Eigen/Core': No such file or directory.
+
+    you have tried to build the default target, instead build target "pyinstall".
+
+
+* Compiling
 
         [ 20%] Building NVCC (Device) object ODLpp/CMakeFiles/cuda.dir//./cuda_generated_cuda.cu.o /usr/include/c++/4.9.2/bits/alloc_traits.h(248): error: expected a ">"
 
     It may be that you are trying to compile with CUDA 6.5 and GCC 4.9, this combination is not supported by CUDA.
+
+* Compiling
+
+        error LNK1112: module machine type 'x64' conflicts with target machine type 'X86'
+
+    You have a 64-bit library on your path (Boost for instance) while trying to build 32-bit odlpp. Either change the lib, or configure to build 64-bit. On Windows, if you are using Visual Studio to compile use Configuration Manager to set platform to x64, if you are compiling on command line via CMake ensure that the Script Generator is for instance "Visual Studio 12 2013 Win64" (note the Win64 at the end).
+
 
 * If you get a error like
 
