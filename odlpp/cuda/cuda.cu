@@ -40,7 +40,7 @@ __global__ void convKernel(const float* source, const float* kernel,
 
     for (int i = 0; i < len; i++) {
         value += source[i] *
-                 kernel[(len + len / 2 + idx - i) % len];  // Positive modulo
+                 kernel[(len + len / 2 + idx - i) % len]; // Positive modulo
     }
 
     target[idx] = value;
@@ -52,8 +52,7 @@ void convImpl(const DeviceVector<float>& source,
     unsigned dimBlock = 256;
     unsigned dimGrid = narrow_cast<unsigned>(1 + (len / dimBlock));
 
-    convKernel << <dimGrid, dimBlock>>>
-        (source.data(), kernel.data(), target.data(), narrow_cast<int>(len));
+    convKernel<<<dimGrid, dimBlock>>>(source.data(), kernel.data(), target.data(), narrow_cast<int>(len));
     CUDA_KERNEL_ERRCHECK;
 }
 
@@ -71,8 +70,7 @@ void forwardDifferenceImpl(const DeviceVector<float>& source,
     unsigned dimGrid(
         std::min<unsigned>(128, narrow_cast<unsigned>(1 + (len / dimBlock))));
 
-    forwardDifferenceKernel << <dimBlock, dimGrid>>>
-        (narrow_cast<int>(len), source.data(), target.data());
+    forwardDifferenceKernel<<<dimBlock, dimGrid>>>(narrow_cast<int>(len), source.data(), target.data());
     CUDA_KERNEL_ERRCHECK;
 }
 
@@ -91,8 +89,7 @@ void forwardDifferenceAdjointImpl(const DeviceVector<float>& source,
     unsigned dimGrid(
         std::min<unsigned>(128u, narrow_cast<unsigned>(1 + (len / dimBlock))));
 
-    forwardDifferenceAdjointKernel << <dimBlock, dimGrid>>>
-        (narrow_cast<int>(len), source.data(), target.data());
+    forwardDifferenceAdjointKernel<<<dimBlock, dimGrid>>>(narrow_cast<int>(len), source.data(), target.data());
     CUDA_KERNEL_ERRCHECK;
 }
 
@@ -151,8 +148,7 @@ void forwardDifference2DImpl(const DeviceVector<float>& source,
     dim3 dimBlock(32, 32);
     dim3 dimGrid(32, 32);
 
-    forwardDifference2DKernel << <dimGrid, dimBlock>>>
-        (cols, rows, source.data(), dx.data(), dy.data());
+    forwardDifference2DKernel<<<dimGrid, dimBlock>>>(cols, rows, source.data(), dx.data(), dy.data());
     CUDA_KERNEL_ERRCHECK;
 }
 
@@ -179,18 +175,17 @@ void forwardDifference2DAdjointImpl(const DeviceVector<float>& dx,
     dim3 dimBlock(32, 32);
     dim3 dimGrid(32, 32);
 
-    forwardDifference2DAdjointKernel << <dimGrid, dimBlock>>>
-        (cols, rows, dx.data(), dy.data(), target.data());
+    forwardDifference2DAdjointKernel<<<dimGrid, dimBlock>>>(cols, rows, dx.data(), dy.data(), target.data());
     CUDA_KERNEL_ERRCHECK;
 }
 
 #define PI 3.141592653589793f
 
 __global__ void gaussianBlurXkernel(const float* source, float* target,
-                                    const int2 imageSize, float sigma_x,
+                                    const uint2 imageSize, float sigma_x,
                                     int kernel_width) {
-    int2 id{blockIdx.x * blockDim.x + threadIdx.x,
-            blockIdx.y * blockDim.y + threadIdx.y};
+    uint2 id{blockIdx.x * blockDim.x + threadIdx.x,
+             blockIdx.y * blockDim.y + threadIdx.y};
 
     if (id.x >= imageSize.x || id.y >= imageSize.y) return;
 
@@ -210,15 +205,15 @@ __global__ void gaussianBlurXkernel(const float* source, float* target,
         value += fx * source[point_id];
     }
 
-    int idx = id.x + imageSize.x * id.y;
+    unsigned idx = id.x + imageSize.x * id.y;
     target[idx] = value;
 }
 
 __global__ void gaussianBlurYkernel(const float* source, float* target,
-                                    const int2 imageSize, float sigma_y,
+                                    const uint2 imageSize, float sigma_y,
                                     int kernel_height) {
-    int2 id{blockIdx.x * blockDim.x + threadIdx.x,
-            blockIdx.y * blockDim.y + threadIdx.y};
+    uint2 id{blockIdx.x * blockDim.x + threadIdx.x,
+             blockIdx.y * blockDim.y + threadIdx.y};
 
     if (id.x >= imageSize.x || id.y >= imageSize.y) return;
 
@@ -238,7 +233,7 @@ __global__ void gaussianBlurYkernel(const float* source, float* target,
         value += fx * source[point_id];
     }
 
-    int idx = id.x + imageSize.x * id.y;
+    unsigned idx = id.x + imageSize.x * id.y;
     target[idx] = value;
 }
 
@@ -251,12 +246,17 @@ void gaussianBlurImpl(const DeviceVector<float>& image,
     dim3 dimGrid(narrow_cast<unsigned>(1 + (image_width / dimBlock.x)),
                  narrow_cast<unsigned>(1 + (image_height / dimBlock.y)));
 
-    gaussianBlurXkernel << <dimGrid, dimBlock>>>
-        (image.data(), temporary.data(), int2{image_width, image_height},
-         sigma_x, kernel_width);
+    gaussianBlurXkernel<<<dimGrid, dimBlock>>>(image.data(),
+                                               temporary.data(),
+                                               uint2{narrow_cast<unsigned>(image_width),
+                                                     narrow_cast<unsigned>(image_height)},
+                                               sigma_x, kernel_width);
     CUDA_KERNEL_ERRCHECK;
-    gaussianBlurYkernel << <dimGrid, dimBlock>>>
-        (temporary.data(), out.data(), int2{image_width, image_height}, sigma_y,
-         kernel_height);
+    gaussianBlurYkernel<<<dimGrid, dimBlock>>>(temporary.data(),
+                                               out.data(),
+                                               uint2{narrow_cast<unsigned>(image_width),
+                                                     narrow_cast<unsigned>(image_height)},
+                                               sigma_y,
+                                               kernel_height);
     CUDA_KERNEL_ERRCHECK;
 }
