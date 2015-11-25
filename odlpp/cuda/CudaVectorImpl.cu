@@ -180,25 +180,90 @@ void CudaVectorImpl<T>::linComb(Scalar a, const CudaVectorImpl<T>& x, Scalar b,
     linCombImpl(*this->_impl, a, *x._impl, b, *y._impl);
 }
 
-template <typename T, typename Scalar>
+// dist
+
+template <typename T>
 struct DistanceFunctor {
-    __host__ __device__ double operator()(const thrust::tuple<T, T>& f) const {
-        return static_cast<Scalar>((thrust::get<0>(f) - thrust::get<1>(f)) *
-                                   (thrust::get<0>(f) - thrust::get<1>(f)));
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    __host__ __device__ RealFloat
+    operator()(const thrust::tuple<T, T>& f) const {
+        return static_cast<RealFloat>((thrust::get<0>(f) - thrust::get<1>(f)) *
+                                      (thrust::get<0>(f) - thrust::get<1>(f)));
     }
 };
-
 template <typename T>
 CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist(
     const CudaVectorImpl<T>& other) const {
     auto first = thrust::make_zip_iterator(
         thrust::make_tuple(this->_impl->begin(), other._impl->begin()));
     auto last = first + this->size();
+
     return sqrt(thrust::transform_reduce(
-        first, last, DistanceFunctor<T, CudaVectorImpl<T>::RealFloat>{},
-        CudaVectorImpl<T>::RealFloat(0),
+        first, last, DistanceFunctor<T>{}, CudaVectorImpl<T>::RealFloat(0),
         thrust::plus<CudaVectorImpl<T>::RealFloat>{}));
 }
+
+template <typename T>
+struct DistanceFunctorPower {
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    RealFloat _power;
+
+    DistanceFunctorPower(RealFloat power) : _power(power) {}
+
+    __host__ __device__ RealFloat
+    operator()(const thrust::tuple<T, T>& f) const {
+        return pow(static_cast<RealFloat>(
+                       fabsf(thrust::get<0>(f) - thrust::get<1>(f))),
+                   _power);
+    }
+};
+template <typename T>
+CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist_power(
+    const CudaVectorImpl<T>& other, CudaVectorImpl<T>::RealFloat power) const {
+    auto first = thrust::make_zip_iterator(
+        thrust::make_tuple(this->_impl->begin(), other._impl->begin()));
+    auto last = first + this->size();
+    auto dist_func = DistanceFunctorPower<T>(power);
+
+    return pow(thrust::transform_reduce(
+                   first, last, dist_func, CudaVectorImpl<T>::RealFloat(0),
+                   thrust::plus<CudaVectorImpl<T>::RealFloat>{}),
+               1.0 / power);
+}
+
+template <typename T>
+struct DistanceFunctorWeighted {
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    RealFloat _power;
+
+    DistanceFunctorWeighted(RealFloat power) : _power(power) {}
+
+    __host__ __device__ RealFloat
+    operator()(const thrust::tuple<T, T, RealFloat>& f) const {
+        return thrust::get<2>(f) *
+               pow(static_cast<RealFloat>(
+                       fabsf(thrust::get<0>(f) - thrust::get<1>(f))),
+                   _power);
+    }
+};
+template <typename T>
+CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist_weight(
+    const CudaVectorImpl<T>& other, CudaVectorImpl<T>::RealFloat power,
+    const CudaVectorImpl<CudaVectorImpl<T>::RealFloat>& weight) const {
+    auto first = thrust::make_zip_iterator(thrust::make_tuple(
+        this->_impl->begin(), other._impl->begin(), weight._impl->begin()));
+    auto last = first + this->size();
+    auto dist_func = DistanceFunctorWeighted<T>(power);
+    return pow(thrust::transform_reduce(
+                   first, last, dist_func, CudaVectorImpl<T>::RealFloat(0),
+                   thrust::plus<CudaVectorImpl<T>::RealFloat>{}),
+               1.0 / power);
+}
+
+// norm
 
 template <typename T>
 CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm() const {
@@ -210,11 +275,85 @@ CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm() const {
 }
 
 template <typename T>
+struct NormFunctorPower {
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    RealFloat _power;
+
+    NormFunctorPower(RealFloat power) : _power(power) {}
+
+    __host__ __device__ RealFloat operator()(T f) const {
+        return pow(static_cast<RealFloat>(fabsf(f)), _power);
+    }
+};
+template <typename T>
+CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm_power(
+    CudaVectorImpl<T>::RealFloat power) const {
+    auto norm_func = NormFunctorPower<T>(power);
+    return pow(
+        thrust::transform_reduce(this->_impl->begin(), this->_impl->end(),
+                                 norm_func, CudaVectorImpl<T>::RealFloat(0),
+                                 thrust::plus<CudaVectorImpl<T>::RealFloat>{}),
+        1.0 / power);
+}
+
+template <typename T>
+struct NormFunctorWeighted {
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    RealFloat _power;
+
+    NormFunctorWeighted(RealFloat power) : _power(power) {}
+
+    __host__ __device__ RealFloat
+    operator()(const thrust::tuple<T, RealFloat>& f) const {
+        return thrust::get<1>(f) *
+               pow(static_cast<RealFloat>(fabsf(thrust::get<0>(f))), _power);
+    }
+};
+template <typename T>
+CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm_weight(
+    CudaVectorImpl<T>::RealFloat power,
+    const CudaVectorImpl<CudaVectorImpl<T>::RealFloat>& weight) const {
+    auto first = thrust::make_zip_iterator(
+        thrust::make_tuple(this->_impl->begin(), weight._impl->begin()));
+    auto last = first + this->size();
+    auto norm_func = NormFunctorWeighted<T>(power);
+    return pow(thrust::transform_reduce(
+                   first, last, norm_func, CudaVectorImpl<T>::RealFloat(0),
+                   thrust::plus<CudaVectorImpl<T>::RealFloat>{}),
+               1.0 / power);
+}
+
+template <typename T>
 CudaVectorImpl<T>::Float CudaVectorImpl<T>::inner(
     const CudaVectorImpl<T>& other) const {
     return thrust::inner_product(this->_impl->begin(), this->_impl->end(),
                                  other._impl->begin(),
                                  CudaVectorImpl<T>::Float(0));
+}
+
+template <typename T>
+struct InnerFunctorWeighted {
+    using Float = typename CudaVectorImpl<T>::Float;
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    __host__ __device__ RealFloat
+    operator()(const thrust::tuple<T, T, RealFloat>& f) const {
+        return thrust::get<0>(f) * thrust::get<1>(f) * thrust::get<2>(f);
+    }
+};
+template <typename T>
+CudaVectorImpl<T>::Float CudaVectorImpl<T>::inner_weight(
+    const CudaVectorImpl<T>& other,
+    const CudaVectorImpl<CudaVectorImpl<T>::RealFloat>& weight) const {
+    auto first = thrust::make_zip_iterator(thrust::make_tuple(
+        this->_impl->begin(), other._impl->begin(), weight._impl->begin()));
+    auto last = first + this->size();
+    auto inner_func = InnerFunctorWeighted<T>();
+    return thrust::transform_reduce(first, last, inner_func,
+                                    CudaVectorImpl<T>::Float(0),
+                                    thrust::plus<CudaVectorImpl<T>::Float>{});
 }
 
 template <typename T>

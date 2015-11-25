@@ -51,11 +51,25 @@ class CudaVectorImpl {
     // numerical methods
     void linComb(Scalar a, const CudaVectorImpl<T>& x, Scalar b,
                  const CudaVectorImpl<T>& y);
-    RealFloat dist(const CudaVectorImpl<T>& other) const;
-    RealFloat norm() const;
-    Float inner(const CudaVectorImpl<T>& v2) const;
     void multiply(const CudaVectorImpl<T>& v1, const CudaVectorImpl<T>& v2);
     void divide(const CudaVectorImpl<T>& v1, const CudaVectorImpl<T>& v2);
+
+    // dist
+    RealFloat dist(const CudaVectorImpl<T>& other) const;
+    RealFloat dist_power(const CudaVectorImpl<T>& other, RealFloat power) const;
+    RealFloat dist_weight(const CudaVectorImpl<T>& other, RealFloat power,
+                          const CudaVectorImpl<RealFloat>& weight) const;
+
+    // norm
+    RealFloat norm() const;
+    RealFloat norm_power(RealFloat power) const;
+    RealFloat norm_weight(RealFloat power,
+                          const CudaVectorImpl<RealFloat>& weight) const;
+
+    // inner
+    Float inner(const CudaVectorImpl<T>& v2) const;
+    Float inner_weight(const CudaVectorImpl<T>& v2,
+                       const CudaVectorImpl<RealFloat>& weight) const;
 
     // Convenience methods
     CudaVectorImpl<T> copy() const;

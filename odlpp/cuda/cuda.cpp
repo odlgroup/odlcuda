@@ -130,6 +130,7 @@ float sumVector(const CudaVectorImpl<float>& source) { return sumImpl(source); }
 
 template <typename T>
 void instantiateCudaVector(const std::string& name) {
+    using Float = typename CudaVectorImpl<T>::Float;
     auto cls =
         class_<CudaVectorImpl<T>>(name.c_str(), "Documentation", init<size_t>())
             .def(init<size_t, T>())
@@ -153,12 +154,19 @@ void instantiateCudaVector(const std::string& name) {
             .def("getslice", &getSliceView<T>)
             .def("setslice", &setSlice<T>)
             .def("lincomb", &CudaVectorImpl<T>::linComb)
+            .def("fill", &CudaVectorImpl<T>::fill)
+            .def("dist", &CudaVectorImpl<T>::dist)
+            .def("dist_power", &CudaVectorImpl<T>::dist_power)
+            .def("dist_weight", &CudaVectorImpl<T>::dist_weight)
+            .def("norm", &CudaVectorImpl<T>::norm)
+            .def("norm_power", &CudaVectorImpl<T>::norm_power)
+            .def("norm_weight", &CudaVectorImpl<T>::norm_weight)
             .def("inner", &CudaVectorImpl<T>::inner)
+            .def("inner_weight", &CudaVectorImpl<T>::inner_weight)
             .def("dist", &CudaVectorImpl<T>::dist)
             .def("norm", &CudaVectorImpl<T>::norm)
             .def("multiply", &CudaVectorImpl<T>::multiply)
-            .def("divide", &CudaVectorImpl<T>::divide)
-            .def("fill", &CudaVectorImpl<T>::fill);
+            .def("divide", &CudaVectorImpl<T>::divide);
 
 #define X(fun) cls.def(#fun, &ufunc_##fun<T, T>);
     ODLPP_FOR_EACH_UFUNC
