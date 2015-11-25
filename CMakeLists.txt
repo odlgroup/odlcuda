@@ -90,4 +90,7 @@ link_directories(${PYTHON_LIBRARIES})
 
 # Add sub directories as needed
 add_subdirectory (odlpp)
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/odl_cpp_utils/CMakeLists.txt")
+    message(SEND_ERROR "odl_cpp_utils not initialized. Run 'git submodule update --init'." )
+endif()
 add_subdirectory (odl_cpp_utils)
