@@ -26,6 +26,12 @@ To build and install the package to your python installation, run (as root)
 
     make pyinstall
 
+To verify your installation, run (in the odlpp directory)
+
+    py.test
+
+This requires the [pytest](http://pytest.org/latest/) package.
+
 #### Windows
 
 To build on windows, open the CMake gui, run configure-generate and set the required variables. Then open the project with Visual Studio and build `pyinstall`.
