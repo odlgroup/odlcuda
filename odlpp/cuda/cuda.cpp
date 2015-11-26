@@ -169,13 +169,13 @@ void instantiateCudaVector(const std::string& name) {
             .def("divide", &CudaVectorImpl<T>::divide);
 
 #define X(fun) cls.def(#fun, &ufunc_##fun<T, T>);
-    ODLPP_FOR_EACH_UFUNC
+    ODL_CUDA_FOR_EACH_UFUNC
 #undef X
 }
 
 // Expose classes and methods to Python
 BOOST_PYTHON_MODULE(odlpp_cuda) {
-    auto result = _import_array();  // Import numpy
+    auto result = _import_array(); // Import numpy
     if (result != 0) {
         PyErr_Print();
         throw std::invalid_argument("numpy.core.multiarray failed to import");
@@ -196,6 +196,6 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
 
 // Instatiate according to numpy
 #define X(type, name) instantiateCudaVector<type>(name);
-    ODLPP_FOR_EACH_TYPE
+    ODL_CUDA_FOR_EACH_TYPE
 #undef X
 }

@@ -33,7 +33,7 @@ struct functor_sign {
 };
 template <>
 void ufunc_sign(const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {
-    apply_transform(in, out, functor_sign{});
+    apply_transform(in, out, functor_sign());
 }
 
 // clang-format off
@@ -44,7 +44,7 @@ struct functor_##fun{                                                           
     }                                                                                           \
 };                                                                                              \
 template <> void ufunc_##fun (const CudaVectorImpl<float>& in, CudaVectorImpl<float>& out) {    \
-    apply_transform(in, out, functor_##fun{});                                                  \
+    apply_transform(in, out, functor_##fun());                                                  \
 }
 
 ODL_DEFINE_FLOAT_UFUNC(sin, sinf)

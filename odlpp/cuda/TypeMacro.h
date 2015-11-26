@@ -1,8 +1,9 @@
 #pragma once
 
-#if 1
+// flag set by CMake
+#if ODL_CUDA_COMPILE_ALL_TYPES
 // full compile
-#define ODLPP_FOR_EACH_TYPE         \
+#define ODL_CUDA_FOR_EACH_TYPE      \
     X(int8_t, "CudaVectorInt8")     \
     X(int16_t, "CudaVectorInt16")   \
     X(int32_t, "CudaVectorInt32")   \
@@ -16,7 +17,7 @@
 #else
 
 // debug type compile
-#define ODLPP_FOR_EACH_TYPE       \
+#define ODL_CUDA_FOR_EACH_TYPE    \
     X(uint8_t, "CudaVectorUInt8") \
     X(float, "CudaVectorFloat32")
 #endif

@@ -16,24 +16,26 @@ set_property(GLOBAL PROPERTY USE_FOLDERS true)
 # Create clang compile for YouCompleteMe
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Add test project
-enable_testing ()
-add_definitions(-DCTEST_OUTPUT_ON_FAILURE)
-
 # Add cuda
 option(CUDA_ENABLED "Enable CUDA" TRUE)
 if(CUDA_ENABLED)
 	find_package(CUDA QUIET REQUIRED)
 
-	set(CUDA_COMPUTE "52" CACHE STRING "Cuda compute capability to compile for")
+    set(ODL_CUDA_COMPUTE "52" CACHE STRING "Cuda compute capability to compile for")
 
 	# Pass options to NVCC
-	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_${CUDA_COMPUTE},code=sm_${CUDA_COMPUTE})
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_${ODL_CUDA_COMPUTE},code=sm_${ODL_CUDA_COMPUTE})
 
-	# Rnable fast math
-	option(CUDA_USE_FAST_MATH "Enable fast math in cuda (can decrease precision)" TRUE)
-	if(CUDA_USE_FAST_MATH)
+	# Enable fast math
+    option(ODL_CUDA_USE_FAST_MATH "Enable fast math in cuda (can decrease precision)" TRUE)
+    if(ODL_CUDA_USE_FAST_MATH)
 		set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-use_fast_math)
+	endif()
+
+	# Enable fast math
+    option(ODL_CUDA_COMPILE_ALL_TYPES "Enable compilation of all types in cuda, disable for quicker builds" TRUE)
+    if(ODL_CUDA_COMPILE_ALL_TYPES)
+        add_definitions(-DODL_CUDA_COMPILE_ALL_TYPES)
 	endif()
 endif()
 
