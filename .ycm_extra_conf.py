@@ -1,4 +1,4 @@
-import os 
+import os
 import ycm_core
 from clang_helpers import PrepareClangFlags
 
@@ -72,10 +72,17 @@ def FlagsForFile( filename ):
     # compilation database. See: https://github.com/Valloric/YouCompleteMe/issues/174.
     # We should also resort to a minimum set of flags that work inside the
     # standard library if we can't find the compilation database entry.
+    inFilename = filename
     baseFilename, fileExtension = os.path.splitext(filename)
-    if (fileExtension == '.h'):
-      filename = baseFilename + '.cpp'
- 
+    if (fileExtension == '.h' or fileExtension == '.t'):
+        filename = baseFilename + '.cpp'
+        if not os.path.isfile(filename):
+            filename = os.path.dirname(inFilename)+'/dummy.cpp'
+    elif (fileExtension == '.cpp'):
+        pass
+    else:
+        filename = os.path.dirname(inFilename)+'/dummy.cpp'
+
     # Bear in mind that compilation_info.compiler_flags_ does NOT return a
     # python list, but a "list-like" StringVec object
     # TODO: If we don't find any flags, use the default list of flags provided.
