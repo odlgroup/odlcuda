@@ -31,3 +31,5 @@ build*/
 # Python bytecode
 *.pyc
 
+# OS config files
+.directory
