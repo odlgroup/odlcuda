@@ -17,7 +17,7 @@
     X(arccos) \
     X(log) \
     X(exp) \
-    X(abs) \
+    X(absolute) \
     X(sign) \
     X(sqrt)
 
