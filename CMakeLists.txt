@@ -82,6 +82,7 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 # Find python
 find_package(PythonLibs REQUIRED)
+find_package(PythonInterp REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 
 # Find numpy

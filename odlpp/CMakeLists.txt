@@ -23,7 +23,7 @@ foreach(file_i ${PYTHON_LIBS})
     add_custom_command(TARGET ${INSTALL_LIB} COMMAND ${CMAKE_COMMAND} -E copy ${TARGET_PY}/${FILESTART}${file_i}.${FILETYPE} ${TARGET_PY}/${file_i}.${TARGETFILETYPE})
 endforeach()
 
-add_custom_command(TARGET ${INSTALL_LIB} COMMAND cd ${TARGET_PY} && python ${CMAKE_CURRENT_SOURCE_DIR}/setup.py install)
+add_custom_command(TARGET ${INSTALL_LIB} COMMAND cd ${TARGET_PY} && ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/setup.py install)
 
 add_dependencies(${INSTALL_LIB} ${PYTHON_LIBS})
 
