@@ -32,5 +32,14 @@ def test_get_set(vector_type):
     vec[0] = 3
     assert vec[0] == 3
 
+
+def test_sum():
+    vec = cuda.CudaVectorFloat32(3)
+    vec[0] = 1
+    vec[1] = 2
+    vec[2] = 3
+    assert vec.sum() == 6.0
+    
+    
 if __name__ == '__main__':
     pytest.main(str(__file__.replace('\\', '/') + ' -v'))

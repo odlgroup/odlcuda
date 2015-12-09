@@ -18,6 +18,7 @@
 // ODL
 #include <odlpp/cuda/DeviceVectorImpl.h>
 #include <odlpp/cuda/TypeMacro.h>
+#include <odlpp/cuda/CudaVectorImpl.h>
 
 // Utils
 #include <odl_cpp_utils/cuda/thrustUtils.h>
@@ -25,10 +26,6 @@
 #include <odl_cpp_utils/cuda/cutil_math.h>
 #include <odl_cpp_utils/cuda/errcheck.h>
 
-// Reductions
-float sumImpl(const DeviceVector<float>& v) {
-    return thrust::reduce(v.begin(), v.end());
-}
 
 __global__ void convKernel(const float* source, const float* kernel,
                            float* target, const int len) {

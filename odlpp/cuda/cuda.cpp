@@ -16,15 +16,13 @@
 #include <odl_cpp_utils/python/numpy_utils.h>
 #include <odlpp/cuda/DeviceVector.h>
 #include <odlpp/cuda/UFunc.h>
+#include <odlpp/cuda/Reduction.h>
 #include <odlpp/cuda/TypeMacro.h>
 #include <odlpp/cuda/CudaVector.h>
 
 using namespace boost::python;
 
 // Externally (CUDA) compiled
-
-// Reductions
-extern float sumImpl(const DeviceVector<float>& v);
 
 // Functions
 extern void convImpl(const DeviceVector<float>& source,
@@ -126,8 +124,6 @@ extern void gaussianBlur(const CudaVectorImpl<float>& image,
                      sigma_y, kernel_width, kernel_height);
 }
 
-float sumVector(const CudaVectorImpl<float>& source) { return sumImpl(source); }
-
 template <typename T>
 void instantiateCudaVector(const std::string& name) {
     using Float = typename CudaVectorImpl<T>::Float;
@@ -171,6 +167,10 @@ void instantiateCudaVector(const std::string& name) {
 #define X(fun) cls.def(#fun, &ufunc_##fun<T, T>);
     ODL_CUDA_FOR_EACH_UFUNC
 #undef X
+
+#define X(fun) cls.def(#fun, &reduction_##fun<T>);
+    ODL_CUDA_FOR_EACH_REDUCTION
+#undef X
 }
 
 // Expose classes and methods to Python
@@ -191,7 +191,6 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     def("max_vector_scalar", maxVectorScalar);
     def("divide_vector_vector", divideVectorVector);
     def("add_scalar", addScalar);
-    def("sum", sumVector);
     def("gaussianBlur", gaussianBlur);
 
 // Instatiate according to numpy
