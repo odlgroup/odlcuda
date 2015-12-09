@@ -27,7 +27,7 @@ float reduction_sum(const CudaVectorImpl<float>& v) {
 
 template <>
 float reduction_prod(const CudaVectorImpl<float>& v) {
-    return thrust::reduce(v._impl->begin(), v._impl->end(), 1, thrust::multiplies<float>());
+    return thrust::reduce(v._impl->begin(), v._impl->end(), 1.0f, thrust::multiplies<float>());
 }
 
 template <>
