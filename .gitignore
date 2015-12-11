@@ -22,6 +22,7 @@
 
 # Build folder
 build*/
+.cache/*
 
 # Temporary vim files
 *.swp
@@ -29,3 +30,6 @@ build*/
 
 # Python bytecode
 *.pyc
+
+# OS config files
+.directory

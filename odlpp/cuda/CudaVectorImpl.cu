@@ -86,8 +86,8 @@ CudaVectorImpl<T>::CudaVectorImpl(DeviceVectorPtr<T> impl)
     : _impl(impl) {}
 
 template <typename T>
-DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(uintptr_t ptr, size_t size,
-                                                  ptrdiff_t stride) {
+DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(
+    uintptr_t ptr, size_t size, ptrdiff_t stride) {
     return std::make_shared<WrapperDeviceVector<T>>(reinterpret_cast<T*>(ptr),
                                                     size, stride);
 }
@@ -100,14 +100,14 @@ void CudaVectorImpl<T>::validateIndex(ptrdiff_t index) const {
 
 template <typename T>
 T CudaVectorImpl<T>::getItem(ptrdiff_t index) const {
-    if (index < 0) index += size();  // Handle negative indexes like python
+    if (index < 0) index += size(); // Handle negative indexes like python
     validateIndex(index);
     return _impl->operator[](index);
 }
 
 template <typename T>
 void CudaVectorImpl<T>::setItem(ptrdiff_t index, T value) {
-    if (index < 0) index += size();  // Handle negative indexes like python
+    if (index < 0) index += size(); // Handle negative indexes like python
     validateIndex(index);
     _impl->operator[](index) = value;
 }
@@ -117,58 +117,58 @@ void linCombImpl(DeviceVector<T>& z, Scalar a, const DeviceVector<T>& x,
                  Scalar b, const DeviceVector<T>& y) {
     namespace ph = thrust::placeholders;
 
-#if 1  // Efficient
+#if 1 // Efficient
     if (a == Scalar(0)) {
-        if (b == Scalar(0)) {  // z = 0
+        if (b == Scalar(0)) { // z = 0
             thrust::fill(z.begin(), z.end(), T(0));
-        } else if (b == Scalar(1)) {  // z = y
+        } else if (b == Scalar(1)) { // z = y
             thrust::copy(y.begin(), y.end(), z.begin());
-        } else if (b == -Scalar(1)) {  // y = -y
+        } else if (b == -Scalar(1)) { // y = -y
             thrust::transform(y.begin(), y.end(), z.begin(), -ph::_1);
-        } else {  // y = b*y
+        } else { // y = b*y
             thrust::transform(y.begin(), y.end(), z.begin(), b * ph::_1);
         }
     } else if (a == Scalar(1)) {
-        if (b == Scalar(0)) {  // z = x
+        if (b == Scalar(0)) { // z = x
             thrust::copy(x.begin(), x.end(), z.begin());
-        } else if (b == Scalar(1)) {  // z = x+y
+        } else if (b == Scalar(1)) { // z = x+y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
-                              thrust::plus<T>{});
-        } else if (b == -Scalar(1)) {  // z = x-y
+                              thrust::plus<T>());
+        } else if (b == -Scalar(1)) { // z = x-y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
-                              thrust::minus<T>{});
-        } else {  // z = x + b*y
+                              thrust::minus<T>());
+        } else { // z = x + b*y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               ph::_1 + b * ph::_2);
         }
     } else if (a == -Scalar(1)) {
-        if (b == Scalar(0)) {  // z = -x
+        if (b == Scalar(0)) { // z = -x
             thrust::transform(x.begin(), x.end(), z.begin(), -ph::_1);
-        } else if (b == Scalar(1)) {  // z = -x+y
+        } else if (b == Scalar(1)) { // z = -x+y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               -ph::_1 + ph::_2);
-        } else if (b == -Scalar(1)) {  // z = -x-y
+        } else if (b == -Scalar(1)) { // z = -x-y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               -ph::_1 - ph::_2);
-        } else {  // z = -x + b*y
+        } else { // z = -x + b*y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               -ph::_1 + b * ph::_2);
         }
     } else {
-        if (b == Scalar(0)) {  // z = a*x
+        if (b == Scalar(0)) { // z = a*x
             thrust::transform(x.begin(), x.end(), z.begin(), a * ph::_1);
-        } else if (b == Scalar(1)) {  // z = a*x+y
+        } else if (b == Scalar(1)) { // z = a*x+y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               a * ph::_1 + ph::_2);
-        } else if (b == -Scalar(1)) {  // z = a*x-y
+        } else if (b == -Scalar(1)) { // z = a*x-y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               a * ph::_1 - ph::_2);
-        } else {  // z = a*x + b*y
+        } else { // z = a*x + b*y
             thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                               a * ph::_1 + b * ph::_2);
         }
     }
-#else  // Basic
+#else // Basic
     thrust::transform(x.begin(), x.end(), y.begin(), z.begin(),
                       a * ph::_1 + b * ph::_2);
 #endif
@@ -180,25 +180,87 @@ void CudaVectorImpl<T>::linComb(Scalar a, const CudaVectorImpl<T>& x, Scalar b,
     linCombImpl(*this->_impl, a, *x._impl, b, *y._impl);
 }
 
-template <typename T, typename Scalar>
+// dist
+
+template <typename T>
 struct DistanceFunctor {
-    __host__ __device__ double operator()(const thrust::tuple<T, T>& f) const {
-        return static_cast<Scalar>((thrust::get<0>(f) - thrust::get<1>(f)) *
-                                   (thrust::get<0>(f) - thrust::get<1>(f)));
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    __host__ __device__ RealFloat
+    operator()(const thrust::tuple<T, T>& f) const {
+        return static_cast<RealFloat>((thrust::get<0>(f) - thrust::get<1>(f)) *
+                                      (thrust::get<0>(f) - thrust::get<1>(f)));
     }
 };
-
 template <typename T>
 CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist(
     const CudaVectorImpl<T>& other) const {
-    auto first = thrust::make_zip_iterator(
-        thrust::make_tuple(this->_impl->begin(), other._impl->begin()));
+    auto first = thrust::make_zip_iterator(thrust::make_tuple(this->_impl->begin(), other._impl->begin()));
     auto last = first + this->size();
+
     return sqrt(thrust::transform_reduce(
-        first, last, DistanceFunctor<T, CudaVectorImpl<T>::RealFloat>{},
-        CudaVectorImpl<T>::RealFloat(0),
-        thrust::plus<CudaVectorImpl<T>::RealFloat>{}));
+        first, last, DistanceFunctor<T>(), CudaVectorImpl<T>::RealFloat(0),
+        thrust::plus<CudaVectorImpl<T>::RealFloat>()));
 }
+
+template <typename T>
+struct DistanceFunctorPower {
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    RealFloat _power;
+
+    DistanceFunctorPower(RealFloat power) : _power(power) {}
+
+    __host__ __device__ RealFloat
+    operator()(const thrust::tuple<T, T>& f) const {
+        return pow(static_cast<RealFloat>(
+                       fabsf(thrust::get<0>(f) - thrust::get<1>(f))),
+                   _power);
+    }
+};
+template <typename T>
+CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist_power(const CudaVectorImpl<T>& other, CudaVectorImpl<T>::RealFloat power) const {
+    auto first = thrust::make_zip_iterator(thrust::make_tuple(this->_impl->begin(), other._impl->begin()));
+    auto last = first + this->size();
+    auto dist_func = DistanceFunctorPower<T>(power);
+
+    return pow(thrust::transform_reduce(
+                   first, last, dist_func, CudaVectorImpl<T>::RealFloat(0),
+                   thrust::plus<CudaVectorImpl<T>::RealFloat>()),
+               1.0 / power);
+}
+
+template <typename T>
+struct DistanceFunctorWeighted {
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    RealFloat _power;
+
+    DistanceFunctorWeighted(RealFloat power) : _power(power) {}
+
+    __host__ __device__ RealFloat
+    operator()(const thrust::tuple<T, T, RealFloat>& f) const {
+        return thrust::get<2>(f) *
+               pow(static_cast<RealFloat>(
+                       fabsf(thrust::get<0>(f) - thrust::get<1>(f))),
+                   _power);
+    }
+};
+template <typename T>
+CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist_weight(
+    const CudaVectorImpl<T>& other, CudaVectorImpl<T>::RealFloat power,
+    const CudaVectorImpl<CudaVectorImpl<T>::RealFloat>& weight) const {
+    auto first = thrust::make_zip_iterator(thrust::make_tuple(
+        this->_impl->begin(), other._impl->begin(), weight._impl->begin()));
+    auto last = first + this->size();
+    auto dist_func = DistanceFunctorWeighted<T>(power);
+    return pow(thrust::transform_reduce(
+                   first, last, dist_func, CudaVectorImpl<T>::RealFloat(0),
+                   thrust::plus<CudaVectorImpl<T>::RealFloat>()),
+               1.0 / power);
+}
+
+// norm
 
 template <typename T>
 CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm() const {
@@ -206,7 +268,58 @@ CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm() const {
     return sqrt(
         thrust::transform_reduce(this->_impl->begin(), this->_impl->end(),
                                  ph::_1 * ph::_1, CudaVectorImpl<T>::Float(0),
-                                 thrust::plus<CudaVectorImpl<T>::RealFloat>{}));
+                                 thrust::plus<CudaVectorImpl<T>::RealFloat>()));
+}
+
+template <typename T>
+struct NormFunctorPower {
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    RealFloat _power;
+
+    NormFunctorPower(RealFloat power) : _power(power) {}
+
+    __host__ __device__ RealFloat operator()(T f) const {
+        return pow(static_cast<RealFloat>(fabsf(f)), _power);
+    }
+};
+template <typename T>
+CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm_power(
+    CudaVectorImpl<T>::RealFloat power) const {
+    auto norm_func = NormFunctorPower<T>(power);
+    return pow(
+        thrust::transform_reduce(this->_impl->begin(), this->_impl->end(),
+                                 norm_func, CudaVectorImpl<T>::RealFloat(0),
+                                 thrust::plus<CudaVectorImpl<T>::RealFloat>()),
+        1.0 / power);
+}
+
+template <typename T>
+struct NormFunctorWeighted {
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    RealFloat _power;
+
+    NormFunctorWeighted(RealFloat power) : _power(power) {}
+
+    __host__ __device__ RealFloat
+    operator()(const thrust::tuple<T, RealFloat>& f) const {
+        return thrust::get<1>(f) *
+               pow(static_cast<RealFloat>(fabsf(thrust::get<0>(f))), _power);
+    }
+};
+template <typename T>
+CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm_weight(
+    CudaVectorImpl<T>::RealFloat power,
+    const CudaVectorImpl<CudaVectorImpl<T>::RealFloat>& weight) const {
+    auto first = thrust::make_zip_iterator(
+        thrust::make_tuple(this->_impl->begin(), weight._impl->begin()));
+    auto last = first + this->size();
+    auto norm_func = NormFunctorWeighted<T>(power);
+    return pow(thrust::transform_reduce(
+                   first, last, norm_func, CudaVectorImpl<T>::RealFloat(0),
+                   thrust::plus<CudaVectorImpl<T>::RealFloat>()),
+               1.0 / power);
 }
 
 template <typename T>
@@ -218,17 +331,40 @@ CudaVectorImpl<T>::Float CudaVectorImpl<T>::inner(
 }
 
 template <typename T>
+struct InnerFunctorWeighted {
+    using Float = typename CudaVectorImpl<T>::Float;
+    using RealFloat = typename CudaVectorImpl<T>::RealFloat;
+
+    __host__ __device__ RealFloat
+    operator()(const thrust::tuple<T, T, RealFloat>& f) const {
+        return thrust::get<0>(f) * thrust::get<1>(f) * thrust::get<2>(f);
+    }
+};
+template <typename T>
+CudaVectorImpl<T>::Float CudaVectorImpl<T>::inner_weight(
+    const CudaVectorImpl<T>& other,
+    const CudaVectorImpl<CudaVectorImpl<T>::RealFloat>& weight) const {
+    auto first = thrust::make_zip_iterator(thrust::make_tuple(
+        this->_impl->begin(), other._impl->begin(), weight._impl->begin()));
+    auto last = first + this->size();
+    auto inner_func = InnerFunctorWeighted<T>();
+    return thrust::transform_reduce(first, last, inner_func,
+                                    CudaVectorImpl<T>::Float(0),
+                                    thrust::plus<CudaVectorImpl<T>::Float>());
+}
+
+template <typename T>
 void CudaVectorImpl<T>::multiply(const CudaVectorImpl<T>& x,
                                  const CudaVectorImpl<T>& y) {
     thrust::transform(x._impl->begin(), x._impl->end(), y._impl->begin(),
-                      this->_impl->begin(), thrust::multiplies<T>{});
+                      this->_impl->begin(), thrust::multiplies<T>());
 }
 
 template <typename T>
 void CudaVectorImpl<T>::divide(const CudaVectorImpl<T>& x,
                                const CudaVectorImpl<T>& y) {
     thrust::transform(x._impl->begin(), x._impl->end(), y._impl->begin(),
-                      this->_impl->begin(), thrust::divides<T>{});
+                      this->_impl->begin(), thrust::divides<T>());
 }
 
 template <typename T>
@@ -282,5 +418,5 @@ size_t CudaVectorImpl<T>::size() const {
 
 // Instantiate the methods for each type
 #define X(type, name) template struct CudaVectorImpl<type>;
-ODLPP_FOR_EACH_TYPE
+ODL_CUDA_FOR_EACH_TYPE
 #undef X

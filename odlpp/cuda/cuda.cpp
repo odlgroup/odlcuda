@@ -16,15 +16,13 @@
 #include <odl_cpp_utils/python/numpy_utils.h>
 #include <odlpp/cuda/DeviceVector.h>
 #include <odlpp/cuda/UFunc.h>
+#include <odlpp/cuda/Reduction.h>
 #include <odlpp/cuda/TypeMacro.h>
 #include <odlpp/cuda/CudaVector.h>
 
 using namespace boost::python;
 
 // Externally (CUDA) compiled
-
-// Reductions
-extern float sumImpl(const DeviceVector<float>& v);
 
 // Functions
 extern void convImpl(const DeviceVector<float>& source,
@@ -126,10 +124,9 @@ extern void gaussianBlur(const CudaVectorImpl<float>& image,
                      sigma_y, kernel_width, kernel_height);
 }
 
-float sumVector(const CudaVectorImpl<float>& source) { return sumImpl(source); }
-
 template <typename T>
 void instantiateCudaVector(const std::string& name) {
+    using Float = typename CudaVectorImpl<T>::Float;
     auto cls =
         class_<CudaVectorImpl<T>>(name.c_str(), "Documentation", init<size_t>())
             .def(init<size_t, T>())
@@ -153,21 +150,32 @@ void instantiateCudaVector(const std::string& name) {
             .def("getslice", &getSliceView<T>)
             .def("setslice", &setSlice<T>)
             .def("lincomb", &CudaVectorImpl<T>::linComb)
+            .def("fill", &CudaVectorImpl<T>::fill)
+            .def("dist", &CudaVectorImpl<T>::dist)
+            .def("dist_power", &CudaVectorImpl<T>::dist_power)
+            .def("dist_weight", &CudaVectorImpl<T>::dist_weight)
+            .def("norm", &CudaVectorImpl<T>::norm)
+            .def("norm_power", &CudaVectorImpl<T>::norm_power)
+            .def("norm_weight", &CudaVectorImpl<T>::norm_weight)
             .def("inner", &CudaVectorImpl<T>::inner)
+            .def("inner_weight", &CudaVectorImpl<T>::inner_weight)
             .def("dist", &CudaVectorImpl<T>::dist)
             .def("norm", &CudaVectorImpl<T>::norm)
             .def("multiply", &CudaVectorImpl<T>::multiply)
-            .def("divide", &CudaVectorImpl<T>::divide)
-            .def("fill", &CudaVectorImpl<T>::fill);
+            .def("divide", &CudaVectorImpl<T>::divide);
 
 #define X(fun) cls.def(#fun, &ufunc_##fun<T, T>);
-    ODLPP_FOR_EACH_UFUNC
+    ODL_CUDA_FOR_EACH_UFUNC
+#undef X
+
+#define X(fun) cls.def(#fun, &reduction_##fun<T>);
+    ODL_CUDA_FOR_EACH_REDUCTION
 #undef X
 }
 
 // Expose classes and methods to Python
 BOOST_PYTHON_MODULE(odlpp_cuda) {
-    auto result = _import_array();  // Import numpy
+    auto result = _import_array(); // Import numpy
     if (result != 0) {
         PyErr_Print();
         throw std::invalid_argument("numpy.core.multiarray failed to import");
@@ -183,11 +191,10 @@ BOOST_PYTHON_MODULE(odlpp_cuda) {
     def("max_vector_scalar", maxVectorScalar);
     def("divide_vector_vector", divideVectorVector);
     def("add_scalar", addScalar);
-    def("sum", sumVector);
     def("gaussianBlur", gaussianBlur);
 
 // Instatiate according to numpy
 #define X(type, name) instantiateCudaVector<type>(name);
-    ODLPP_FOR_EACH_TYPE
+    ODL_CUDA_FOR_EACH_TYPE
 #undef X
 }

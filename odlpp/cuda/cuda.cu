@@ -18,6 +18,7 @@
 // ODL
 #include <odlpp/cuda/DeviceVectorImpl.h>
 #include <odlpp/cuda/TypeMacro.h>
+#include <odlpp/cuda/CudaVectorImpl.h>
 
 // Utils
 #include <odl_cpp_utils/cuda/thrustUtils.h>
@@ -25,10 +26,6 @@
 #include <odl_cpp_utils/cuda/cutil_math.h>
 #include <odl_cpp_utils/cuda/errcheck.h>
 
-// Reductions
-float sumImpl(const DeviceVector<float>& v) {
-    return thrust::reduce(v.begin(), v.end());
-}
 
 __global__ void convKernel(const float* source, const float* kernel,
                            float* target, const int len) {
@@ -97,14 +94,14 @@ void maxVectorVectorImpl(const DeviceVector<float>& v1,
                          const DeviceVector<float>& v2,
                          DeviceVector<float>& target) {
     thrust::transform(v1.begin(), v1.end(), v2.begin(), target.begin(),
-                      thrust::maximum<float>{});
+                      thrust::maximum<float>());
 }
 
 void maxVectorScalarImpl(const DeviceVector<float>& source, float scalar,
                          DeviceVector<float>& target) {
     auto scalarIter = thrust::make_constant_iterator(scalar);
     thrust::transform(source.begin(), source.end(), scalarIter, target.begin(),
-                      thrust::maximum<float>{});
+                      thrust::maximum<float>());
 }
 
 struct DivideFunctor {
@@ -117,14 +114,14 @@ void divideVectorVectorImpl(const DeviceVector<float>& dividend,
                             const DeviceVector<float>& divisor,
                             DeviceVector<float>& quotient) {
     thrust::transform(dividend.begin(), dividend.end(), divisor.begin(),
-                      quotient.begin(), DivideFunctor{});
+                      quotient.begin(), DivideFunctor());
 }
 
 void addScalarImpl(const DeviceVector<float>& source, float scalar,
                    DeviceVector<float>& target) {
     auto scalarIter = thrust::make_constant_iterator(scalar);
     thrust::transform(source.begin(), source.end(), scalarIter, target.begin(),
-                      thrust::plus<float>{});
+                      thrust::plus<float>());
 }
 
 __global__ void forwardDifference2DKernel(const int cols, const int rows,
@@ -184,8 +181,8 @@ void forwardDifference2DAdjointImpl(const DeviceVector<float>& dx,
 __global__ void gaussianBlurXkernel(const float* source, float* target,
                                     const uint2 imageSize, float sigma_x,
                                     int kernel_width) {
-    uint2 id{blockIdx.x * blockDim.x + threadIdx.x,
-             blockIdx.y * blockDim.y + threadIdx.y};
+    int2 id = make_int2(blockIdx.x * blockDim.x + threadIdx.x,
+                        blockIdx.y * blockDim.y + threadIdx.y);
 
     if (id.x >= imageSize.x || id.y >= imageSize.y) return;
 
@@ -212,8 +209,8 @@ __global__ void gaussianBlurXkernel(const float* source, float* target,
 __global__ void gaussianBlurYkernel(const float* source, float* target,
                                     const uint2 imageSize, float sigma_y,
                                     int kernel_height) {
-    uint2 id{blockIdx.x * blockDim.x + threadIdx.x,
-             blockIdx.y * blockDim.y + threadIdx.y};
+    int2 id = make_int2(blockIdx.x * blockDim.x + threadIdx.x,
+                        blockIdx.y * blockDim.y + threadIdx.y);
 
     if (id.x >= imageSize.x || id.y >= imageSize.y) return;
 
@@ -248,14 +245,14 @@ void gaussianBlurImpl(const DeviceVector<float>& image,
 
     gaussianBlurXkernel<<<dimGrid, dimBlock>>>(image.data(),
                                                temporary.data(),
-                                               uint2{narrow_cast<unsigned>(image_width),
-                                                     narrow_cast<unsigned>(image_height)},
+                                               make_uint2(narrow_cast<unsigned>(image_width),
+                                                          narrow_cast<unsigned>(image_height)),
                                                sigma_x, kernel_width);
     CUDA_KERNEL_ERRCHECK;
     gaussianBlurYkernel<<<dimGrid, dimBlock>>>(temporary.data(),
                                                out.data(),
-                                               uint2{narrow_cast<unsigned>(image_width),
-                                                     narrow_cast<unsigned>(image_height)},
+                                               make_uint2(narrow_cast<unsigned>(image_width),
+                                                          narrow_cast<unsigned>(image_height)),
                                                sigma_y,
                                                kernel_height);
     CUDA_KERNEL_ERRCHECK;

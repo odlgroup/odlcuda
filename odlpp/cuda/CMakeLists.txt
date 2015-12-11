@@ -13,7 +13,9 @@ if(CUDA_ENABLED)
                                         "SliceHelper.h"
                                         "TypeMacro.h"
                                         "UFunc.h"
-                                        "UFunc.cu")
+                                        "UFunc.cu"
+                                        "Reduction.h"
+                                        "Reduction.cu")
     # CUDA_ADD_CUBLAS_TO_TARGET( ${LIB_NAME} ) possibly needed
     set_property(TARGET ${LIB_NAME} PROPERTY FOLDER python)
     target_link_libraries(${LIB_NAME} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})

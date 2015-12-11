@@ -57,6 +57,7 @@ template <typename T>
 boost::python::numeric::array getSliceToHost(CudaVectorImpl<T>& vector,
                                              const boost::python::slice index) {
     sliceHelper sh(index, vector.size());
+    //TODO: remove?
     _import_array();
     if (sh.numel > 0) {
         boost::python::numeric::array arr = makeArray<T>(sh.numel);
