@@ -1,16 +1,17 @@
 #pragma once
 
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+
 struct sliceHelper {
-    sliceHelper(const slice& index, ptrdiff_t n) : arraySize(n) {
-        extract<ptrdiff_t> stepIn(index.step());
-        if (stepIn.check())
-            step = stepIn();
-        else
-            step = 1;
+    sliceHelper(const py::slice& index, ptrdiff_t n) : arraySize(n) {
+		ssize_t start, stop, step, slicelength;
+		index.compute(n, &start, &stop, &step, &slicelength);
+		if (step == 0)
+			step = 1;
 
-        if (step == 0) throw std::invalid_argument("step = 0 is not valid");
+        if (step < 0) throw std::invalid_argument("step = 0 is not valid");
 
-        extract<ptrdiff_t> startIn(index.start());
         if (startIn.check()) {
             if (step > 0) {
                 start = startIn();

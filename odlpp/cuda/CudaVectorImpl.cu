@@ -227,7 +227,7 @@ CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist_power(const CudaVectorImpl<
     return pow(thrust::transform_reduce(
                    first, last, dist_func, CudaVectorImpl<T>::RealFloat(0),
                    thrust::plus<CudaVectorImpl<T>::RealFloat>()),
-               1.0 / power);
+               1.0f / power);
 }
 
 template <typename T>
@@ -257,7 +257,7 @@ CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist_weight(
     return pow(thrust::transform_reduce(
                    first, last, dist_func, CudaVectorImpl<T>::RealFloat(0),
                    thrust::plus<CudaVectorImpl<T>::RealFloat>()),
-               1.0 / power);
+               1.0f / power);
 }
 
 // norm
@@ -291,7 +291,7 @@ CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm_power(
         thrust::transform_reduce(this->_impl->begin(), this->_impl->end(),
                                  norm_func, CudaVectorImpl<T>::RealFloat(0),
                                  thrust::plus<CudaVectorImpl<T>::RealFloat>()),
-        1.0 / power);
+        1.0f / power);
 }
 
 template <typename T>
@@ -319,7 +319,7 @@ CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm_weight(
     return pow(thrust::transform_reduce(
                    first, last, norm_func, CudaVectorImpl<T>::RealFloat(0),
                    thrust::plus<CudaVectorImpl<T>::RealFloat>()),
-               1.0 / power);
+               1.0f / power);
 }
 
 template <typename T>

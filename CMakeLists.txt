@@ -71,19 +71,11 @@ else()
 	endif()
 endif()
 
-# Python bindings
-set(Boost_USE_SHARED_LIBS   ON)
-set(Boost_USE_MULTITHREADED ON)
-find_package(Boost COMPONENTS
-             python
-             REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
-
 # Find python
 find_package(PythonLibs REQUIRED)
 find_package(PythonInterp REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
+include_directories("pybind11/include")
 
 # Find numpy
 find_package(Numpy REQUIRED)
