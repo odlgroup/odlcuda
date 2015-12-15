@@ -29,15 +29,15 @@ CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size, ptrdiff_t stride) {
 
 template <typename T>
 CudaVectorImpl<T> getSliceView(CudaVectorImpl<T>& vector,
-                               const py::slice index) {
-    sliceHelper sh(index, vector.size());
-    uintptr_t input_data_begin = vector.dataPtr();
-    uintptr_t output_data_begin =
-        input_data_begin + vector.stride() * sh.start * sizeof(T);
-    if (sh.step < 0) output_data_begin -= sizeof(T);
+	const py::slice index) {
+	sliceHelper sh(index, vector.size());
+	uintptr_t input_data_begin = vector.dataPtr();
+	uintptr_t output_data_begin =
+		input_data_begin + vector.stride() * sh.start * sizeof(T);
+	if (sh.step < 0) output_data_begin -= sizeof(T);
 
-    return fromPointer<T>(output_data_begin, sh.numel,
-                          sh.step * vector.stride());
+	return fromPointer<T>(output_data_begin, sh.numel,
+		sh.step * vector.stride());
 }
 
 template <typename T>

@@ -93,22 +93,20 @@ DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(
 }
 
 template <typename T>
-void CudaVectorImpl<T>::validateIndex(ptrdiff_t index) const {
-    if (index < 0 || index >= static_cast<ptrdiff_t>(size()))
-        throw std::out_of_range("index out of range");
+void validateIndex(const CudaVectorImpl<T>& vector, ptrdiff_t index) {
+	if (index < 0 || index >= static_cast<ptrdiff_t>(vector.size()))
+		throw std::out_of_range("index out of range");
 }
 
 template <typename T>
 T CudaVectorImpl<T>::getItem(ptrdiff_t index) const {
-    if (index < 0) index += size(); // Handle negative indexes like python
-    validateIndex(index);
+	validateIndex(*this, index);
     return _impl->operator[](index);
 }
 
 template <typename T>
 void CudaVectorImpl<T>::setItem(ptrdiff_t index, T value) {
-    if (index < 0) index += size(); // Handle negative indexes like python
-    validateIndex(index);
+	validateIndex(*this, index);
     _impl->operator[](index) = value;
 }
 

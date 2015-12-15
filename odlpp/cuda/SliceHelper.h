@@ -8,7 +8,6 @@ namespace py = pybind11;
 struct sliceHelper {
     sliceHelper(const py::slice& index, ptrdiff_t n) : arraySize(n) {
 		index.compute(n, &start, &stop, &step, &numel);
-		std::cout << start << " " << stop << " " << step << " " << numel << std::endl;
 
 		//TODO make consistient with python
 		if (step < 0){
@@ -51,8 +50,8 @@ struct sliceHelper {
             numel =
                 std::max<ptrdiff_t>(0, 1 + (start - stop - 1) / std::abs(step));*/
 
-        if (start < 0 || stop > arraySize)
-            throw std::out_of_range("Slice index out of range");
+		if (start < 0 || stop > arraySize)
+			throw std::out_of_range("Slice index out of range");
     }
 
     friend std::ostream& operator<<(std::ostream& ss, const sliceHelper& sh) {
