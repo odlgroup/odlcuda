@@ -62,11 +62,8 @@ Current external dependencies are
 #####Python
 The building block of ODL, ODLpp needs access to both python and numpy header files and compiled files to link against.
 
-#####Boost
-General library with C++ code. This project specifically uses [Boost.Python](http://www.boost.org/doc/libs/1_58_0/libs/python/doc/index.html) to handle the python bindings.
-
-[Boost webpage](http://www.boost.org/)
-[Prebuilt boost (windows)](http://boost.teeks99.com/), this version uses python 2.7
+#####Numpy
+Backend used for easy interfacing of numerical data.
 
 #####CUDA
 Used for GPU accelerated versions of algorithms. The code uses C++11 features in device code, so CUDA 7.0 is required. CUDA 6.5 may work on some platforms (notably windows). It should as of now compile with compute capbability >2.0, in the future certain features require higher compute capability may be added.
@@ -76,10 +73,9 @@ Used for GPU accelerated versions of algorithms. The code uses C++11 features in
 ### Included
 These are distributed with this project.
 
-#####Catch
-A header only framework for automated testing. Currently shipped with the repository as a single include.
-
-[Catch webpage](https://github.com/philsquared/Catch)
+#####PyBind11
+Library for creating python bindings for c++ code.
+[PyBind11 github](https://github.com/wjakob/pybind11)
 
 Troublefinding
 --------------
