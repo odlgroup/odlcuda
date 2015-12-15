@@ -5,7 +5,7 @@
 
 // Thrust bug...
 #define DEBUG 1
-#include <pybind11\pybind11.h>
+#include <pybind11/pybind11.h>
 // Disable deprecated API
 
 #include <iostream>
