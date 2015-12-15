@@ -192,14 +192,20 @@ void add_vector(py::module &m) {
 #undef X
 }
 
+void add_definitions(py::module &m) {
+	add_functions(m);
+	add_vector(m);
+}
+
+
 // Expose classes and methods to Python
-PYBIND11_PLUGIN(odlpp_cuda) {
+PYBIND11_PLUGIN(odlpp) {
 	py::module m("odlpp_cuda", "odl c++ backend");
     auto result = _import_array(); // Import numpy
     if (result != 0) {
         PyErr_Print();
         throw std::invalid_argument("numpy.core.multiarray failed to import");
-	}	
+    }
 	add_functions(m);
 	add_vector(m);
 }

@@ -3,21 +3,27 @@
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
 
+#include <iostream>
+
 struct sliceHelper {
     sliceHelper(const py::slice& index, ptrdiff_t n) : arraySize(n) {
-		ssize_t start, stop, step, slicelength;
-		index.compute(n, &start, &stop, &step, &slicelength);
-		if (step == 0)
-			step = 1;
+		index.compute(n, &start, &stop, &step, &numel);
+		std::cout << start << " " << stop << " " << step << " " << numel << std::endl;
 
-        if (step < 0) throw std::invalid_argument("step = 0 is not valid");
+		//TODO make consistient with python
+		if (step < 0){
+			start += 1;
+			stop += 1;
+		}
 
-        if (startIn.check()) {
+		//if (step == 0)
+		//	step = 1;
+
+        /*if (start != 0) {
             if (step > 0) {
-                start = startIn();
                 if (start < 0) start += n;
             } else {
-                start = startIn() + 1;
+                start += 1;
                 if (start <= 0) start += n;
             }
         } else if (step > 0)
@@ -25,13 +31,11 @@ struct sliceHelper {
         else
             start = n;
 
-        extract<ptrdiff_t> stopIn(index.stop());
-        if (stopIn.check()) {
+        if (stop != 0) {
             if (step > 0) {
-                stop = stopIn();
                 if (stop < 0) stop += n;
             } else {
-                stop = stopIn() + 1;
+                stop += 1;
                 if (stop <= 0) stop += n;
             }
         } else if (step > 0)
@@ -45,7 +49,7 @@ struct sliceHelper {
             numel = std::max<ptrdiff_t>(0, 1 + (stop - start - 1) / step);
         else
             numel =
-                std::max<ptrdiff_t>(0, 1 + (start - stop - 1) / std::abs(step));
+                std::max<ptrdiff_t>(0, 1 + (start - stop - 1) / std::abs(step));*/
 
         if (start < 0 || stop > arraySize)
             throw std::out_of_range("Slice index out of range");
