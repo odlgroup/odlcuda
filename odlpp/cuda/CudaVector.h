@@ -59,7 +59,7 @@ template <typename T>
 py::array getSliceToHost(CudaVectorImpl<T>& vector, const py::slice index) {
     sliceHelper sh(index, vector.size());
     //TODO: remove?
-    _import_array();
+//    _import_array();
     if (sh.numel > 0) {
         py::array arr = makeArray<T>(sh.numel);
         copyDeviceToHost<T>(vector, index, arr);
