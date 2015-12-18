@@ -202,4 +202,6 @@ PYBIND11_PLUGIN(odlpp_cuda) {
 //	}
 	add_functions(m);
 	add_vector(m);
+
+	return m.ptr();
 }
