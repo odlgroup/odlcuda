@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <stdint.h>
 
 // Thrust bug...
@@ -29,15 +28,15 @@ CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size, ptrdiff_t stride) {
 
 template <typename T>
 CudaVectorImpl<T> getSliceView(CudaVectorImpl<T>& vector,
-	const py::slice index) {
-	sliceHelper sh(index, vector.size());
-	uintptr_t input_data_begin = vector.dataPtr();
-	uintptr_t output_data_begin =
-		input_data_begin + vector.stride() * sh.start * sizeof(T);
-	if (sh.step < 0) output_data_begin -= sizeof(T);
+                               const py::slice index) {
+    sliceHelper sh(index, vector.size());
+    uintptr_t input_data_begin = vector.dataPtr();
+    uintptr_t output_data_begin =
+        input_data_begin + vector.stride() * sh.start * sizeof(T);
+    if (sh.step < 0) output_data_begin -= sizeof(T);
 
-	return fromPointer<T>(output_data_begin, sh.numel,
-		sh.step * vector.stride());
+    return fromPointer<T>(output_data_begin, sh.numel,
+                          sh.step * vector.stride());
 }
 
 template <typename T>
@@ -46,7 +45,7 @@ void copyDeviceToHost(CudaVectorImpl<T>& vector,
                       py::array& target) {
     sliceHelper sh(index, vector.size());
 
-	if (sh.numel != target.request().count)
+    if (sh.numel != target.request().count)
         throw std::out_of_range("Size of array does not match slice");
 
     if (sh.numel > 0) {
@@ -59,7 +58,7 @@ template <typename T>
 py::array getSliceToHost(CudaVectorImpl<T>& vector, const py::slice index) {
     sliceHelper sh(index, vector.size());
     //TODO: remove?
-//    _import_array();
+    _import_array();
     if (sh.numel > 0) {
         py::array arr = makeArray<T>(sh.numel);
         copyDeviceToHost<T>(vector, index, arr);
@@ -74,7 +73,7 @@ void setSlice(CudaVectorImpl<T>& vector, const py::slice index,
               py::array& arr) {
     sliceHelper sh(index, vector.size());
 
-	if (sh.numel != arr.request().count)
+    if (sh.numel != arr.request().count)
         throw std::out_of_range("Size of array does not match slice");
 
     if (sh.numel > 0) {
@@ -116,7 +115,7 @@ size_t itemsize(const CudaVectorImpl<T>& vector) {
 
 template <typename T>
 py::tuple shape(const CudaVectorImpl<T>& v) {
-	py::tuple result(1);
-	result[0] = py::int_(v.size());
+    py::tuple result(1);
+    result[0] = py::int_(v.size());
     return result;
 }

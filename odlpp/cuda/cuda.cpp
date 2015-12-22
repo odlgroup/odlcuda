@@ -124,26 +124,26 @@ extern void gaussianBlur(const CudaVectorImpl<float>& image,
 }
 
 template <typename T>
-void instantiateCudaVector(py::module &m, const std::string& name) {
+void instantiateCudaVector(py::module& m, const std::string& name) {
     using Float = typename CudaVectorImpl<T>::Float;
     auto cls =
         py::class_<CudaVectorImpl<T>>(m, name.c_str(), "Documentation")
-			.def(py::init<size_t>())
+            .def(py::init<size_t>())
             .def(py::init<size_t, T>())
-			.def_static("from_pointer", &fromPointer<T>)
+            .def_static("from_pointer", &fromPointer<T>)
             .def("copy", &CudaVectorImpl<T>::copy)
-			.def("__str__", &repr<T>)
+            .def("__str__", &repr<T>)
             .def("__repr__", &repr<T>)
             .def("data_ptr", &CudaVectorImpl<T>::dataPtr)
-			.def_property_readonly("dtype", &dtype<T>)
-			.def_property_readonly("shape", &shape<T>)
-			.def_property_readonly("size", &CudaVectorImpl<T>::size)
-			.def_property_readonly("itemsize", &itemsize<T>)
-			.def_property_readonly("nbytes", &nbytes<T>)
+            .def_property_readonly("dtype", &dtype<T>)
+            .def_property_readonly("shape", &shape<T>)
+            .def_property_readonly("size", &CudaVectorImpl<T>::size)
+            .def_property_readonly("itemsize", &itemsize<T>)
+            .def_property_readonly("nbytes", &nbytes<T>)
             .def("__len__", &CudaVectorImpl<T>::size)
             .def("__eq__", &CudaVectorImpl<T>::allEqual)
-			.def("__getitem__", &CudaVectorImpl<T>::getItem)
-			.def("__setitem__", &CudaVectorImpl<T>::setItem)
+            .def("__getitem__", &CudaVectorImpl<T>::getItem)
+            .def("__setitem__", &CudaVectorImpl<T>::setItem)
             .def("copy_device_to_host", &copyDeviceToHost<T>)
             .def("get_to_host", &getSliceToHost<T>)
             .def("getslice", &getSliceView<T>)
@@ -172,36 +172,32 @@ void instantiateCudaVector(py::module &m, const std::string& name) {
 #undef X
 }
 
-void add_functions(py::module &m) {
-	m.def("conv", convolution);
-	m.def("forward_diff", forwardDifference);
-	m.def("forward_diff_adj", forwardDifferenceAdjoint);
-	m.def("forward_diff_2d", forwardDifference2D);
-	m.def("forward_diff_2d_adj", forwardDifference2DAdjoint);
-	m.def("max_vector_vector", maxVectorVector);
-	m.def("max_vector_scalar", maxVectorScalar);
-	m.def("divide_vector_vector", divideVectorVector);
-	m.def("add_scalar", addScalar);
-	m.def("gaussianBlur", gaussianBlur);
+void add_functions(py::module& m) {
+    m.def("conv", convolution);
+    m.def("forward_diff", forwardDifference);
+    m.def("forward_diff_adj", forwardDifferenceAdjoint);
+    m.def("forward_diff_2d", forwardDifference2D);
+    m.def("forward_diff_2d_adj", forwardDifference2DAdjoint);
+    m.def("max_vector_vector", maxVectorVector);
+    m.def("max_vector_scalar", maxVectorScalar);
+    m.def("divide_vector_vector", divideVectorVector);
+    m.def("add_scalar", addScalar);
+    m.def("gaussianBlur", gaussianBlur);
 }
 
-void add_vector(py::module &m) {
-	// Instatiate according to numpy
+void add_vector(py::module& m) {
+// Instatiate according to numpy
 #define X(type, name) instantiateCudaVector<type>(m, name);
-	ODL_CUDA_FOR_EACH_TYPE
+    ODL_CUDA_FOR_EACH_TYPE
 #undef X
 }
 
 // Expose classes and methods to Python
 PYBIND11_PLUGIN(odlpp_cuda) {
-	py::module m("odlpp_cuda", "odl c++ backend");
-//    auto result = _import_array(); // Import numpy
-//    if (result != 0) {
-//        PyErr_Print();
-//        throw std::invalid_argument("numpy.core.multiarray failed to import");
-//	}
-	add_functions(m);
-	add_vector(m);
+    py::module m("odlpp_cuda", "odl c++ backend");
 
-	return m.ptr();
+    add_functions(m);
+    add_vector(m);
+
+    return m.ptr();
 }
