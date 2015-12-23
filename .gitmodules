@@ -3,4 +3,4 @@
 	url = https://github.com/odlgroup/odl-cpp-utils.git
 [submodule "pybind11"]
 	path = pybind11
-	url = https://github.com/wjakob/pybind11
+	url = https://github.com/adler-j/pybind11.git
