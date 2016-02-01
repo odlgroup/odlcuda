@@ -26,7 +26,6 @@
 #include <odl_cpp_utils/cuda/cutil_math.h>
 #include <odl_cpp_utils/cuda/errcheck.h>
 
-
 __global__ void convKernel(const float* source, const float* kernel,
                            float* target, const int len) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -195,6 +194,7 @@ __global__ void gaussianBlurXkernel(const float* source, float* target,
         int x = i;
         if (x < 0) x = -x;
         if (x >= imageSize.x) x = 2 * imageSize.x - x - 1;
+        if (x < 0 || x >= imageSize.x) continue;
 
         float dx = static_cast<float>(i - id.x);
         float fx = a * expf(-dx * dx / b);
@@ -223,6 +223,7 @@ __global__ void gaussianBlurYkernel(const float* source, float* target,
         int y = i;
         if (y < 0) y = -y;
         if (y >= imageSize.y) y = 2 * imageSize.y - y - 1;
+        if (y < 0 || y >= imageSize.y) continue;
 
         float dx = static_cast<float>(i - id.y);
         float fx = a * expf(-dx * dx / b);
