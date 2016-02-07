@@ -1,24 +1,25 @@
 #pragma once
 
-// Disable deprecated API
-#include <numpy/numpyconfig.h>
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-
 #include <stdint.h>
 
 // Thrust bug...
 #define DEBUG 1
-#include <boost/python.hpp>
-#include <boost/python/slice.hpp>
+#include <pybind11/pybind11.h>
+// Disable deprecated API
+
 #include <iostream>
 #define _DEBUG 1
 #include <thrust/device_vector.h>
+
+// Numpy
+#include <numpy/numpyconfig.h>
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 
 #include <odlpp/cuda/CudaVectorImpl.h>
 #include <odlpp/cuda/SliceHelper.h>
 
-using namespace boost::python;
+namespace py = pybind11;
 
 template <typename T>
 CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size, ptrdiff_t stride) {
@@ -27,7 +28,7 @@ CudaVectorImpl<T> fromPointer(uintptr_t ptr, size_t size, ptrdiff_t stride) {
 
 template <typename T>
 CudaVectorImpl<T> getSliceView(CudaVectorImpl<T>& vector,
-                               const boost::python::slice index) {
+                               const py::slice index) {
     sliceHelper sh(index, vector.size());
     uintptr_t input_data_begin = vector.dataPtr();
     uintptr_t output_data_begin =
@@ -40,11 +41,11 @@ CudaVectorImpl<T> getSliceView(CudaVectorImpl<T>& vector,
 
 template <typename T>
 void copyDeviceToHost(CudaVectorImpl<T>& vector,
-                      const boost::python::slice index,
-                      boost::python::numeric::array& target) {
+                      const py::slice index,
+                      py::array& target) {
     sliceHelper sh(index, vector.size());
 
-    if (sh.numel != len(target))
+    if (sh.numel != target.request().size)
         throw std::out_of_range("Size of array does not match slice");
 
     if (sh.numel > 0) {
@@ -54,13 +55,12 @@ void copyDeviceToHost(CudaVectorImpl<T>& vector,
 }
 
 template <typename T>
-boost::python::numeric::array getSliceToHost(CudaVectorImpl<T>& vector,
-                                             const boost::python::slice index) {
+py::array getSliceToHost(CudaVectorImpl<T>& vector, const py::slice index) {
     sliceHelper sh(index, vector.size());
     //TODO: remove?
     _import_array();
     if (sh.numel > 0) {
-        boost::python::numeric::array arr = makeArray<T>(sh.numel);
+        py::array arr = makeArray<T>(sh.numel);
         copyDeviceToHost<T>(vector, index, arr);
         return arr;
     } else {
@@ -69,11 +69,11 @@ boost::python::numeric::array getSliceToHost(CudaVectorImpl<T>& vector,
 }
 
 template <typename T>
-void setSlice(CudaVectorImpl<T>& vector, const boost::python::slice index,
-              const boost::python::numeric::array& arr) {
+void setSlice(CudaVectorImpl<T>& vector, const py::slice index,
+              py::array& arr) {
     sliceHelper sh(index, vector.size());
 
-    if (sh.numel != len(arr))
+    if (sh.numel != arr.request().size)
         throw std::out_of_range("Size of array does not match slice");
 
     if (sh.numel > 0) {
@@ -98,10 +98,9 @@ std::string repr(const CudaVectorImpl<T>& vector) {
 }
 
 template <typename T>
-boost::python::object dtype(const CudaVectorImpl<T>& v) {
+py::object dtype(const CudaVectorImpl<T>& v) {
     PyArray_Descr* descr = PyArray_DescrNewFromType(getEnum<T>());
-    return boost::python::object(
-        boost::python::handle<>(reinterpret_cast<PyObject*>(descr)));
+    return py::object(reinterpret_cast<PyObject*>(descr), false);
 }
 
 template <typename T>
@@ -115,6 +114,8 @@ size_t itemsize(const CudaVectorImpl<T>& vector) {
 }
 
 template <typename T>
-boost::python::tuple shape(const CudaVectorImpl<T>& v) {
-    return boost::python::make_tuple(v.size());
+py::tuple shape(const CudaVectorImpl<T>& v) {
+    py::tuple result(1);
+    result[0] = py::int_(v.size());
+    return result;
 }

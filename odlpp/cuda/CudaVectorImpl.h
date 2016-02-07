@@ -94,7 +94,6 @@ class CudaVectorImpl {
     // Members
     DeviceVectorPtr<T> _impl;
 
-    void validateIndex(ptrdiff_t index) const;
     // Copy to ostream
     void printData(std::ostream_iterator<T>& out, size_t numel) const;
 };

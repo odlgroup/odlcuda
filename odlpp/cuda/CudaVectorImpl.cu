@@ -93,22 +93,20 @@ DeviceVectorPtr<T> CudaVectorImpl<T>::fromPointer(
 }
 
 template <typename T>
-void CudaVectorImpl<T>::validateIndex(ptrdiff_t index) const {
-    if (index < 0 || index >= static_cast<ptrdiff_t>(size()))
-        throw std::out_of_range("index out of range");
+void validateIndex(const CudaVectorImpl<T>& vector, ptrdiff_t index) {
+	if (index < 0 || index >= static_cast<ptrdiff_t>(vector.size()))
+		throw std::out_of_range("index out of range");
 }
 
 template <typename T>
 T CudaVectorImpl<T>::getItem(ptrdiff_t index) const {
-    if (index < 0) index += size(); // Handle negative indexes like python
-    validateIndex(index);
+	validateIndex(*this, index);
     return _impl->operator[](index);
 }
 
 template <typename T>
 void CudaVectorImpl<T>::setItem(ptrdiff_t index, T value) {
-    if (index < 0) index += size(); // Handle negative indexes like python
-    validateIndex(index);
+	validateIndex(*this, index);
     _impl->operator[](index) = value;
 }
 
@@ -227,7 +225,7 @@ CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist_power(const CudaVectorImpl<
     return pow(thrust::transform_reduce(
                    first, last, dist_func, CudaVectorImpl<T>::RealFloat(0),
                    thrust::plus<CudaVectorImpl<T>::RealFloat>()),
-               1.0 / power);
+               1.0f / power);
 }
 
 template <typename T>
@@ -257,7 +255,7 @@ CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::dist_weight(
     return pow(thrust::transform_reduce(
                    first, last, dist_func, CudaVectorImpl<T>::RealFloat(0),
                    thrust::plus<CudaVectorImpl<T>::RealFloat>()),
-               1.0 / power);
+               1.0f / power);
 }
 
 // norm
@@ -291,7 +289,7 @@ CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm_power(
         thrust::transform_reduce(this->_impl->begin(), this->_impl->end(),
                                  norm_func, CudaVectorImpl<T>::RealFloat(0),
                                  thrust::plus<CudaVectorImpl<T>::RealFloat>()),
-        1.0 / power);
+        1.0f / power);
 }
 
 template <typename T>
@@ -319,7 +317,7 @@ CudaVectorImpl<T>::RealFloat CudaVectorImpl<T>::norm_weight(
     return pow(thrust::transform_reduce(
                    first, last, norm_func, CudaVectorImpl<T>::RealFloat(0),
                    thrust::plus<CudaVectorImpl<T>::RealFloat>()),
-               1.0 / power);
+               1.0f / power);
 }
 
 template <typename T>

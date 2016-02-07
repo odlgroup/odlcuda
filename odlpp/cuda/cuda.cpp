@@ -1,17 +1,16 @@
-// Disable deprecated API
-#include <numpy/numpyconfig.h>
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-
 #include <stdint.h>
 
 // Thrust bug...
 #define DEBUG 1
-#include <boost/python.hpp>
-#include <boost/python/slice.hpp>
+#include <pybind11/pybind11.h>
 #include <iostream>
 #define _DEBUG 1
 #include <thrust/device_vector.h>
-#include <numpy/arrayobject.h>
+
+// Disable deprecated API
+//#include <numpy/numpyconfig.h>
+//#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+//#include <numpy/arrayobject.h>
 
 #include <odl_cpp_utils/python/numpy_utils.h>
 #include <odlpp/cuda/DeviceVector.h>
@@ -20,7 +19,7 @@
 #include <odlpp/cuda/TypeMacro.h>
 #include <odlpp/cuda/CudaVector.h>
 
-using namespace boost::python;
+namespace py = pybind11;
 
 // Externally (CUDA) compiled
 
@@ -125,22 +124,22 @@ extern void gaussianBlur(const CudaVectorImpl<float>& image,
 }
 
 template <typename T>
-void instantiateCudaVector(const std::string& name) {
+void instantiateCudaVector(py::module& m, const std::string& name) {
     using Float = typename CudaVectorImpl<T>::Float;
     auto cls =
-        class_<CudaVectorImpl<T>>(name.c_str(), "Documentation", init<size_t>())
-            .def(init<size_t, T>())
-            .def("from_pointer", &fromPointer<T>)
-            .staticmethod("from_pointer")
+        py::class_<CudaVectorImpl<T>>(m, name.c_str(), "Documentation")
+            .def(py::init<size_t>())
+            .def(py::init<size_t, T>())
+            .def_static("from_pointer", &fromPointer<T>)
             .def("copy", &CudaVectorImpl<T>::copy)
-            .def(self_ns::str(self_ns::self))
+            .def("__str__", &repr<T>)
             .def("__repr__", &repr<T>)
             .def("data_ptr", &CudaVectorImpl<T>::dataPtr)
-            .add_property("dtype", &dtype<T>)
-            .add_property("shape", &shape<T>)
-            .add_property("size", &CudaVectorImpl<T>::size)
-            .add_property("itemsize", &itemsize<T>)
-            .add_property("nbytes", &nbytes<T>)
+            .def_property_readonly("dtype", &dtype<T>)
+            .def_property_readonly("shape", &shape<T>)
+            .def_property_readonly("size", &CudaVectorImpl<T>::size)
+            .def_property_readonly("itemsize", &itemsize<T>)
+            .def_property_readonly("nbytes", &nbytes<T>)
             .def("__len__", &CudaVectorImpl<T>::size)
             .def("__eq__", &CudaVectorImpl<T>::allEqual)
             .def("__getitem__", &CudaVectorImpl<T>::getItem)
@@ -173,28 +172,32 @@ void instantiateCudaVector(const std::string& name) {
 #undef X
 }
 
-// Expose classes and methods to Python
-BOOST_PYTHON_MODULE(odlpp_cuda) {
-    auto result = _import_array(); // Import numpy
-    if (result != 0) {
-        PyErr_Print();
-        throw std::invalid_argument("numpy.core.multiarray failed to import");
-    }
-    boost::python::numeric::array::set_module_and_type("numpy", "ndarray");
+void add_functions(py::module& m) {
+    m.def("conv", convolution);
+    m.def("forward_diff", forwardDifference);
+    m.def("forward_diff_adj", forwardDifferenceAdjoint);
+    m.def("forward_diff_2d", forwardDifference2D);
+    m.def("forward_diff_2d_adj", forwardDifference2DAdjoint);
+    m.def("max_vector_vector", maxVectorVector);
+    m.def("max_vector_scalar", maxVectorScalar);
+    m.def("divide_vector_vector", divideVectorVector);
+    m.def("add_scalar", addScalar);
+    m.def("gaussianBlur", gaussianBlur);
+}
 
-    def("conv", convolution);
-    def("forward_diff", forwardDifference);
-    def("forward_diff_adj", forwardDifferenceAdjoint);
-    def("forward_diff_2d", forwardDifference2D);
-    def("forward_diff_2d_adj", forwardDifference2DAdjoint);
-    def("max_vector_vector", maxVectorVector);
-    def("max_vector_scalar", maxVectorScalar);
-    def("divide_vector_vector", divideVectorVector);
-    def("add_scalar", addScalar);
-    def("gaussianBlur", gaussianBlur);
-
+void add_vector(py::module& m) {
 // Instatiate according to numpy
-#define X(type, name) instantiateCudaVector<type>(name);
+#define X(type, name) instantiateCudaVector<type>(m, name);
     ODL_CUDA_FOR_EACH_TYPE
 #undef X
+}
+
+// Expose classes and methods to Python
+PYBIND11_PLUGIN(odlpp_cuda) {
+    py::module m("odlpp_cuda", "odl c++ backend");
+
+    add_functions(m);
+    add_vector(m);
+
+    return m.ptr();
 }
