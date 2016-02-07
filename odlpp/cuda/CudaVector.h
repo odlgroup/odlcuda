@@ -45,7 +45,7 @@ void copyDeviceToHost(CudaVectorImpl<T>& vector,
                       py::array& target) {
     sliceHelper sh(index, vector.size());
 
-    if (sh.numel != target.request().count)
+    if (sh.numel != target.request().size)
         throw std::out_of_range("Size of array does not match slice");
 
     if (sh.numel > 0) {
@@ -73,7 +73,7 @@ void setSlice(CudaVectorImpl<T>& vector, const py::slice index,
               py::array& arr) {
     sliceHelper sh(index, vector.size());
 
-    if (sh.numel != arr.request().count)
+    if (sh.numel != arr.request().size)
         throw std::out_of_range("Size of array does not match slice");
 
     if (sh.numel > 0) {
