@@ -16,7 +16,7 @@ The project uses CMake to enable builds. Using *cmake-gui* is recommended
 [Cmake webpage](http://www.cmake.org/)
 
 #### Unix:
-Start by going the the directory where you want your binaries and run,
+Start by going the the directory where you want your binaries (usually ``odlpp/build``) and run,
 
     cmake-gui PATH_TO_SOURCE
 
@@ -26,7 +26,7 @@ To build and install the package to your python installation, run (as root)
 
     make pyinstall
 
-To verify your installation, run (in the odlpp directory)
+To verify your installation, run (in the odlpp root directory)
 
     py.test
 
@@ -72,14 +72,6 @@ General library with C++ code. This project specifically uses [Boost.Python](htt
 Used for GPU accelerated versions of algorithms. The code uses C++11 features in device code, so CUDA 7.0 is required. CUDA 6.5 may work on some platforms (notably windows). It should as of now compile with compute capbability >2.0, in the future certain features require higher compute capability may be added.
 
 [CUDA](https://developer.nvidia.com/cuda-downloads)
-
-### Included
-These are distributed with this project.
-
-#####Catch
-A header only framework for automated testing. Currently shipped with the repository as a single include.
-
-[Catch webpage](https://github.com/philsquared/Catch)
 
 Troublefinding
 --------------
