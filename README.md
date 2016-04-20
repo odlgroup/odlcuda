@@ -16,11 +16,13 @@ The project uses CMake to enable builds. Using *cmake-gui* is recommended
 [Cmake webpage](http://www.cmake.org/)
 
 #### Unix:
-Start by going the the directory where you want your binaries (usually ``odlpp/build``) and run,
+The binaries are typically built in a ``build`` folder. Starting at the repository's top level directory, do
 
-    cmake-gui PATH_TO_SOURCE
+    mkdir build
+    cd build
+    cmake-gui ../
 
-Set the required variables.
+And set the required variables.
 
 To build and install the package to your python installation, run (as root)
 
