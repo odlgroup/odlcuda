@@ -6,7 +6,8 @@
 from future import standard_library
 standard_library.install_aliases()
 
-from distutils.core import setup
+#from distutils.core import setup
+from setuptools import setup
 
 
 setup(name='odlpp',
@@ -16,6 +17,8 @@ setup(name='odlpp',
       url='https://github.com/odlgroup/odlpp',
       description='C++ backend for odl',
       license='GPLv3',
+      install_requires=['odl'],
       packages=['odlpp'],
       package_dir={'odlpp': '.'},
-      package_data={'odlpp': ['*.*']})
+      package_data={'' : ['*.pyd']},
+      entry_points={'odl.space': ['odl_cuda = odlpp.odl_pluggin']})

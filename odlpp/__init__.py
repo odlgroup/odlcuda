@@ -1,4 +1,4 @@
-# Copyright 2014, 2015 The ODL development group
+# Copyright 2014-2016 The ODL development group
 #
 # This file is part of ODL.
 #
@@ -17,6 +17,9 @@
 
 from __future__ import absolute_import
 
-from . import odlpp_cuda
+# Workaround for weird bug. Nothing is installed without this
+_install_location = __file__
 
-# __all__ = ['']
+from . import odlpp_cuda
+from . import cu_ntuples
+from . import ufuncs
