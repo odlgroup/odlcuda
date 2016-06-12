@@ -1,0 +1,48 @@
+package:
+    name: odlpp
+    version: "0.2.0"
+
+source:
+    git_url: https://github.com/odlgroup/odlpp.git
+    # git_rev: v0.2.3
+
+build:
+    script_env:
+        - CUDA_ROOT
+        - CUDA_COMPUTE
+
+requirements:
+    build:
+        - python 2.7|>=3.4
+        - nomkl
+        - setuptools
+        - numpy >=1.9
+        - future >=0.14
+        - boost
+    run:
+        - nomkl
+        - python 2.7|>=3.4
+        - numpy >=1.9
+        - future >=0.14
+        - boost
+
+test:
+    imports:
+        - odlpp
+
+    requires:
+        - pytest
+
+about:
+    home: https://github.com/odlgroup/odl
+    license: GPLv3+
+    license_file: LICENSE
+    summary: "Operator Discretization Library - a versatile Python framework for rapid prototyping in Inverse Problems and related fields"
+
+extra:
+    maintainers:
+        - Jonas Adler (@adler-j)
+        - Holger Kohr (@kohr-h)
+        - Ozan Öktem (@ozanoktem)
+
+
