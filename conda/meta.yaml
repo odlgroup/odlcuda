@@ -18,7 +18,8 @@ requirements:
         - setuptools
         - numpy >=1.9
         - future >=0.14
-        - gcc <5  # [not win]
+        - gcc <5    # [linux]
+        - llvm      # [osx]
         # Dependency for Windows compiler goes here if applicable
         - boost
     run:
