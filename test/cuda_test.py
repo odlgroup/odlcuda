@@ -3,7 +3,7 @@
 This is mostly compilation tests, main suite is in odl
 """
 
-import odlpp.odlpp_cuda as cuda
+from odlpp import odlpp_cuda as cuda
 import pytest
 
 vec_ids = [str(el) for el in dir(cuda) if el.startswith('CudaVector')]
