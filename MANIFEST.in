@@ -1,0 +1,6 @@
+include README.md
+include LICENSE
+include odlpp_cuda.so
+include libodlpp_cuda.so
+include setup.py
+
