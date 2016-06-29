@@ -20,5 +20,5 @@ setup(name='odlpp',
       install_requires=['odl'],
       packages=['odlpp'],
       package_dir={'odlpp': '.'},
-      package_data={'' : ['*.pyd']},
+      package_data={'' : ['*.pyd', '*.so']},
       entry_points={'odl.space': ['odl_cuda = odlpp.odl_pluggin']})
