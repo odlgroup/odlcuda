@@ -11,9 +11,9 @@
 #include <iostream>
 
 // ODL
-#include <odlpp/cuda/UFunc.h>
-#include <odlpp/cuda/DeviceVectorImpl.h>
-#include <odlpp/cuda/CudaVectorImpl.h>
+#include <odlcuda/cuda/UFunc.h>
+#include <odlcuda/cuda/DeviceVectorImpl.h>
+#include <odlcuda/cuda/CudaVectorImpl.h>
 
 // Utils
 #include <math.h>

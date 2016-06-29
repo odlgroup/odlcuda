@@ -1,6 +1,10 @@
 cmake_minimum_required (VERSION 2.6)
 
-project (odlpp)
+project (odlcuda)
+
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/odl_cpp_utils/CMakeLists.txt")
+    message(FATAL_ERROR "odl_cpp_utils not initialized. Run 'git submodule update --init'." )
+endif()
 
 #Set binary dir
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
@@ -92,8 +96,5 @@ include_directories(${PYTHON_NUMPY_INCLUDE_DIR})
 link_directories(${PYTHON_LIBRARIES})
 
 # Add sub directories as needed
-add_subdirectory (odlpp)
-if(NOT EXISTS "${CMAKE_SOURCE_DIR}/odl_cpp_utils/CMakeLists.txt")
-    message(SEND_ERROR "odl_cpp_utils not initialized. Run 'git submodule update --init'." )
-endif()
+add_subdirectory (odlcuda)
 add_subdirectory (odl_cpp_utils)

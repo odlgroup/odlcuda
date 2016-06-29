@@ -8,7 +8,7 @@
 #include <odl_cpp_utils/cuda/enableThrustWarnings.h>
 
 // ODL
-#include <odlpp/cuda/DeviceVector.h>
+#include <odlcuda/cuda/DeviceVector.h>
 
 // Utils
 #include <odl_cpp_utils/cuda/thrustUtils.h>

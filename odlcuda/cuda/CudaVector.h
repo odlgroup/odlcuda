@@ -15,8 +15,8 @@
 #include <thrust/device_vector.h>
 #include <numpy/arrayobject.h>
 
-#include <odlpp/cuda/CudaVectorImpl.h>
-#include <odlpp/cuda/SliceHelper.h>
+#include <odlcuda/cuda/CudaVectorImpl.h>
+#include <odlcuda/cuda/SliceHelper.h>
 
 using namespace boost::python;
 

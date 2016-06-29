@@ -29,7 +29,7 @@ from numpy import float64
 
 # ODL imports
 import odl
-from odlpp.cu_ntuples import (
+from odlcuda.cu_ntuples import (
     CudaNtuples, CudaFn, CudaFnVector,
     CudaFnNoWeighting, CudaFnConstWeighting, CudaFnVectorWeighting,
     CudaFnCustomInnerProduct, CudaFnCustomNorm, CudaFnCustomDist,

@@ -1,3 +1,5 @@
+"""Exposes the odlcuda files to ODL as a plugin."""
+
 from . import cu_ntuples
 
 def ntuples_impls():
