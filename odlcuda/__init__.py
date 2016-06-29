@@ -20,6 +20,6 @@ from __future__ import absolute_import
 # Workaround for weird bug. Nothing is installed without this
 _install_location = __file__
 
-from . import odlpp_cuda
+from . import odlcuda_
 from . import cu_ntuples
 from . import ufuncs

@@ -29,7 +29,7 @@ from numpy import float64
 
 # ODL imports
 import odl
-from odlpp.cu_ntuples import (
+from odlcuda.cu_ntuples import (
     CudaNtuples, CudaFn, CudaFnVector,
     CudaFnNoWeighting, CudaFnConstWeighting, CudaFnVectorWeighting,
     CudaFnCustomInnerProduct, CudaFnCustomNorm, CudaFnCustomDist,
@@ -430,7 +430,7 @@ def test_astype():
     rn = CudaFn(3, weight=1.5)
     assert rn.astype('float32') == rn
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         rn.astype(complex)
 
 
@@ -729,7 +729,7 @@ def test_offset_sub_vector():
 
 def _test_dtype(dt):
     if dt not in CUDA_DTYPES:
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             r3 = CudaFn(3, dt)
     else:
         r3 = CudaFn(3, dt)

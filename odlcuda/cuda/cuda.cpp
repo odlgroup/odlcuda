@@ -14,11 +14,11 @@
 #include <numpy/arrayobject.h>
 
 #include <odl_cpp_utils/python/numpy_utils.h>
-#include <odlpp/cuda/DeviceVector.h>
-#include <odlpp/cuda/UFunc.h>
-#include <odlpp/cuda/Reduction.h>
-#include <odlpp/cuda/TypeMacro.h>
-#include <odlpp/cuda/CudaVector.h>
+#include <odlcuda/cuda/DeviceVector.h>
+#include <odlcuda/cuda/UFunc.h>
+#include <odlcuda/cuda/Reduction.h>
+#include <odlcuda/cuda/TypeMacro.h>
+#include <odlcuda/cuda/CudaVector.h>
 
 using namespace boost::python;
 
@@ -174,7 +174,7 @@ void instantiateCudaVector(const std::string& name) {
 }
 
 // Expose classes and methods to Python
-BOOST_PYTHON_MODULE(odlpp_cuda) {
+BOOST_PYTHON_MODULE(odlcuda_) {
     auto result = _import_array(); // Import numpy
     if (result != 0) {
         PyErr_Print();

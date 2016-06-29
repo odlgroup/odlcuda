@@ -34,13 +34,13 @@ from odl.space.weighting import (
     CustomInnerProductBase, CustomNormBase, CustomDistBase)
 from odl.util.utility import dtype_repr
 
-from odlpp.ufuncs import CudaNtuplesUFuncs
+from odlcuda.ufuncs import CudaNtuplesUFuncs
 
 try:
-    import odlpp.odlpp_cuda as cuda
+    import odlcuda.odlcuda_ as backend
     CUDA_AVAILABLE = True
 except ImportError:
-    cuda = None
+    backend = None
     CUDA_AVAILABLE = False
 
 
@@ -63,8 +63,8 @@ def _get_int_type():
 
 def _add_if_exists(dtype, name):
     """Add ``dtype`` to ``CUDA_DTYPES`` if it's available."""
-    if hasattr(cuda, name):
-        _TYPE_MAP_NPY2CUDA[np.dtype(dtype)] = getattr(cuda, name)
+    if hasattr(backend, name):
+        _TYPE_MAP_NPY2CUDA[np.dtype(dtype)] = getattr(backend, name)
         CUDA_DTYPES.append(np.dtype(dtype))
 
 
