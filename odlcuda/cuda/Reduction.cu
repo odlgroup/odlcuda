@@ -12,9 +12,9 @@
 #include <iostream>
 
 // ODL
-#include <odlpp/cuda/Reduction.h>
-#include <odlpp/cuda/DeviceVectorImpl.h>
-#include <odlpp/cuda/CudaVectorImpl.h>
+#include <odlcuda/cuda/Reduction.h>
+#include <odlcuda/cuda/DeviceVectorImpl.h>
+#include <odlcuda/cuda/CudaVectorImpl.h>
 
 // Utils
 #include <math.h>

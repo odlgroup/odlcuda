@@ -16,9 +16,9 @@
 #include <odl_cpp_utils/cuda/enableThrustWarnings.h>
 
 // ODL
-#include <odlpp/cuda/DeviceVectorImpl.h>
-#include <odlpp/cuda/TypeMacro.h>
-#include <odlpp/cuda/CudaVectorImpl.h>
+#include <odlcuda/cuda/DeviceVectorImpl.h>
+#include <odlcuda/cuda/TypeMacro.h>
+#include <odlcuda/cuda/CudaVectorImpl.h>
 
 // Utils
 #include <odl_cpp_utils/cuda/thrustUtils.h>

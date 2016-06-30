@@ -1,7 +1,7 @@
 include_directories ("${PROJECT_SOURCE_DIR}")
 
 if(CUDA_ENABLED)
-    set(LIB_NAME "odlpp_cuda")
+    set(LIB_NAME "odlcuda_")
     cuda_include_directories ("${PROJECT_SOURCE_DIR}")
     CUDA_ADD_LIBRARY(${LIB_NAME} SHARED "cuda.cpp"
                                         "cuda.cu"

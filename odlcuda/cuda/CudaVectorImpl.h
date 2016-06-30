@@ -4,8 +4,8 @@
 #include <sstream>
 #include <type_traits>
 
-#include <odlpp/cuda/TypeMacro.h>
-#include <odlpp/cuda/DeviceVector.h>
+#include <odlcuda/cuda/TypeMacro.h>
+#include <odlcuda/cuda/DeviceVector.h>
 
 // The scalar type used for multiplication
 template <typename T, typename Enable = void>

@@ -1,16 +1,16 @@
-ODLpp
-=====
+odlcuda
+=======
 
-C++ backend for ODL
+CUDA backend for [ODL](https://github.com/odlgroup/odl)
 
 Introduction
---------------------
-This is a default backend for ODL, intended to contain examples of ODL interactions with C++.
+------------
+This is a default CUDA backend for ODL. It contains a default implementation of a CUDA based Rn space with associated methods.
 
-It contains a default implementation of a CUDA based Rn space with associated methods.
+By installing this package, CUDA spaces become available to `rn`, `uniform_discr` and related spaces in ODL through the `impl='cuda'` option.
 
 Building
---------------------
+--------
 The project uses CMake to enable builds. Using *cmake-gui* is recommended
 
 [Cmake webpage](http://www.cmake.org/)
@@ -28,7 +28,7 @@ To build and install the package to your python installation, run (as root)
 
     make pyinstall
 
-To verify your installation, run (in the odlpp root directory)
+To verify your installation, run (in the odlcuda root directory)
 
     py.test
 
@@ -62,7 +62,7 @@ External Dependences
 Current external dependencies are
 
 #####Python
-The building block of ODL, ODLpp needs access to both python and numpy header files and compiled files to link against.
+The building block of ODL, odlcuda needs access to both python and numpy header files and compiled files to link against.
 
 #####Boost
 General library with C++ code. This project specifically uses [Boost.Python](http://www.boost.org/doc/libs/1_58_0/libs/python/doc/index.html) to handle the python bindings.
@@ -95,7 +95,7 @@ There are a few common errors encountered, this is the solution to some of these
 
 * Compiling
 
-        [ 20%] Building NVCC (Device) object ODLpp/CMakeFiles/cuda.dir//./cuda_generated_cuda.cu.o /usr/include/c++/4.9.2/bits/alloc_traits.h(248): error: expected a ">"
+        [ 20%] Building NVCC (Device) object odlcuda/CMakeFiles/cuda.dir//./cuda_generated_cuda.cu.o /usr/include/c++/4.9.2/bits/alloc_traits.h(248): error: expected a ">"
 
     It may be that you are trying to compile with CUDA 6.5 and GCC 4.9, this combination is not supported by CUDA.
 
@@ -103,12 +103,12 @@ There are a few common errors encountered, this is the solution to some of these
 
         error LNK1112: module machine type 'x64' conflicts with target machine type 'X86'
 
-    You have a 64-bit library on your path (Boost for instance) while trying to build 32-bit odlpp. Either change the lib, or configure to build 64-bit. On Windows, if you are using Visual Studio to compile use Configuration Manager to set platform to x64, if you are compiling on command line via CMake ensure that the Script Generator is for instance "Visual Studio 12 2013 Win64" (note the Win64 at the end).
+    You have a 64-bit library on your path (Boost for instance) while trying to build 32-bit odlcuda. Either change the lib, or configure to build 64-bit. On Windows, if you are using Visual Studio to compile use Configuration Manager to set platform to x64, if you are compiling on command line via CMake ensure that the Script Generator is for instance "Visual Studio 12 2013 Win64" (note the Win64 at the end).
 
 
 * If you get a error like
 
-        Error	5	error LNK2019: unresolved external symbol "__declspec(dllimport) struct _object * __cdecl boost::python::detail::init_module(struct PyModuleDef &,void (__cdecl*)(void))" (__imp_?init_module@detail@python@boost@@YAPEAU_object@@AEAUPyModuleDef@@P6AXXZ@Z) referenced in function PyInit_utils	C:\Programming\Projects\ODLpp_bin\RLcpp\utils.obj	utils
+        Error	5	error LNK2019: unresolved external symbol "__declspec(dllimport) struct _object * __cdecl boost::python::detail::init_module(struct PyModuleDef &,void (__cdecl*)(void))" (__imp_?init_module@detail@python@boost@@YAPEAU_object@@AEAUPyModuleDef@@P6AXXZ@Z) referenced in function PyInit_utils	C:\Programming\Projects\odlcuda_bin\odlcuda\utils.obj	utils
 
     then it is likely that you are trying to build against unmatched python header files and boost python version
 
@@ -122,7 +122,7 @@ There are a few common errors encountered, this is the solution to some of these
 
 * If, when running the test in python, you encounter an error like
 
-        ImportError: No module named odlpp
+        ImportError: No module named odlcuda
 
     It may be that you have not installed the package, run (as root) `make pyinstall` or equivalent.
     
