@@ -4,6 +4,7 @@ package:
 
 source:
     git_url: https://github.com/odlgroup/odlcuda.git
+    # TODO: this is for testing. Change to a version tag when done.
     git_rev: conda-build
 
 build:
@@ -19,7 +20,7 @@ requirements:
         - future >=0.14
         - cudatoolkit
         - boost
-        # Make sure to run "conda config --append channels odlgroup"
+        # Make sure to run "conda config --append channels odlgroup" before building.
         - odl >=0.3.0
         # Compilers, needed for build only
         - gcc <5    # [linux]
@@ -36,10 +37,10 @@ requirements:
 
 test:
     imports:
-        - odlcuda
+        - odl
 
-    requires:
-        - pytest
+    commands:
+        - python -c "import odl; odl.rn(5, impl='cuda').element()"
 
 about:
     home: https://github.com/odlgroup/odlcuda
@@ -51,6 +52,3 @@ extra:
     maintainers:
         - Jonas Adler (@adler-j)
         - Holger Kohr (@kohr-h)
-        - Ozan Öktem (@ozanoktem)
-
-
