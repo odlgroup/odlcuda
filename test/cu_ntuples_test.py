@@ -36,13 +36,13 @@ from odlcuda.cu_ntuples import (
     cu_weighted_inner, cu_weighted_norm, cu_weighted_dist, CUDA_DTYPES)
 
 from odl.util.testutils import (all_equal, all_almost_equal, almost_equal,
-                                example_vectors, example_element)
+                                noise_elements, noise_element)
 
 
 # Helper to generate data
 def _pos_vector(fn):
     """Create an vector with positive real entries as weight in `fn`."""
-    return np.abs(example_element(fn)) + 0.1
+    return np.abs(noise_element(fn)) + 0.1
 
 
 # Pytest fixtures
@@ -394,7 +394,7 @@ def test_inner():
 
 def test_norm(exponent):
     r3 = CudaFn(3, exponent=exponent)
-    xarr, x = example_vectors(r3)
+    xarr, x = noise_elements(r3)
 
     correct_norm = np.linalg.norm(xarr, ord=exponent)
 
@@ -410,7 +410,7 @@ def test_norm(exponent):
 
 def test_dist(exponent):
     r3 = CudaFn(3, exponent=exponent)
-    [xarr, yarr], [x, y] = example_vectors(r3, n=2)
+    [xarr, yarr], [x, y] = noise_elements(r3, n=2)
 
     correct_dist = np.linalg.norm(xarr - yarr, ord=exponent)
 
@@ -439,7 +439,7 @@ def _test_lincomb(fn, a, b):
     # data and given a,b
 
     # Unaliased arguments
-    [x_arr, y_arr, z_arr], [x, y, z] = example_vectors(fn, 3)
+    [x_arr, y_arr, z_arr], [x, y, z] = noise_elements(fn, 3)
 
     z_arr[:] = a * x_arr + b * y_arr
     fn.lincomb(a, x, b, y, out=z)
@@ -447,7 +447,7 @@ def _test_lincomb(fn, a, b):
                             [x_arr, y_arr, z_arr])
 
     # First argument aliased with output
-    [x_arr, y_arr, z_arr], [x, y, z] = example_vectors(fn, 3)
+    [x_arr, y_arr, z_arr], [x, y, z] = noise_elements(fn, 3)
 
     z_arr[:] = a * z_arr + b * y_arr
     fn.lincomb(a, z, b, y, out=z)
@@ -455,7 +455,7 @@ def _test_lincomb(fn, a, b):
                             [x_arr, y_arr, z_arr])
 
     # Second argument aliased with output
-    [x_arr, y_arr, z_arr], [x, y, z] = example_vectors(fn, 3)
+    [x_arr, y_arr, z_arr], [x, y, z] = noise_elements(fn, 3)
 
     z_arr[:] = a * x_arr + b * z_arr
     fn.lincomb(a, x, b, z, out=z)
@@ -463,7 +463,7 @@ def _test_lincomb(fn, a, b):
                             [x_arr, y_arr, z_arr])
 
     # Both arguments aliased with each other
-    [x_arr, y_arr, z_arr], [x, y, z] = example_vectors(fn, 3)
+    [x_arr, y_arr, z_arr], [x, y, z] = noise_elements(fn, 3)
 
     z_arr[:] = a * x_arr + b * x_arr
     fn.lincomb(a, x, b, x, out=z)
@@ -471,7 +471,7 @@ def _test_lincomb(fn, a, b):
                             [x_arr, y_arr, z_arr])
 
     # All aliased
-    [x_arr, y_arr, z_arr], [x, y, z] = example_vectors(fn, 3)
+    [x_arr, y_arr, z_arr], [x, y, z] = noise_elements(fn, 3)
 
     z_arr[:] = a * z_arr + b * z_arr
     fn.lincomb(a, z, b, z, out=z)
@@ -490,7 +490,7 @@ def _test_member_lincomb(spc, a):
     # Validates vector member lincomb against the result on host
 
     # Generate vectors
-    [x_host, y_host], [x_device, y_device] = example_vectors(spc, 2)
+    [x_host, y_host], [x_device, y_device] = noise_elements(spc, 2)
 
     # Host side calculation
     y_host[:] = a * x_host
@@ -510,7 +510,7 @@ def test_member_lincomb(fn):
 
 def test_multiply(fn):
     # Validates multiply against the result on host with randomized data
-    [xarr, yarr, zarr], [x_device, y_device, z_device] = example_vectors(fn, 3)
+    [xarr, yarr, zarr], [x_device, y_device, z_device] = noise_elements(fn, 3)
 
     # Host side calculation
     zarr[:] = xarr * yarr
@@ -538,7 +538,7 @@ def test_multiply(fn):
 def test_member_multiply(fn):
     # Validate vector member multiply against the result on host
     # with randomized data
-    [x_host, y_host], [x_device, y_device] = example_vectors(fn, 2)
+    [x_host, y_host], [x_device, y_device] = noise_elements(fn, 2)
 
     # Host side calculation
     y_host *= x_host
@@ -553,7 +553,7 @@ def test_member_multiply(fn):
 def _test_unary_operator(spc, function):
     # Verify that the statement y=function(x) gives equivalent
     # results to Numpy.
-    x_arr, x = example_vectors(spc)
+    x_arr, x = noise_elements(spc)
 
     y_arr = function(x_arr)
     y = function(x)
@@ -565,7 +565,7 @@ def _test_unary_operator(spc, function):
 def _test_binary_operator(spc, function):
     # Verify that the statement z=function(x,y) gives equivalent
     # results to Numpy.
-    [x_arr, y_arr], [x, y] = example_vectors(spc, 2)
+    [x_arr, y_arr], [x, y] = noise_elements(spc, 2)
 
     z_arr = function(x_arr, y_arr)
     z = function(x, y)
@@ -667,7 +667,7 @@ def test_incompatible_operations():
 def test_copy(fn):
     import copy
 
-    x = example_element(fn)
+    x = noise_element(fn)
     y = copy.copy(x)
 
     assert x == y
@@ -680,8 +680,8 @@ def test_copy(fn):
 
 
 def test_transpose(fn):
-    x = example_element(fn)
-    y = example_element(fn)
+    x = noise_element(fn)
+    y = noise_element(fn)
 
     # Assert linear operator
     assert isinstance(x.T, odl.Operator)
@@ -772,7 +772,7 @@ def test_const_equals(exponent):
 
 def test_const_inner():
     rn = CudaFn(5)
-    [xarr, yarr], [x, y] = example_vectors(rn, 2)
+    [xarr, yarr], [x, y] = noise_elements(rn, 2)
 
     constant = 1.5
     weighting = CudaFnConstWeighting(constant)
@@ -783,7 +783,7 @@ def test_const_inner():
 
 def test_const_norm(exponent):
     rn = CudaFn(5)
-    xarr, x = example_vectors(rn)
+    xarr, x = noise_elements(rn)
 
     constant = 1.5
     weighting = CudaFnConstWeighting(constant, exponent=exponent)
@@ -810,7 +810,7 @@ def test_const_norm(exponent):
 
 def test_const_dist(exponent):
     rn = CudaFn(5)
-    [xarr, yarr], [x, y] = example_vectors(rn, n=2)
+    [xarr, yarr], [x, y] = noise_elements(rn, n=2)
 
     constant = 1.5
     weighting = CudaFnConstWeighting(constant, exponent=exponent)
@@ -871,7 +871,7 @@ def test_vector_equals():
 
 def test_vector_inner():
     rn = CudaFn(5)
-    [xarr, yarr], [x, y] = example_vectors(rn, 2)
+    [xarr, yarr], [x, y] = noise_elements(rn, 2)
 
     weight = _pos_vector(CudaFn(5))
 
@@ -893,7 +893,7 @@ def test_vector_inner():
 
 def test_vector_norm(exponent):
     rn = CudaFn(5)
-    xarr, x = example_vectors(rn)
+    xarr, x = noise_elements(rn)
 
     weight = _pos_vector(CudaFn(5))
 
@@ -925,7 +925,7 @@ def test_vector_norm(exponent):
 
 def test_vector_dist(exponent):
     rn = CudaFn(5)
-    [xarr, yarr], [x, y] = example_vectors(rn, n=2)
+    [xarr, yarr], [x, y] = noise_elements(rn, n=2)
 
     weight = _pos_vector(CudaFn(5))
 
@@ -957,7 +957,7 @@ def test_vector_dist(exponent):
 
 
 def test_custom_inner(fn):
-    [xarr, yarr], [x, y] = example_vectors(fn, 2)
+    [xarr, yarr], [x, y] = noise_elements(fn, 2)
 
     def inner(x, y):
         return np.vdot(y, x)
@@ -989,7 +989,7 @@ def test_custom_inner(fn):
 
 
 def test_custom_norm(fn):
-    [xarr, yarr], [x, y] = example_vectors(fn, 2)
+    [xarr, yarr], [x, y] = noise_elements(fn, 2)
 
     norm = np.linalg.norm
 
@@ -1018,7 +1018,7 @@ def test_custom_norm(fn):
 
 
 def test_custom_dist(fn):
-    [xarr, yarr], [x, y] = example_vectors(fn, 2)
+    [xarr, yarr], [x, y] = noise_elements(fn, 2)
 
     def dist(x, y):
         return np.linalg.norm(x - y)
@@ -1063,7 +1063,7 @@ def test_ufuncs(fn, ufunc):
     ufunc = getattr(np, name)
 
     # Create some data
-    arrays, vectors = example_vectors(fn, n_args + n_out)
+    arrays, vectors = noise_elements(fn, n_args + n_out)
     in_arrays = arrays[:n_args]
     out_arrays = arrays[n_args:]
     data_vector = vectors[0]
@@ -1103,7 +1103,7 @@ def test_reductions(fn, reduction):
     ufunc = getattr(np, name)
 
     # Create some data
-    x_arr, x = example_vectors(fn, 1)
+    x_arr, x = noise_elements(fn, 1)
 
     assert almost_equal(ufunc(x_arr), getattr(x.ufunc, name)())
 

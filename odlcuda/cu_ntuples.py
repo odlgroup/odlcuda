@@ -26,7 +26,7 @@ from builtins import int, super
 import numpy as np
 
 from odl.set.sets import RealNumbers, ComplexNumbers
-from odl.set.space import LinearSpaceVector
+from odl.set.space import LinearSpaceElement
 from odl.space.base_ntuples import (
     NtuplesBase, NtuplesBaseVector, FnBase, FnBaseVector)
 from odl.space.weighting import (
@@ -235,7 +235,7 @@ class CudaNtuples(NtuplesBase):
                              ''.format(field))
 
 
-class CudaNtuplesVector(NtuplesBaseVector, LinearSpaceVector):
+class CudaNtuplesVector(NtuplesBaseVector, LinearSpaceElement):
 
     """Representation of a `CudaNtuples` element."""
 
