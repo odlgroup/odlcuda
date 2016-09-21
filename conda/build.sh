@@ -10,15 +10,14 @@ else
     PYTHON_INCLUDE_DIR=$PREFIX/include/python${PYTHON_VERSION}m
 fi
 
-CUDA_ROOT=$PREFIX/lib/
-BOOST_LIBRARY=$PREFIX/lib/libboost_python.so
+BOOST_PYTHON_LIBRARY=$PREFIX/lib/libboost_python.so
 
-# Fix: need .so files without version number for FindCUDA.cmake
-cd $CUDA_ROOT
-for lib in libcu*.so.*.[0-9]; do
-    # Replace *.so.* with *.so
-    ln -sf $lib $(echo $lib | sed 's/\(.*\.so\)\..*/\1/')
-done
+# # Fix: need .so files without version number for FindCUDA.cmake
+# cd $CUDA_ROOT
+# for lib in libcu*.so.*.[0-9]; do
+#     # Replace *.so.* with *.so
+#     ln -sf $lib $(echo $lib | sed 's/\(.*\.so\)\..*/\1/')
+# done
 
 NUMPY_INCLUDE_DIR=$(python -c "from __future__ import print_function; import numpy; print(numpy.get_include())")
 
@@ -27,7 +26,7 @@ ODLCUDA_BUILDDIR=$SRC_DIR/build-py$PYTHON_VERSION
 ODLCUDA_NUMPY_BUILDOPTS="-DPYTHON_NUMPY_INCLUDE_DIR=$NUMPY_INCLUDE_DIR"
 ODLCUDA_PYTHON_BUILDOPTS="-DPYTHON_EXECUTABLE=$PYTHON -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR -DPYTHON_LIBRARY=$PYTHON_LIBRARY"
 ODLCUDA_CUDA_BUILDOPTS="-DCUDA_TOOLKIT_ROOT_DIR=$CUDA_ROOT -DODL_CUDA_COMPUTE=$CUDA_COMPUTE -DCUDA_LIBRARIES=$CUDA_LIBRARIES"
-ODLCUDA_BOOST_BUILDOPTS="-DBoost_PYTHON_LIBRARY_RELEASE=$BOOST_LIBRARY -DBoost_PYTHON_LIBRARY_DEBUG=$BOOST_LIBRARY"
+ODLCUDA_BOOST_BUILDOPTS="-DBoost_PYTHON_LIBRARY_RELEASE=$BOOST_PYTHON_LIBRARY -DBoost_PYTHON_LIBRARY_DEBUG=$BOOST_PYTHON_LIBRARY"
 ODLCUDA_CC_BUILDOPTS="-DCMAKE_CXX_COMPILER=$PREFIX/bin/c++ -DCMAKE_C_COMPILER=$PREFIX/bin/cc"
 ODLCUDA_CMAKEOPTS="$ODLCUDA_PYTHON_BUILDOPTS $ODLCUDA_NUMPY_BUILDOPTS $ODLCUDA_CUDA_BUILDOPTS $ODLCUDA_BOOST_BUILDOPTS $ODLCUDA_CC_BUILDOPTS"
 

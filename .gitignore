@@ -33,3 +33,6 @@ build*/
 
 # OS config files
 .directory
+
+# Spyder project file
+.spyderproject

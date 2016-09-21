@@ -9,31 +9,32 @@ source:
 
 build:
     script_env:
+        - CUDA_ROOT
         - CUDA_COMPUTE
 
 requirements:
     build:
-        - python 2.7|>=3.4
+        - python
         - nomkl
         - setuptools
         - numpy >=1.9
         - future >=0.14
-        - cudatoolkit
         - boost
+
         # Make sure to run "conda config --append channels odlgroup" before building.
         - odl >=0.3.0
+
         # Compilers, needed for build only
         - gcc <5    # [linux]
         - llvm      # [osx]
         # ??? # [win]
     run:
         - nomkl
-        - python 2.7|>=3.4
+        - python
         - numpy >=1.9
         - future >=0.14
-        - cudatoolkit
-        - boost
         - odl >=0.3.0
+        - boost
 
 test:
     imports:
