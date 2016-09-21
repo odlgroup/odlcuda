@@ -1,10 +1,12 @@
-#!/bin/sh
+#!/bin/bash
+
+set -x
 
 PYTHON_VERSION=${CONDA_PY:0:1}.${CONDA_PY:1:2}
 
-if [ -z $PY3K ]; then
+if [[ $PY3K == 0 ]]; then
     PYTHON_LIBRARY=$PREFIX/lib/libpython2.7.so
-    PYTHON_INCLUDE_DIR=$PREFIX/include/python2.7.so
+    PYTHON_INCLUDE_DIR=$PREFIX/include/python2.7
 else
     PYTHON_LIBRARY=$PREFIX/lib/libpython${PYTHON_VERSION}m.so
     PYTHON_INCLUDE_DIR=$PREFIX/include/python${PYTHON_VERSION}m
