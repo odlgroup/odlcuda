@@ -30,8 +30,8 @@ from odl.set.space import LinearSpaceElement
 from odl.space.base_ntuples import (
     NtuplesBase, NtuplesBaseVector, FnBase, FnBaseVector)
 from odl.space.weighting import (
-    WeightingBase, VectorWeightingBase, ConstWeightingBase, NoWeightingBase,
-    CustomInnerProductBase, CustomNormBase, CustomDistBase)
+    Weighting, ArrayWeighting, ConstWeighting, NoWeighting,
+    CustomInner, CustomNorm, CustomDist)
 from odl.util.utility import dtype_repr
 
 from odlcuda.ufuncs import CudaNtuplesUFuncs
@@ -641,19 +641,19 @@ class CudaFn(FnBase, CudaNtuples):
             raise ValueError('invalid combination of options `weight`, '
                              '`dist`, `norm` and `inner`')
         if weight is not None:
-            if isinstance(weight, WeightingBase):
+            if isinstance(weight, Weighting):
                 self._weighting = weight
             elif np.isscalar(weight):
                 self._weighting = CudaFnConstWeighting(
                     weight, exponent=exponent)
             elif isinstance(weight, CudaFnVector):
-                self._weighting = CudaFnVectorWeighting(
+                self._weighting = CudaFnArrayWeighting(
                     weight, exponent=exponent)
             else:
                 # Must make a CudaFnVector from the array
                 weight = self.element(np.asarray(weight))
                 if weight.ndim == 1:
-                    self._weighting = CudaFnVectorWeighting(
+                    self._weighting = CudaFnArrayWeighting(
                         weight, exponent=exponent)
                 else:
                     raise ValueError('invalid weight argument {!r}'
@@ -967,14 +967,14 @@ def _weighting(weight, exponent):
         weighting = CudaFnConstWeighting(
             weight, exponent)
     elif isinstance(weight, CudaFnVector):
-        weighting = CudaFnVectorWeighting(
+        weighting = CudaFnArrayWeighting(
             weight, exponent=exponent)
     else:
         weight_ = np.asarray(weight)
         if weight_.dtype == object:
             raise ValueError('bad weight {}'.format(weight))
         if weight_.ndim == 1:
-            weighting = CudaFnVectorWeighting(
+            weighting = CudaFnArrayWeighting(
                 weight_, exponent)
         elif weight_.ndim == 2:
             raise NotImplementedError('matrix weighting not implemented '
@@ -1110,7 +1110,7 @@ def _inner_diagweight(x1, x2, w):
     return x1.data.inner_weight(x2.data, w.data)
 
 
-class CudaFnVectorWeighting(VectorWeightingBase):
+class CudaFnArrayWeighting(ArrayWeighting):
 
     """Vector weighting for `CudaFn`.
 
@@ -1218,7 +1218,7 @@ class CudaFnVectorWeighting(VectorWeightingBase):
             return _pdist_diagweight(x1, x2, self.exponent, self.vector)
 
 
-class CudaFnConstWeighting(ConstWeightingBase):
+class CudaFnConstWeighting(ConstWeighting):
 
     """Weighting of `CudaFn` by a constant.
 
@@ -1324,7 +1324,7 @@ class CudaFnConstWeighting(ConstWeightingBase):
                     _pdist_default(x1, x2, self.exponent))
 
 
-class CudaFnNoWeighting(NoWeightingBase, CudaFnConstWeighting):
+class CudaFnNoWeighting(NoWeighting, CudaFnConstWeighting):
 
     """Weighting of `CudaFn` with constant 1.
 
@@ -1368,7 +1368,7 @@ class CudaFnNoWeighting(NoWeightingBase, CudaFnConstWeighting):
                          dist_using_inner=False)
 
 
-class CudaFnCustomInnerProduct(CustomInnerProductBase):
+class CudaFnCustomInnerProduct(CustomInner):
 
     """Class for handling a user-specified inner product on `CudaFn`."""
 
@@ -1400,7 +1400,7 @@ class CudaFnCustomInnerProduct(CustomInnerProductBase):
                          dist_using_inner=dist_using_inner)
 
 
-class CudaFnCustomNorm(CustomNormBase):
+class CudaFnCustomNorm(CustomNorm):
 
     """Class for handling a user-specified norm in `CudaFn`.
 
@@ -1425,7 +1425,7 @@ class CudaFnCustomNorm(CustomNormBase):
         super().__init__(norm, impl='cuda')
 
 
-class CudaFnCustomDist(CustomDistBase):
+class CudaFnCustomDist(CustomDist):
 
     """Class for handling a user-specified distance in `CudaFn`.
 
