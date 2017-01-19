@@ -7,7 +7,7 @@ from setuptools import setup
 
 
 setup(name='odlcuda',
-      version='0.4.0',
+      version='0.5.0',
       author='Jonas Adler',
       author_email='jonasadl@kth.se',
       url='https://github.com/odlgroup/odlcuda',
