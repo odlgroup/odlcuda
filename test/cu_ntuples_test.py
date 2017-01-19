@@ -31,8 +31,8 @@ from numpy import float64
 import odl
 from odlcuda.cu_ntuples import (
     CudaNtuples, CudaFn, CudaFnVector,
-    CudaFnNoWeighting, CudaFnConstWeighting, CudaFnVectorWeighting,
-    CudaFnCustomInnerProduct, CudaFnCustomNorm, CudaFnCustomDist,
+    CudaFnNoWeighting, CudaFnConstWeighting, CudaFnArrayWeighting,
+    CudaFnCustomInner, CudaFnCustomNorm, CudaFnCustomDist,
     cu_weighted_inner, cu_weighted_norm, cu_weighted_dist, CUDA_DTYPES)
 
 from odl.util.testutils import (all_equal, all_almost_equal, almost_equal,
@@ -134,8 +134,8 @@ def test_init_weighting(exponent):
 
     weighting_none = CudaFnNoWeighting(exponent=exponent)
     weighting_const = CudaFnConstWeighting(const, exponent=exponent)
-    weighting_vec = CudaFnVectorWeighting(weight_vec, exponent=exponent)
-    weighting_elem = CudaFnVectorWeighting(weight_elem, exponent=exponent)
+    weighting_vec = CudaFnArrayWeighting(weight_vec, exponent=exponent)
+    weighting_elem = CudaFnArrayWeighting(weight_elem, exponent=exponent)
 
     assert f3_none.weighting == weighting_none
     assert f3_const.weighting == weighting_const
@@ -839,22 +839,22 @@ def test_vector_init():
     rn = CudaFn(5)
     weight_vec = _pos_vector(rn)
 
-    CudaFnVectorWeighting(weight_vec)
-    CudaFnVectorWeighting(rn.element(weight_vec))
+    CudaFnArrayWeighting(weight_vec)
+    CudaFnArrayWeighting(rn.element(weight_vec))
 
 
 def test_vector_is_valid():
     rn = CudaFn(5)
     weight = _pos_vector(rn)
 
-    weighting = CudaFnVectorWeighting(weight)
+    weighting = CudaFnArrayWeighting(weight)
 
     assert weighting.is_valid()
 
     # Invalid
     weight[0] = 0
 
-    weighting = CudaFnVectorWeighting(weight)
+    weighting = CudaFnArrayWeighting(weight)
 
     assert not weighting.is_valid()
 
@@ -863,8 +863,8 @@ def test_vector_equals():
     rn = CudaFn(5)
     weight = _pos_vector(rn)
 
-    weighting = CudaFnVectorWeighting(weight)
-    weighting2 = CudaFnVectorWeighting(weight)
+    weighting = CudaFnArrayWeighting(weight)
+    weighting2 = CudaFnArrayWeighting(weight)
 
     assert weighting == weighting2
 
@@ -875,7 +875,7 @@ def test_vector_inner():
 
     weight = _pos_vector(CudaFn(5))
 
-    weighting = CudaFnVectorWeighting(weight)
+    weighting = CudaFnArrayWeighting(weight)
 
     true_inner = np.vdot(yarr, xarr * weight.asarray())
 
@@ -888,7 +888,7 @@ def test_vector_inner():
 
     # Exponent != 2 -> no inner product, should raise
     with pytest.raises(NotImplementedError):
-        CudaFnVectorWeighting(weight, exponent=1.0).inner(x, y)
+        CudaFnArrayWeighting(weight, exponent=1.0).inner(x, y)
 
 
 def test_vector_norm(exponent):
@@ -897,7 +897,7 @@ def test_vector_norm(exponent):
 
     weight = _pos_vector(CudaFn(5))
 
-    weighting = CudaFnVectorWeighting(weight, exponent=exponent)
+    weighting = CudaFnArrayWeighting(weight, exponent=exponent)
 
     if exponent in (1.0, float('inf')):
         true_norm = np.linalg.norm(weight.asarray() * xarr, ord=exponent)
@@ -929,7 +929,7 @@ def test_vector_dist(exponent):
 
     weight = _pos_vector(CudaFn(5))
 
-    weighting = CudaFnVectorWeighting(weight, exponent=exponent)
+    weighting = CudaFnArrayWeighting(weight, exponent=exponent)
 
     if exponent in (1.0, float('inf')):
         true_dist = np.linalg.norm(weight.asarray() * (xarr - yarr),
@@ -962,10 +962,10 @@ def test_custom_inner(fn):
     def inner(x, y):
         return np.vdot(y, x)
 
-    w = CudaFnCustomInnerProduct(inner)
-    w_same = CudaFnCustomInnerProduct(inner)
-    w_other = CudaFnCustomInnerProduct(np.dot)
-    w_d = CudaFnCustomInnerProduct(inner, dist_using_inner=False)
+    w = CudaFnCustomInner(inner)
+    w_same = CudaFnCustomInner(inner)
+    w_other = CudaFnCustomInner(np.dot)
+    w_d = CudaFnCustomInner(inner, dist_using_inner=False)
 
     assert w == w
     assert w == w_same
@@ -985,7 +985,7 @@ def test_custom_inner(fn):
     assert almost_equal(w_d.dist(x, y), true_dist)
 
     with pytest.raises(TypeError):
-        CudaFnCustomInnerProduct(1)
+        CudaFnCustomInner(1)
 
 
 def test_custom_norm(fn):

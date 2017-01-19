@@ -47,7 +47,7 @@ except ImportError:
 __all__ = ('CudaNtuples', 'CudaNtuplesVector',
            'CudaFn', 'CudaFnVector',
            'CUDA_DTYPES', 'CUDA_AVAILABLE',
-           'CudaFnConstWeighting', 'CudaFnVectorWeighting',
+           'CudaFnConstWeighting', 'CudaFnArrayWeighting',
            'cu_weighted_inner', 'cu_weighted_norm', 'cu_weighted_dist')
 
 
@@ -664,7 +664,7 @@ class CudaFn(FnBase, CudaNtuples):
             self._weighting = CudaFnCustomNorm(norm)
         elif inner is not None:
             # Use fast dist implementation
-            self._weighting = CudaFnCustomInnerProduct(
+            self._weighting = CudaFnCustomInner(
                 inner, dist_using_inner=True)
         else:  # all None -> no weighing
             self._weighting = CudaFnNoWeighting(exponent)
@@ -1208,7 +1208,7 @@ class CudaFnArrayWeighting(ArrayWeighting):
                                       'exponent != 2 (got {})'
                                       ''.format(self.exponent))
         else:
-            return _inner_diagweight(x1, x2, self.vector)
+            return _inner_diagweight(x1, x2, self.array)
 
     def norm(self, x):
         """Calculate the vector-weighted norm of a vector.
@@ -1226,7 +1226,7 @@ class CudaFnArrayWeighting(ArrayWeighting):
         if self.exponent == float('inf'):
             raise NotImplementedError('inf norm not implemented yet')
         else:
-            return _pnorm_diagweight(x, self.exponent, self.vector)
+            return _pnorm_diagweight(x, self.exponent, self.array)
 
     def dist(self, x1, x2):
         """Calculate the vector-weighted distance between two vectors.
@@ -1244,7 +1244,7 @@ class CudaFnArrayWeighting(ArrayWeighting):
         if self.exponent == float('inf'):
             raise NotImplementedError('inf norm not implemented yet')
         else:
-            return _pdist_diagweight(x1, x2, self.exponent, self.vector)
+            return _pdist_diagweight(x1, x2, self.exponent, self.array)
 
 
 class CudaFnConstWeighting(ConstWeighting):
@@ -1397,7 +1397,7 @@ class CudaFnNoWeighting(NoWeighting, CudaFnConstWeighting):
                          dist_using_inner=False)
 
 
-class CudaFnCustomInnerProduct(CustomInner):
+class CudaFnCustomInner(CustomInner):
 
     """Class for handling a user-specified inner product on `CudaFn`."""
 
