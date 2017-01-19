@@ -761,6 +761,35 @@ class CudaFn(FnBase, CudaNtuples):
         """
         return self.weighting.inner(x1, x2)
 
+    def _integral(self, x):
+        """Raw integral of vector.
+
+        Parameters
+        ----------
+        x : `CudaFnVector`
+            The vector whose integral should be computed.
+
+        Returns
+        -------
+        inner : `field` element
+            Inner product of the vectors
+
+        Examples
+        --------
+        >>> r3 = CudaFn(2, dtype='float32')
+        >>> x = r3.element([3, -1])
+        >>> r3.integral(x)
+        2.0
+
+        Notes
+        -----
+        Integration of `ntuples` vectors are defined as the sum of the elements
+        in the vector, i.e. the discrete measure.
+
+        In weighted spaces, the unweighted measure is used for the integral.
+        """
+        return x.ufunc.sum()
+
     def _dist(self, x1, x2):
         """Calculate the distance between two vectors.
 
