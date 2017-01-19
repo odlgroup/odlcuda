@@ -37,7 +37,7 @@ from __future__ import print_function, division, absolute_import
 from future import standard_library
 standard_library.install_aliases()
 
-import re
+
 import odl
 
 
@@ -49,7 +49,7 @@ def _make_nullary_fun(name):
     def fun(self):
         return getattr(self.vector.data, name)()
 
-    fun.__doc__ = getattr(odl.util.ufuncs.NtuplesBaseUFuncs, name).__doc__
+    fun.__doc__ = getattr(odl.util.ufuncs.NtuplesBaseUfuncs, name).__doc__
     fun.__name__ = name
     return fun
 
@@ -61,12 +61,12 @@ def _make_unary_fun(name):
         getattr(self.vector.data, name)(out.data)
         return out
 
-    fun.__doc__ = getattr(odl.util.ufuncs.NtuplesBaseUFuncs, name).__doc__
+    fun.__doc__ = getattr(odl.util.ufuncs.NtuplesBaseUfuncs, name).__doc__
     fun.__name__ = name
     return fun
 
 
-class CudaNtuplesUFuncs(odl.util.ufuncs.NtuplesBaseUFuncs):
+class CudaNtuplesUFuncs(odl.util.ufuncs.NtuplesBaseUfuncs):
 
     """UFuncs for `CudaNtuplesVector` objects.
 

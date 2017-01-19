@@ -30,8 +30,8 @@ from odl.set.space import LinearSpaceElement
 from odl.space.base_ntuples import (
     NtuplesBase, NtuplesBaseVector, FnBase, FnBaseVector)
 from odl.space.weighting import (
-    WeightingBase, VectorWeightingBase, ConstWeightingBase, NoWeightingBase,
-    CustomInnerProductBase, CustomNormBase, CustomDistBase)
+    Weighting, ArrayWeighting, ConstWeighting, NoWeighting,
+    CustomInner, CustomNorm, CustomDist)
 from odl.util.utility import dtype_repr
 
 from odlcuda.ufuncs import CudaNtuplesUFuncs
@@ -47,7 +47,7 @@ except ImportError:
 __all__ = ('CudaNtuples', 'CudaNtuplesVector',
            'CudaFn', 'CudaFnVector',
            'CUDA_DTYPES', 'CUDA_AVAILABLE',
-           'CudaFnConstWeighting', 'CudaFnVectorWeighting',
+           'CudaFnConstWeighting', 'CudaFnArrayWeighting',
            'cu_weighted_inner', 'cu_weighted_norm', 'cu_weighted_dist')
 
 
@@ -477,36 +477,36 @@ class CudaNtuplesVector(NtuplesBaseVector, LinearSpaceElement):
                 self.data[int(indices)] = values
 
     @property
-    def ufunc(self):
+    def ufuncs(self):
         """`CudaNtuplesUFuncs`, access to numpy style ufuncs.
 
         Examples
         --------
         >>> r2 = CudaFn(2)
         >>> x = r2.element([1, -2])
-        >>> x.ufunc.absolute()
+        >>> x.ufuncs.absolute()
         CudaFn(2).element([1.0, 2.0])
 
         These functions can also be used with broadcasting
 
-        >>> x.ufunc.add(3)
+        >>> x.ufuncs.add(3)
         CudaFn(2).element([4.0, 1.0])
 
         and non-space elements
 
-        >>> x.ufunc.subtract([3, 3])
+        >>> x.ufuncs.subtract([3, 3])
         CudaFn(2).element([-2.0, -5.0])
 
         There is also support for various reductions (sum, prod, min, max)
 
-        >>> x.ufunc.sum()
+        >>> x.ufuncs.sum()
         -1.0
 
         Also supports out parameter
 
         >>> y = r2.element([3, 4])
         >>> out = r2.element()
-        >>> result = x.ufunc.add(y, out=out)
+        >>> result = x.ufuncs.add(y, out=out)
         >>> result
         CudaFn(2).element([4.0, 2.0])
         >>> result is out
@@ -519,7 +519,7 @@ class CudaNtuplesVector(NtuplesBaseVector, LinearSpaceElement):
 
         See also
         --------
-        odl.util.ufuncs.NtuplesBaseUFuncs
+        odl.util.ufuncs.NtuplesBaseUfuncs
             Base class for ufuncs in `NtuplesBase` spaces.
         """
         return CudaNtuplesUFuncs(self)
@@ -547,7 +547,7 @@ class CudaFn(FnBase, CudaNtuples):
 
             Only scalar data types are allowed.
 
-        weight : optional
+        weighting : optional
             Use weighted inner product, norm, and dist. The following
             types are supported as ``weight``:
 
@@ -633,41 +633,41 @@ class CudaFn(FnBase, CudaNtuples):
         dist = kwargs.pop('dist', None)
         norm = kwargs.pop('norm', None)
         inner = kwargs.pop('inner', None)
-        weight = kwargs.pop('weight', None)
+        weighting = kwargs.pop('weighting', None)
         exponent = kwargs.pop('exponent', 2.0)
 
         # Check validity of option combination (3 or 4 out of 4 must be None)
-        if sum(x is None for x in (dist, norm, inner, weight)) < 3:
+        if sum(x is None for x in (dist, norm, inner, weighting)) < 3:
             raise ValueError('invalid combination of options `weight`, '
                              '`dist`, `norm` and `inner`')
-        if weight is not None:
-            if isinstance(weight, WeightingBase):
-                self._weighting = weight
-            elif np.isscalar(weight):
-                self._weighting = CudaFnConstWeighting(
-                    weight, exponent=exponent)
-            elif isinstance(weight, CudaFnVector):
-                self._weighting = CudaFnVectorWeighting(
-                    weight, exponent=exponent)
+        if weighting is not None:
+            if isinstance(weighting, Weighting):
+                self.__weighting = weighting
+            elif np.isscalar(weighting):
+                self.__weighting = CudaFnConstWeighting(
+                    weighting, exponent=exponent)
+            elif isinstance(weighting, CudaFnVector):
+                self.__weighting = CudaFnArrayWeighting(
+                    weighting, exponent=exponent)
             else:
                 # Must make a CudaFnVector from the array
-                weight = self.element(np.asarray(weight))
-                if weight.ndim == 1:
-                    self._weighting = CudaFnVectorWeighting(
-                        weight, exponent=exponent)
+                weighting = self.element(np.asarray(weighting))
+                if weighting.ndim == 1:
+                    self.__weighting = CudaFnArrayWeighting(
+                        weighting, exponent=exponent)
                 else:
-                    raise ValueError('invalid weight argument {!r}'
-                                     ''.format(weight))
+                    raise ValueError('invalid weighting argument {!r}'
+                                     ''.format(weighting))
         elif dist is not None:
-            self._weighting = CudaFnCustomDist(dist)
+            self.__weighting = CudaFnCustomDist(dist)
         elif norm is not None:
-            self._weighting = CudaFnCustomNorm(norm)
+            self.__weighting = CudaFnCustomNorm(norm)
         elif inner is not None:
             # Use fast dist implementation
-            self._weighting = CudaFnCustomInnerProduct(
+            self.__weighting = CudaFnCustomInner(
                 inner, dist_using_inner=True)
         else:  # all None -> no weighing
-            self._weighting = CudaFnNoWeighting(exponent)
+            self.__weighting = CudaFnNoWeighting(exponent)
 
     @property
     def exponent(self):
@@ -677,7 +677,7 @@ class CudaFn(FnBase, CudaNtuples):
     @property
     def weighting(self):
         """This space's weighting scheme."""
-        return self._weighting
+        return self.__weighting
 
     @property
     def is_weighted(self):
@@ -760,6 +760,35 @@ class CudaFn(FnBase, CudaNtuples):
         20.0
         """
         return self.weighting.inner(x1, x2)
+
+    def _integral(self, x):
+        """Raw integral of vector.
+
+        Parameters
+        ----------
+        x : `CudaFnVector`
+            The vector whose integral should be computed.
+
+        Returns
+        -------
+        inner : `field` element
+            Inner product of the vectors
+
+        Examples
+        --------
+        >>> r3 = CudaFn(2, dtype='float32')
+        >>> x = r3.element([3, -1])
+        >>> r3.integral(x)
+        2.0
+
+        Notes
+        -----
+        Integration of `ntuples` vectors are defined as the sum of the elements
+        in the vector, i.e. the discrete measure.
+
+        In weighted spaces, the unweighted measure is used for the integral.
+        """
+        return x.ufuncs.sum()
 
     def _dist(self, x1, x2):
         """Calculate the distance between two vectors.
@@ -961,20 +990,20 @@ class CudaFnVector(FnBaseVector, CudaNtuplesVector):
         super().__init__(space, data)
 
 
-def _weighting(weight, exponent):
+def _weighting(weighting, exponent):
     """Return a weighting whose type is inferred from the arguments."""
-    if np.isscalar(weight):
+    if np.isscalar(weighting):
         weighting = CudaFnConstWeighting(
-            weight, exponent)
-    elif isinstance(weight, CudaFnVector):
-        weighting = CudaFnVectorWeighting(
-            weight, exponent=exponent)
+            weighting, exponent)
+    elif isinstance(weighting, CudaFnVector):
+        weighting = CudaFnArrayWeighting(
+            weighting, exponent=exponent)
     else:
-        weight_ = np.asarray(weight)
+        weight_ = np.asarray(weighting)
         if weight_.dtype == object:
-            raise ValueError('bad weight {}'.format(weight))
+            raise ValueError('bad weighting {}'.format(weighting))
         if weight_.ndim == 1:
-            weighting = CudaFnVectorWeighting(
+            weighting = CudaFnArrayWeighting(
                 weight_, exponent)
         elif weight_.ndim == 2:
             raise NotImplementedError('matrix weighting not implemented '
@@ -984,16 +1013,16 @@ def _weighting(weight, exponent):
         else:
             raise ValueError('array-like weight must have 1 or 2 dimensions, '
                              'but {} has {} dimensions'
-                             ''.format(weight, weight_.ndim))
+                             ''.format(weighting, weighting.ndim))
     return weighting
 
 
-def cu_weighted_inner(weight):
+def cu_weighted_inner(weighting):
     """Weighted inner product on `CudaFn` spaces as free function.
 
     Parameters
     ----------
-    weight : scalar, `array-like` or `CudaFnVector`
+    weighting : scalar, `array-like` or `CudaFnVector`
         Weight of the inner product. A scalar is interpreted as a
         constant weight and a 1-dim. array or a `CudaFnVector`
         as a weighting vector.
@@ -1009,15 +1038,15 @@ def cu_weighted_inner(weight):
     --------
     CudaFnConstWeighting, CudaFnVectorWeighting
     """
-    return _weighting(weight, exponent=2.0).inner
+    return _weighting(weighting, exponent=2.0).inner
 
 
-def cu_weighted_norm(weight, exponent=2.0):
+def cu_weighted_norm(weighting, exponent=2.0):
     """Weighted norm on `CudaFn` spaces as free function.
 
     Parameters
     ----------
-    weight : scalar, `array-like` or `CudaFnVector`
+    weighting : scalar, `array-like` or `CudaFnVector`
         Weight of the inner product. A scalar is interpreted as a
         constant weight and a 1-dim. array or a `CudaFnVector`
         as a weighting vector.
@@ -1036,15 +1065,15 @@ def cu_weighted_norm(weight, exponent=2.0):
     --------
     CudaFnConstWeighting, CudaFnVectorWeighting
     """
-    return _weighting(weight, exponent=exponent).norm
+    return _weighting(weighting, exponent=exponent).norm
 
 
-def cu_weighted_dist(weight, exponent=2.0):
+def cu_weighted_dist(weighting, exponent=2.0):
     """Weighted distance on `CudaFn` spaces as free function.
 
     Parameters
     ----------
-    weight : scalar, `array-like` or `CudaFnVector`
+    weighting : scalar, `array-like` or `CudaFnVector`
         Weight of the inner product. A scalar is interpreted as a
         constant weight and a 1-dim. array or a `CudaFnVector`
         as a weighting vector.
@@ -1062,7 +1091,7 @@ def cu_weighted_dist(weight, exponent=2.0):
     --------
     CudaFnConstWeighting, CudaFnVectorWeighting
     """
-    return _weighting(weight, exponent=exponent).dist
+    return _weighting(weighting, exponent=exponent).dist
 
 
 def _dist_default(x1, x2):
@@ -1110,7 +1139,7 @@ def _inner_diagweight(x1, x2, w):
     return x1.data.inner_weight(x2.data, w.data)
 
 
-class CudaFnVectorWeighting(VectorWeightingBase):
+class CudaFnArrayWeighting(ArrayWeighting):
 
     """Vector weighting for `CudaFn`.
 
@@ -1179,7 +1208,7 @@ class CudaFnVectorWeighting(VectorWeightingBase):
                                       'exponent != 2 (got {})'
                                       ''.format(self.exponent))
         else:
-            return _inner_diagweight(x1, x2, self.vector)
+            return _inner_diagweight(x1, x2, self.array)
 
     def norm(self, x):
         """Calculate the vector-weighted norm of a vector.
@@ -1197,7 +1226,7 @@ class CudaFnVectorWeighting(VectorWeightingBase):
         if self.exponent == float('inf'):
             raise NotImplementedError('inf norm not implemented yet')
         else:
-            return _pnorm_diagweight(x, self.exponent, self.vector)
+            return _pnorm_diagweight(x, self.exponent, self.array)
 
     def dist(self, x1, x2):
         """Calculate the vector-weighted distance between two vectors.
@@ -1215,10 +1244,10 @@ class CudaFnVectorWeighting(VectorWeightingBase):
         if self.exponent == float('inf'):
             raise NotImplementedError('inf norm not implemented yet')
         else:
-            return _pdist_diagweight(x1, x2, self.exponent, self.vector)
+            return _pdist_diagweight(x1, x2, self.exponent, self.array)
 
 
-class CudaFnConstWeighting(ConstWeightingBase):
+class CudaFnConstWeighting(ConstWeighting):
 
     """Weighting of `CudaFn` by a constant.
 
@@ -1324,7 +1353,7 @@ class CudaFnConstWeighting(ConstWeightingBase):
                     _pdist_default(x1, x2, self.exponent))
 
 
-class CudaFnNoWeighting(NoWeightingBase, CudaFnConstWeighting):
+class CudaFnNoWeighting(NoWeighting, CudaFnConstWeighting):
 
     """Weighting of `CudaFn` with constant 1.
 
@@ -1368,7 +1397,7 @@ class CudaFnNoWeighting(NoWeightingBase, CudaFnConstWeighting):
                          dist_using_inner=False)
 
 
-class CudaFnCustomInnerProduct(CustomInnerProductBase):
+class CudaFnCustomInner(CustomInner):
 
     """Class for handling a user-specified inner product on `CudaFn`."""
 
@@ -1400,7 +1429,7 @@ class CudaFnCustomInnerProduct(CustomInnerProductBase):
                          dist_using_inner=dist_using_inner)
 
 
-class CudaFnCustomNorm(CustomNormBase):
+class CudaFnCustomNorm(CustomNorm):
 
     """Class for handling a user-specified norm in `CudaFn`.
 
@@ -1425,7 +1454,7 @@ class CudaFnCustomNorm(CustomNormBase):
         super().__init__(norm, impl='cuda')
 
 
-class CudaFnCustomDist(CustomDistBase):
+class CudaFnCustomDist(CustomDist):
 
     """Class for handling a user-specified distance in `CudaFn`.
 
