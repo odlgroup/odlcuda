@@ -1072,7 +1072,7 @@ def test_ufuncs(fn, ufunc):
 
     # Out of place:
     np_result = ufunc(*in_arrays)
-    vec_fun = getattr(data_vector.ufunc, name)
+    vec_fun = getattr(data_vector.ufuncs, name)
     odl_result = vec_fun(*in_vectors)
     assert all_almost_equal(np_result, odl_result)
 
@@ -1085,7 +1085,7 @@ def test_ufuncs(fn, ufunc):
 
     # In place:
     np_result = ufunc(*(in_arrays + out_arrays))
-    vec_fun = getattr(data_vector.ufunc, name)
+    vec_fun = getattr(data_vector.ufuncs, name)
     odl_result = vec_fun(*(in_vectors + out_vectors))
     assert all_almost_equal(np_result, odl_result)
 
@@ -1105,7 +1105,7 @@ def test_reductions(fn, reduction):
     # Create some data
     x_arr, x = noise_elements(fn, 1)
 
-    assert almost_equal(ufunc(x_arr), getattr(x.ufunc, name)())
+    assert almost_equal(ufunc(x_arr), getattr(x.ufuncs, name)())
 
 
 if __name__ == '__main__':

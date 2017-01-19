@@ -477,36 +477,36 @@ class CudaNtuplesVector(NtuplesBaseVector, LinearSpaceElement):
                 self.data[int(indices)] = values
 
     @property
-    def ufunc(self):
+    def ufuncs(self):
         """`CudaNtuplesUFuncs`, access to numpy style ufuncs.
 
         Examples
         --------
         >>> r2 = CudaFn(2)
         >>> x = r2.element([1, -2])
-        >>> x.ufunc.absolute()
+        >>> x.ufuncs.absolute()
         CudaFn(2).element([1.0, 2.0])
 
         These functions can also be used with broadcasting
 
-        >>> x.ufunc.add(3)
+        >>> x.ufuncs.add(3)
         CudaFn(2).element([4.0, 1.0])
 
         and non-space elements
 
-        >>> x.ufunc.subtract([3, 3])
+        >>> x.ufuncs.subtract([3, 3])
         CudaFn(2).element([-2.0, -5.0])
 
         There is also support for various reductions (sum, prod, min, max)
 
-        >>> x.ufunc.sum()
+        >>> x.ufuncs.sum()
         -1.0
 
         Also supports out parameter
 
         >>> y = r2.element([3, 4])
         >>> out = r2.element()
-        >>> result = x.ufunc.add(y, out=out)
+        >>> result = x.ufuncs.add(y, out=out)
         >>> result
         CudaFn(2).element([4.0, 2.0])
         >>> result is out
@@ -519,7 +519,7 @@ class CudaNtuplesVector(NtuplesBaseVector, LinearSpaceElement):
 
         See also
         --------
-        odl.util.ufuncs.NtuplesBaseUFuncs
+        odl.util.ufuncs.NtuplesBaseUfuncs
             Base class for ufuncs in `NtuplesBase` spaces.
         """
         return CudaNtuplesUFuncs(self)
@@ -788,7 +788,7 @@ class CudaFn(FnBase, CudaNtuples):
 
         In weighted spaces, the unweighted measure is used for the integral.
         """
-        return x.ufunc.sum()
+        return x.ufuncs.sum()
 
     def _dist(self, x1, x2):
         """Calculate the distance between two vectors.
