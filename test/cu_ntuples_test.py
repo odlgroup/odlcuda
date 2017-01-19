@@ -128,9 +128,9 @@ def test_init_weighting(exponent):
     weight_elem = CudaFn(3, dtype='float32').element(weight_vec)
 
     f3_none = CudaFn(3, dtype='float32', exponent=exponent)
-    f3_const = CudaFn(3, dtype='float32', weight=const, exponent=exponent)
-    f3_vec = CudaFn(3, dtype='float32', weight=weight_vec, exponent=exponent)
-    f3_elem = CudaFn(3, dtype='float32', weight=weight_elem, exponent=exponent)
+    f3_const = CudaFn(3, dtype='float32', weighting=const, exponent=exponent)
+    f3_vec = CudaFn(3, dtype='float32', weighting=weight_vec, exponent=exponent)
+    f3_elem = CudaFn(3, dtype='float32', weighting=weight_elem, exponent=exponent)
 
     weighting_none = CudaFnNoWeighting(exponent=exponent)
     weighting_const = CudaFnConstWeighting(const, exponent=exponent)
@@ -427,7 +427,7 @@ def test_dist(exponent):
 
 def test_astype():
     # Complex not implemented
-    rn = CudaFn(3, weight=1.5)
+    rn = CudaFn(3, weighting=1.5)
     assert rn.astype('float32') == rn
 
     with pytest.raises(TypeError):
