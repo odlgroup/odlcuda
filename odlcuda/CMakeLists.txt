@@ -19,7 +19,7 @@ add_custom_target(${INSTALL_LIB} COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURREN
 set_property(TARGET ${INSTALL_LIB} PROPERTY FOLDER python)
 
 # copy raw python files
-set(python_files odl_plugin.py setup.py cu_ntuples.py ufuncs.py)
+set(python_files odl_plugin.py setup.py cu_ntuples.py ufuncs.py util.py)
 foreach(file_i ${python_files})
     add_custom_command(TARGET ${INSTALL_LIB} COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${file_i} ${TARGET_PY}/${file_i})
 endforeach()

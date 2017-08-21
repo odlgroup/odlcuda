@@ -23,3 +23,4 @@ _install_location = __file__
 from . import odlcuda_
 from . import cu_ntuples
 from . import ufuncs
+from . import util
