@@ -14,6 +14,12 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # add cmake find modules
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
+# Add eigen
+find_package(Eigen3 REQUIRED)
+include_directories(SYSTEM ${EIGEN3_INCLUDE_DIR})
+add_definitions(-DEIGEN_DONT_VECTORIZE)
+add_definitions(-DEIGEN_DONT_ALIGN_STATICALLY) #Causes lots of issues sadly and we dont use eigen for numerics.
+
 # Use folders in MSVC
 set_property(GLOBAL PROPERTY USE_FOLDERS true)
 
