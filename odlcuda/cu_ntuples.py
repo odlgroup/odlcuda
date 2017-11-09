@@ -39,8 +39,7 @@ except ImportError:
 
 __all__ = ('CudaFn', 'CudaFnVector',
            'CUDA_DTYPES', 'CUDA_AVAILABLE',
-           'CudaFnConstWeighting', 'CudaFnArrayWeighting',
-           'cu_weighted_inner', 'cu_weighted_norm', 'cu_weighted_dist')
+           'CudaFnConstWeighting', 'CudaFnArrayWeighting')
 
 
 def _get_int_type():
@@ -329,10 +328,10 @@ class CudaFn(FnBase):
 
         Parameters
         ----------
-        a, b : `LinearSpace.field` `element`
+        a, b : `field` element
             Scalar to multiply ``x`` and ``y`` with.
         x, y : `CudaFnVector`
-            The summands
+            The summands.
         out : `CudaFnVector`
             The Vector that the result is written to.
 
@@ -932,83 +931,6 @@ def _weighting(weighting, exponent):
                              'but {} has {} dimensions'
                              ''.format(weighting, weighting.ndim))
     return weighting
-
-
-def cu_weighted_inner(weighting):
-    """Weighted inner product on `CudaFn` spaces as free function.
-
-    Parameters
-    ----------
-    weighting : scalar, `array-like` or `CudaFnVector`
-        Weight of the inner product. A scalar is interpreted as a
-        constant weight and a 1-dim. array or a `CudaFnVector`
-        as a weighting vector.
-
-    Returns
-    -------
-    inner : `callable`
-        Inner product function with given weight. Constant weightings
-        are applicable to spaces of any size, for arrays the sizes
-        of the weighting and the space must match.
-
-    See also
-    --------
-    CudaFnConstWeighting, CudaFnVectorWeighting
-    """
-    return _weighting(weighting, exponent=2.0).inner
-
-
-def cu_weighted_norm(weighting, exponent=2.0):
-    """Weighted norm on `CudaFn` spaces as free function.
-
-    Parameters
-    ----------
-    weighting : scalar, `array-like` or `CudaFnVector`
-        Weight of the inner product. A scalar is interpreted as a
-        constant weight and a 1-dim. array or a `CudaFnVector`
-        as a weighting vector.
-    exponent : positive `float`
-        Exponent of the norm. If ``weight`` is a sparse matrix, only
-        1.0, 2.0 and ``inf`` are allowed.
-
-    Returns
-    -------
-    norm : `callable`
-        Norm function with given weight. Constant weightings
-        are applicable to spaces of any size, for arrays the sizes
-        of the weighting and the space must match.
-
-    See also
-    --------
-    CudaFnConstWeighting, CudaFnVectorWeighting
-    """
-    return _weighting(weighting, exponent=exponent).norm
-
-
-def cu_weighted_dist(weighting, exponent=2.0):
-    """Weighted distance on `CudaFn` spaces as free function.
-
-    Parameters
-    ----------
-    weighting : scalar, `array-like` or `CudaFnVector`
-        Weight of the inner product. A scalar is interpreted as a
-        constant weight and a 1-dim. array or a `CudaFnVector`
-        as a weighting vector.
-    exponent : positive `float`
-        Exponent of the distance
-
-    Returns
-    -------
-    dist : `callable`
-        Distance function with given weight. Constant weightings
-        are applicable to spaces of any size, for arrays the sizes
-        of the weighting and the space must match.
-
-    See also
-    --------
-    CudaFnConstWeighting, CudaFnVectorWeighting
-    """
-    return _weighting(weighting, exponent=exponent).dist
 
 
 def _dist_default(x1, x2):

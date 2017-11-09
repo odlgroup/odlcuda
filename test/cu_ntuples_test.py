@@ -24,7 +24,7 @@ from odlcuda.cu_ntuples import (
     CudaFn, CudaFnVector,
     CudaFnNoWeighting, CudaFnConstWeighting, CudaFnArrayWeighting,
     CudaFnCustomInner, CudaFnCustomNorm, CudaFnCustomDist,
-    cu_weighted_inner, cu_weighted_norm, cu_weighted_dist, CUDA_DTYPES)
+    CUDA_DTYPES)
 
 from odl.util.testutils import (
     all_equal, all_almost_equal, almost_equal, noise_elements, noise_element,
@@ -758,15 +758,6 @@ def test_const_norm(exponent):
     else:
         assert almost_equal(weighting.norm(x), true_norm)
 
-    # Same with free function
-    pnorm = cu_weighted_norm(constant, exponent=exponent)
-    if exponent == float('inf'):
-        # Not yet implemented, should raise
-        with pytest.raises(NotImplementedError):
-            pnorm(x)
-    else:
-        assert almost_equal(pnorm(x), true_norm)
-
 
 def test_const_dist(exponent):
     rn = CudaFn(5)
@@ -784,15 +775,6 @@ def test_const_dist(exponent):
             weighting.dist(x, y)
     else:
         assert almost_equal(weighting.dist(x, y), true_dist)
-
-    # Same with free function
-    pdist = cu_weighted_dist(constant, exponent=exponent)
-    if exponent == float('inf'):
-        # Not yet implemented, should raise
-        with pytest.raises(NotImplementedError):
-            pdist(x, y)
-    else:
-        assert almost_equal(pdist(x, y), true_dist)
 
 
 def test_vector_init():
@@ -841,11 +823,6 @@ def test_vector_inner():
 
     assert almost_equal(weighting.inner(x, y), true_inner)
 
-    # Same with free function
-    inner_vec = cu_weighted_inner(weight)
-
-    assert almost_equal(inner_vec(x, y), true_inner)
-
     # Exponent != 2 -> no inner product, should raise
     with pytest.raises(NotImplementedError):
         CudaFnArrayWeighting(weight, exponent=1.0).inner(x, y)
@@ -872,16 +849,6 @@ def test_vector_norm(exponent):
     else:
         assert almost_equal(weighting.norm(x), true_norm)
 
-    # Same with free function
-    pnorm = cu_weighted_norm(weight, exponent=exponent)
-
-    if exponent == float('inf'):
-        # Not yet implemented, should raise
-        with pytest.raises(NotImplementedError):
-            pnorm(x)
-    else:
-        assert almost_equal(pnorm(x), true_norm)
-
 
 def test_vector_dist(exponent):
     rn = CudaFn(5)
@@ -904,16 +871,6 @@ def test_vector_dist(exponent):
             weighting.dist(x, y)
     else:
         assert almost_equal(weighting.dist(x, y), true_dist)
-
-    # Same with free function
-    pdist = cu_weighted_dist(weight, exponent=exponent)
-
-    if exponent == float('inf'):
-        # Not yet implemented, should raise
-        with pytest.raises(NotImplementedError):
-            pdist(x, y)
-    else:
-        assert almost_equal(pdist(x, y), true_dist)
 
 
 def test_custom_inner(fn):
