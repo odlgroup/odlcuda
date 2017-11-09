@@ -15,28 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with ODL.  If not, see <http://www.gnu.org/licenses/>.
 
-
-# Imports for common Python 2/3 codebase
-from __future__ import print_function, division, absolute_import
-from future import standard_library
-standard_library.install_aliases()
-from builtins import range
-
-# External module imports
 import pytest
 import numpy as np
 from numpy import float64
 
-# ODL imports
 import odl
 from odlcuda.cu_ntuples import (
-    CudaNtuples, CudaFn, CudaFnVector,
+    CudaFn, CudaFnVector,
     CudaFnNoWeighting, CudaFnConstWeighting, CudaFnArrayWeighting,
     CudaFnCustomInner, CudaFnCustomNorm, CudaFnCustomDist,
     cu_weighted_inner, cu_weighted_norm, cu_weighted_dist, CUDA_DTYPES)
 
-from odl.util.testutils import (all_equal, all_almost_equal, almost_equal,
-                                noise_elements, noise_element)
+from odl.util.testutils import (
+    all_equal, all_almost_equal, almost_equal, noise_elements, noise_element,
+    simple_fixture)
 
 
 # Helper to generate data
@@ -49,7 +41,7 @@ def _pos_vector(fn):
 
 
 spc_params = ['100 float32']
-spc_ids = [' size={} dtype={} '
+spc_ids = [' size={}, dtype={} '
            ''.format(*p.split()) for p in spc_params]
 
 
@@ -59,53 +51,18 @@ def fn(request):
     return CudaFn(int(size), dtype=dtype)
 
 
-# Simply modify exp_params to modify the fixture
-exp_params = [2.0, 1.0, float('inf'), 0.5, 1.5, 3.0]
-exp_ids = [' p = {} '.format(p) for p in exp_params]
-exp_fixture = pytest.fixture(scope="module", ids=exp_ids, params=exp_params)
-
-
-@exp_fixture
-def exponent(request):
-    return request.param
-
-
-# Simply modify dtype_params to modify the fixture
-dtype_params = CudaFn.available_dtypes()
-dtype_ids = [' dtype = {} '.format(t) for t in dtype_params]
-dtype_fixture = pytest.fixture(scope="module", ids=dtype_ids,
-                               params=dtype_params)
-
-
-@dtype_fixture
-def dtype(request):
-    return request.param
-
-
-ufunc_params = [ufunc for ufunc in odl.util.ufuncs.UFUNCS]
-ufunc_ids = [' ufunc={} '.format(p[0]) for p in ufunc_params]
-
-
-@pytest.fixture(scope="module", ids=ufunc_ids, params=ufunc_params)
-def ufunc(request):
-    return request.param
-
-
-reduction_params = [reduction for reduction in odl.util.ufuncs.REDUCTIONS]
-reduction_ids = [' reduction={} '.format(p[0]) for p in reduction_params]
-
-
-@pytest.fixture(scope="module", ids=reduction_ids, params=reduction_params)
-def reduction(request):
-    return request.param
+exponent = simple_fixture('exponent', [2.0, 1.0, float('inf'), 0.5, 1.5, 3.0])
+dtype = simple_fixture('dtype', CudaFn.available_dtypes(),
+                       fmt=" {name}='{value.name}' ")
+ufunc = simple_fixture('ufunc', odl.util.ufuncs.UFUNCS)
+reduction = simple_fixture('reduction', odl.util.ufuncs.REDUCTIONS)
 
 
 # --- CUDA space tests --- #
 
 
-def test_init_cudantuples(dtype):
+def test_init_cuda_fn(dtype):
     # verify that the code runs
-    CudaNtuples(3, dtype=dtype).element()
     CudaFn(3, dtype=dtype).element()
 
 
@@ -113,13 +70,13 @@ def test_init_exponent(exponent, dtype):
     CudaFn(3, dtype=dtype, exponent=exponent)
 
 
-def test_init_cudantuples_bad_dtype():
+def test_init_cuda_fn_bad_dtype():
     with pytest.raises(TypeError):
-        CudaNtuples(3, dtype=np.ndarray)
+        CudaFn(3, dtype=np.ndarray)
     with pytest.raises(TypeError):
-        CudaNtuples(3, dtype=str)
+        CudaFn(3, dtype=str)
     with pytest.raises(TypeError):
-        CudaNtuples(3, dtype=np.matrix)
+        CudaFn(3, dtype=np.matrix)
 
 
 def test_init_weighting(exponent):
@@ -129,8 +86,10 @@ def test_init_weighting(exponent):
 
     f3_none = CudaFn(3, dtype='float32', exponent=exponent)
     f3_const = CudaFn(3, dtype='float32', weighting=const, exponent=exponent)
-    f3_vec = CudaFn(3, dtype='float32', weighting=weight_vec, exponent=exponent)
-    f3_elem = CudaFn(3, dtype='float32', weighting=weight_elem, exponent=exponent)
+    f3_vec = CudaFn(3, dtype='float32', weighting=weight_vec,
+                    exponent=exponent)
+    f3_elem = CudaFn(3, dtype='float32', weighting=weight_elem,
+                     exponent=exponent)
 
     weighting_none = CudaFnNoWeighting(exponent=exponent)
     weighting_const = CudaFnConstWeighting(const, exponent=exponent)
@@ -744,7 +703,7 @@ def test_dtypes():
                np.uint8, np.uint16, np.uint32, np.uint64, np.uint,
                np.float32, np.float64, np.float,
                np.complex64, np.complex128, np.complex]:
-        yield _test_dtype, dt
+        _test_dtype(dt)
 
 # --- Weighting tests --- #
 
@@ -767,7 +726,8 @@ def test_const_equals(exponent):
     assert weighting2 == weighting
 
     assert weighting != other_weighting
-    assert weighting != wrong_exp
+    if exponent != float('inf'):
+        assert weighting != wrong_exp
 
 
 def test_const_inner():
@@ -965,12 +925,10 @@ def test_custom_inner(fn):
     w = CudaFnCustomInner(inner)
     w_same = CudaFnCustomInner(inner)
     w_other = CudaFnCustomInner(np.dot)
-    w_d = CudaFnCustomInner(inner, dist_using_inner=False)
 
     assert w == w
     assert w == w_same
     assert w != w_other
-    assert w != w_d
 
     true_inner = inner(xarr, yarr)
     assert almost_equal(w.inner(x, y), true_inner)
@@ -982,7 +940,6 @@ def test_custom_inner(fn):
     # Using 3 places (single precision default) since the result is always
     # double even if the underlying computation was only single precision
     assert almost_equal(w.dist(x, y), true_dist, places=3)
-    assert almost_equal(w_d.dist(x, y), true_dist)
 
     with pytest.raises(TypeError):
         CudaFnCustomInner(1)
@@ -1071,10 +1028,11 @@ def test_ufuncs(fn, ufunc):
     out_vectors = vectors[n_args:]
 
     # Out of place:
-    np_result = ufunc(*in_arrays)
-    vec_fun = getattr(data_vector.ufuncs, name)
-    odl_result = vec_fun(*in_vectors)
-    assert all_almost_equal(np_result, odl_result)
+    with np.errstate(all='ignore'):  # avoid pytest warnings
+        npy_result = ufunc(*in_arrays)
+        vec_fun = getattr(data_vector.ufuncs, name)
+        odl_result = vec_fun(*in_vectors)
+    assert all_almost_equal(odl_result, npy_result)
 
     # Test type of output
     if n_out == 1:
@@ -1084,10 +1042,11 @@ def test_ufuncs(fn, ufunc):
             assert isinstance(odl_result[i], fn.element_type)
 
     # In place:
-    np_result = ufunc(*(in_arrays + out_arrays))
-    vec_fun = getattr(data_vector.ufuncs, name)
-    odl_result = vec_fun(*(in_vectors + out_vectors))
-    assert all_almost_equal(np_result, odl_result)
+    with np.errstate(all='ignore'):  # avoid pytest warnings
+        npy_result = ufunc(*(in_arrays + out_arrays))
+        vec_fun = getattr(data_vector.ufuncs, name)
+        odl_result = vec_fun(*(in_vectors + out_vectors))
+    assert all_almost_equal(odl_result, npy_result)
 
     # Test inplace actually holds:
     if n_out == 1:
@@ -1100,12 +1059,15 @@ def test_ufuncs(fn, ufunc):
 def test_reductions(fn, reduction):
     name, _ = reduction
 
-    ufunc = getattr(np, name)
+    reduction = getattr(np, name)
 
     # Create some data
     x_arr, x = noise_elements(fn, 1)
 
-    assert almost_equal(ufunc(x_arr), getattr(x.ufuncs, name)())
+    with np.errstate(all='ignore'):  # avoid pytest warnings
+        npy_result = reduction(x_arr)
+        odl_result = getattr(x.ufuncs, name)()
+    assert almost_equal(odl_result, npy_result)
 
 
 if __name__ == '__main__':

@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with ODL.  If not, see <http://www.gnu.org/licenses/>.
 
-"""UFuncs for ODL vectors.
+"""Ufuncs for ODL vectors.
 
 These functions are internal and should only be used as methods on
-`NtuplesBaseVector` type spaces.
+`FnBaseVector` type spaces.
 
 See `numpy.ufuncs
 <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
@@ -27,21 +27,15 @@ for more information.
 Notes
 -----
 The default implementation of these methods make heavy use of the
-``NtuplesBaseVector.__array__`` to extract a `numpy.ndarray` from the vector,
-and then apply a ufunc to it. Afterwards, ``NtuplesBaseVector.__array_wrap__``
+``FnBaseVector.__array__`` to extract a `numpy.ndarray` from the vector,
+and then apply a ufunc to it. Afterwards, ``FnBaseVector.__array_wrap__``
 is used to re-wrap the data into the appropriate space.
 """
 
-# Imports for common Python 2/3 codebase
-from __future__ import print_function, division, absolute_import
-from future import standard_library
-standard_library.install_aliases()
+from odl.util.ufuncs import FnBaseUfuncs
 
 
-import odl
-
-
-__all__ = ('CudaNtuplesUFuncs',)
+__all__ = ('CudaFnUfuncs',)
 
 
 # Optimizations for CUDA
@@ -49,7 +43,7 @@ def _make_nullary_fun(name):
     def fun(self):
         return getattr(self.vector.data, name)()
 
-    fun.__doc__ = getattr(odl.util.ufuncs.NtuplesBaseUfuncs, name).__doc__
+    fun.__doc__ = getattr(FnBaseUfuncs, name).__doc__
     fun.__name__ = name
     return fun
 
@@ -61,16 +55,16 @@ def _make_unary_fun(name):
         getattr(self.vector.data, name)(out.data)
         return out
 
-    fun.__doc__ = getattr(odl.util.ufuncs.NtuplesBaseUfuncs, name).__doc__
+    fun.__doc__ = getattr(FnBaseUfuncs, name).__doc__
     fun.__name__ = name
     return fun
 
 
-class CudaNtuplesUFuncs(odl.util.ufuncs.NtuplesBaseUfuncs):
+class CudaFnUfuncs(FnBaseUfuncs):
 
-    """UFuncs for `CudaNtuplesVector` objects.
+    """Ufuncs for `CudaFnVector` objects.
 
-    Internal object, should not be created except in `CudaNtuplesVector`.
+    Internal object, should not be created except in `CudaFnVector`.
     """
 
     # Ufuncs
