@@ -18,7 +18,7 @@
 """Ufuncs for ODL vectors.
 
 These functions are internal and should only be used as methods on
-`FnBaseVector` type spaces.
+`TensorSpace` type spaces.
 
 See `numpy.ufuncs
 <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
@@ -27,23 +27,23 @@ for more information.
 Notes
 -----
 The default implementation of these methods make heavy use of the
-``FnBaseVector.__array__`` to extract a `numpy.ndarray` from the vector,
-and then apply a ufunc to it. Afterwards, ``FnBaseVector.__array_wrap__``
+``Tensor.__array__`` to extract a `numpy.ndarray` from the vector,
+and then apply a ufunc to it. Afterwards, ``Tensor.__array_wrap__``
 is used to re-wrap the data into the appropriate space.
 """
 
-from odl.util.ufuncs import FnBaseUfuncs
+from odl.util.ufuncs import TensorSpaceUfuncs
 
 
-__all__ = ('CudaFnUfuncs',)
+__all__ = ('CudaTensorSpaceUfuncs',)
 
 
 # Optimizations for CUDA
 def _make_nullary_fun(name):
     def fun(self):
-        return getattr(self.vector.data, name)()
+        return getattr(self.elem.data, name)()
 
-    fun.__doc__ = getattr(FnBaseUfuncs, name).__doc__
+    fun.__doc__ = getattr(TensorSpaceUfuncs, name).__doc__
     fun.__name__ = name
     return fun
 
@@ -51,20 +51,20 @@ def _make_nullary_fun(name):
 def _make_unary_fun(name):
     def fun(self, out=None):
         if out is None:
-            out = self.vector.space.element()
-        getattr(self.vector.data, name)(out.data)
+            out = self.elem.space.element()
+        getattr(self.elem.data, name)(out.data)
         return out
 
-    fun.__doc__ = getattr(FnBaseUfuncs, name).__doc__
+    fun.__doc__ = getattr(TensorSpaceUfuncs, name).__doc__
     fun.__name__ = name
     return fun
 
 
-class CudaFnUfuncs(FnBaseUfuncs):
+class CudaTensorSpaceUfuncs(TensorSpaceUfuncs):
 
-    """Ufuncs for `CudaFnVector` objects.
+    """Ufuncs for `CudaTensor` objects.
 
-    Internal object, should not be created except in `CudaFnVector`.
+    Internal object, should not be created except in `CudaTensor`.
     """
 
     # Ufuncs

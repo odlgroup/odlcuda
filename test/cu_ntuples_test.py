@@ -21,9 +21,10 @@ from numpy import float64
 
 import odl
 from odlcuda.cu_ntuples import (
-    CudaFn, CudaFnVector,
-    CudaFnNoWeighting, CudaFnConstWeighting, CudaFnArrayWeighting,
-    CudaFnCustomInner, CudaFnCustomNorm, CudaFnCustomDist,
+    CudaTensorSpace, CudaTensor,
+    CudaTensorSpaceConstWeighting, CudaTensorSpaceArrayWeighting,
+    CudaTensorSpaceCustomInner, CudaTensorSpaceCustomNorm, 
+    CudaTensorSpaceCustomDist,
     CUDA_DTYPES)
 
 from odl.util.testutils import (
@@ -48,14 +49,14 @@ spc_ids = [' size={}, dtype={} '
 @pytest.fixture(scope="module", ids=spc_ids, params=spc_params)
 def fn(request):
     size, dtype = request.param.split()
-    return CudaFn(int(size), dtype=dtype)
+    return CudaTensorSpace(int(size), dtype=dtype)
 
 
 exponent = simple_fixture('exponent', [2.0, 1.0, float('inf'), 0.5, 1.5, 3.0])
-dtype = simple_fixture('dtype', CudaFn.available_dtypes(),
+dtype = simple_fixture('dtype', CudaTensorSpace.available_dtypes(),
                        fmt=" {name}='{value.name}' ")
-ufunc = simple_fixture('ufunc', odl.util.ufuncs.UFUNCS)
-reduction = simple_fixture('reduction', odl.util.ufuncs.REDUCTIONS)
+ufunc = simple_fixture('ufunc', [p[0] for p in odl.util.ufuncs.UFUNCS])
+reduction = simple_fixture('reduction', ['sum', 'prod', 'min', 'max'])
 
 
 # --- CUDA space tests --- #
@@ -63,38 +64,38 @@ reduction = simple_fixture('reduction', odl.util.ufuncs.REDUCTIONS)
 
 def test_init_cuda_fn(dtype):
     # verify that the code runs
-    CudaFn(3, dtype=dtype).element()
+    CudaTensorSpace(3, dtype=dtype).element()
 
 
 def test_init_exponent(exponent, dtype):
-    CudaFn(3, dtype=dtype, exponent=exponent)
+    CudaTensorSpace(3, dtype=dtype, exponent=exponent)
 
 
 def test_init_cuda_fn_bad_dtype():
     with pytest.raises(TypeError):
-        CudaFn(3, dtype=np.ndarray)
+        CudaTensorSpace(3, dtype=np.ndarray)
     with pytest.raises(TypeError):
-        CudaFn(3, dtype=str)
+        CudaTensorSpace(3, dtype=str)
     with pytest.raises(TypeError):
-        CudaFn(3, dtype=np.matrix)
+        CudaTensorSpace(3, dtype=np.matrix)
 
 
 def test_init_weighting(exponent):
     const = 1.5
-    weight_vec = _pos_vector(CudaFn(3))
-    weight_elem = CudaFn(3, dtype='float32').element(weight_vec)
+    weight_vec = _pos_vector(CudaTensorSpace(3))
+    weight_elem = CudaTensorSpace(3, dtype='float32').element(weight_vec)
 
-    f3_none = CudaFn(3, dtype='float32', exponent=exponent)
-    f3_const = CudaFn(3, dtype='float32', weighting=const, exponent=exponent)
-    f3_vec = CudaFn(3, dtype='float32', weighting=weight_vec,
+    f3_none = CudaTensorSpace(3, dtype='float32', exponent=exponent)
+    f3_const = CudaTensorSpace(3, dtype='float32', weighting=const, exponent=exponent)
+    f3_vec = CudaTensorSpace(3, dtype='float32', weighting=weight_vec,
                     exponent=exponent)
-    f3_elem = CudaFn(3, dtype='float32', weighting=weight_elem,
+    f3_elem = CudaTensorSpace(3, dtype='float32', weighting=weight_elem,
                      exponent=exponent)
 
-    weighting_none = CudaFnNoWeighting(exponent=exponent)
-    weighting_const = CudaFnConstWeighting(const, exponent=exponent)
-    weighting_vec = CudaFnArrayWeighting(weight_vec, exponent=exponent)
-    weighting_elem = CudaFnArrayWeighting(weight_elem, exponent=exponent)
+    weighting_none = CudaTensorSpaceConstWeighting(1.0, exponent=exponent)
+    weighting_const = CudaTensorSpaceConstWeighting(const, exponent=exponent)
+    weighting_vec = CudaTensorSpaceArrayWeighting(weight_vec, exponent=exponent)
+    weighting_elem = CudaTensorSpaceArrayWeighting(weight_elem, exponent=exponent)
 
     assert f3_none.weighting == weighting_none
     assert f3_const.weighting == weighting_const
@@ -128,22 +129,22 @@ def test_vector_cuda():
     # Rn
     inp = [1.0, 2.0, 3.0]
 
-    x = odl.vector(inp, dtype='float32', impl='cuda')
-    assert isinstance(x, CudaFnVector)
+    x = odl.vector(inp, dtype='float32', impl='odlcuda')
+    assert isinstance(x, CudaTensor)
     assert x.dtype == np.dtype('float32')
     assert all_equal(x, inp)
 
-    x = odl.vector([1.0, 2.0, float('inf')], dtype='float32', impl='cuda')
+    x = odl.vector([1.0, 2.0, float('inf')], dtype='float32', impl='odlcuda')
     assert x.dtype == np.dtype('float32')
-    assert isinstance(x, CudaFnVector)
+    assert isinstance(x, CudaTensor)
 
-    x = odl.vector([1.0, 2.0, float('nan')], dtype='float32', impl='cuda')
+    x = odl.vector([1.0, 2.0, float('nan')], dtype='float32', impl='odlcuda')
     assert x.dtype == np.dtype('float32')
-    assert isinstance(x, CudaFnVector)
+    assert isinstance(x, CudaTensor)
 
-    x = odl.vector([1, 2, 3], dtype='float32', impl='cuda')
+    x = odl.vector([1, 2, 3], dtype='float32', impl='odlcuda')
     assert x.dtype == np.dtype('float32')
-    assert isinstance(x, CudaFnVector)
+    assert isinstance(x, CudaTensor)
 
 
 def test_zero(fn):
@@ -161,7 +162,7 @@ def test_list_init(fn):
 
 
 def test_ndarray_init():
-    r3 = CudaFn(3)
+    r3 = CudaTensorSpace(3)
 
     x0 = np.array([1., 2., 3.])
     x = r3.element(x0)
@@ -177,7 +178,7 @@ def test_ndarray_init():
 
 
 def test_getitem():
-    r3 = CudaFn(3)
+    r3 = CudaTensorSpace(3)
     y = [1, 2, 3]
     x = r3.element(y)
 
@@ -186,7 +187,7 @@ def test_getitem():
 
 
 def test_iterator():
-    r3 = CudaFn(3)
+    r3 = CudaTensorSpace(3)
     y = [1, 2, 3]
     x = r3.element(y)
 
@@ -194,7 +195,7 @@ def test_iterator():
 
 
 def test_getitem_index_error():
-    r3 = CudaFn(3)
+    r3 = CudaTensorSpace(3)
     x = r3.element([1, 2, 3])
 
     with pytest.raises(IndexError):
@@ -205,7 +206,7 @@ def test_getitem_index_error():
 
 
 def test_setitem():
-    r3 = CudaFn(3)
+    r3 = CudaTensorSpace(3)
     x = r3.element([42, 42, 42])
 
     for index in [0, 1, 2, -1, -2, -3]:
@@ -214,7 +215,7 @@ def test_setitem():
 
 
 def test_setitem_index_error():
-    r3 = CudaFn(3)
+    r3 = CudaTensorSpace(3)
     x = r3.element([1, 2, 3])
 
     with pytest.raises(IndexError):
@@ -226,7 +227,7 @@ def test_setitem_index_error():
 
 def _test_getslice(slice):
     # Validate get against python list behaviour
-    r6 = CudaFn(6)
+    r6 = CudaTensorSpace(6)
     y = [0, 1, 2, 3, 4, 5]
     x = r6.element(y)
 
@@ -247,7 +248,7 @@ def test_getslice():
 
 def test_slice_of_slice():
     # Verify that creating slices from slices works as expected
-    r10 = CudaFn(10)
+    r10 = CudaTensorSpace(10)
     xh = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     xd = r10.element(xh)
 
@@ -264,7 +265,7 @@ def test_slice_of_slice():
 
 def test_slice_is_view():
     # Verify that modifications of a view modify the original data
-    r10 = CudaFn(10)
+    r10 = CudaTensorSpace(10)
     xh = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     xd = r10.element(xh)
 
@@ -279,7 +280,7 @@ def test_slice_is_view():
 
 
 def test_getslice_index_error():
-    r3 = CudaFn(3)
+    r3 = CudaTensorSpace(3)
     xd = r3.element([1, 2, 3])
 
     # Bad slice
@@ -289,7 +290,7 @@ def test_getslice_index_error():
 
 def _test_setslice(slice):
     # Validate set against python list behaviour
-    r6 = CudaFn(6)
+    r6 = CudaTensorSpace(6)
     z = [7, 8, 9, 10, 11, 10]
     y = [0, 1, 2, 3, 4, 5]
     x = r6.element(y)
@@ -312,7 +313,7 @@ def test_setslice():
 
 
 def test_setslice_index_error():
-    r3 = CudaFn(3)
+    r3 = CudaTensorSpace(3)
     xd = r3.element([1, 2, 3])
 
     # Bad slice
@@ -331,7 +332,7 @@ def test_setslice_index_error():
 
 
 def test_inner():
-    r3 = CudaFn(3)
+    r3 = CudaTensorSpace(3)
     x = r3.element([1, 2, 3])
     y = r3.element([5, 3, 9])
 
@@ -341,7 +342,7 @@ def test_inner():
     assert almost_equal(r3.inner(x, y), correct_inner)
 
     # Exponent != 2 -> no inner product
-    r3 = CudaFn(3, exponent=1)
+    r3 = CudaTensorSpace(3, exponent=1)
     x = r3.element([1, 2, 3])
     y = r3.element([5, 3, 9])
 
@@ -352,7 +353,7 @@ def test_inner():
 
 
 def test_norm(exponent):
-    r3 = CudaFn(3, exponent=exponent)
+    r3 = CudaTensorSpace(3, exponent=exponent)
     xarr, x = noise_elements(r3)
 
     correct_norm = np.linalg.norm(xarr, ord=exponent)
@@ -368,7 +369,7 @@ def test_norm(exponent):
 
 
 def test_dist(exponent):
-    r3 = CudaFn(3, exponent=exponent)
+    r3 = CudaTensorSpace(3, exponent=exponent)
     [xarr, yarr], [x, y] = noise_elements(r3, n=2)
 
     correct_dist = np.linalg.norm(xarr - yarr, ord=exponent)
@@ -386,7 +387,7 @@ def test_dist(exponent):
 
 def test_astype():
     # Complex not implemented
-    rn = CudaFn(3, weighting=1.5)
+    rn = CudaTensorSpace(3, weighting=1.5)
     assert rn.astype('float32') == rn
 
     with pytest.raises(TypeError):
@@ -605,7 +606,7 @@ def test_operators(fn):
 
 
 def test_incompatible_operations():
-    r3 = CudaFn(3)
+    r3 = CudaTensorSpace(3)
     R3h = odl.rn(3)
     xA = r3.zero()
     xB = R3h.zero()
@@ -655,7 +656,7 @@ def test_transpose(fn):
 
 
 def test_modify():
-    r3 = CudaFn(3)
+    r3 = CudaTensorSpace(3)
     xd = r3.element([1, 2, 3])
     yd = r3.element(data_ptr=xd.data_ptr)
 
@@ -665,8 +666,8 @@ def test_modify():
 
 
 def test_sub_vector():
-    r6 = CudaFn(6)
-    r3 = CudaFn(3)
+    r6 = CudaTensorSpace(6)
+    r3 = CudaTensorSpace(3)
     xd = r6.element([1, 2, 3, 4, 5, 6])
 
     yd = r3.element(data_ptr=xd.data_ptr)
@@ -676,8 +677,8 @@ def test_sub_vector():
 
 
 def test_offset_sub_vector():
-    r6 = CudaFn(6)
-    r3 = CudaFn(3)
+    r6 = CudaTensorSpace(6)
+    r3 = CudaTensorSpace(3)
     xd = r6.element([1, 2, 3, 4, 5, 6])
 
     yd = r3.element(data_ptr=xd.data_ptr + 3 * xd.space.dtype.itemsize)
@@ -689,9 +690,9 @@ def test_offset_sub_vector():
 def _test_dtype(dt):
     if dt not in CUDA_DTYPES:
         with pytest.raises(TypeError):
-            r3 = CudaFn(3, dt)
+            r3 = CudaTensorSpace(3, dt)
     else:
-        r3 = CudaFn(3, dt)
+        r3 = CudaTensorSpace(3, dt)
         x = r3.element([1, 2, 3])
         y = r3.element([4, 5, 6])
         z = x + y
@@ -710,16 +711,16 @@ def test_dtypes():
 
 def test_const_init(exponent):
     const = 1.5
-    CudaFnConstWeighting(const, exponent=exponent)
+    CudaTensorSpaceConstWeighting(const, exponent=exponent)
 
 
 def test_const_equals(exponent):
     constant = 1.5
 
-    weighting = CudaFnConstWeighting(constant, exponent=exponent)
-    weighting2 = CudaFnConstWeighting(constant, exponent=exponent)
-    other_weighting = CudaFnConstWeighting(2.5, exponent=exponent)
-    wrong_exp = CudaFnConstWeighting(constant, exponent=exponent + 1)
+    weighting = CudaTensorSpaceConstWeighting(constant, exponent=exponent)
+    weighting2 = CudaTensorSpaceConstWeighting(constant, exponent=exponent)
+    other_weighting = CudaTensorSpaceConstWeighting(2.5, exponent=exponent)
+    wrong_exp = CudaTensorSpaceConstWeighting(constant, exponent=exponent + 1)
 
     assert weighting == weighting
     assert weighting == weighting2
@@ -731,22 +732,22 @@ def test_const_equals(exponent):
 
 
 def test_const_inner():
-    rn = CudaFn(5)
+    rn = CudaTensorSpace(5)
     [xarr, yarr], [x, y] = noise_elements(rn, 2)
 
     constant = 1.5
-    weighting = CudaFnConstWeighting(constant)
+    weighting = CudaTensorSpaceConstWeighting(constant)
 
     true_inner = constant * np.vdot(yarr, xarr)
     assert almost_equal(weighting.inner(x, y), true_inner)
 
 
 def test_const_norm(exponent):
-    rn = CudaFn(5)
+    rn = CudaTensorSpace(5)
     xarr, x = noise_elements(rn)
 
     constant = 1.5
-    weighting = CudaFnConstWeighting(constant, exponent=exponent)
+    weighting = CudaTensorSpaceConstWeighting(constant, exponent=exponent)
 
     factor = 1 if exponent == float('inf') else constant ** (1 / exponent)
     true_norm = factor * np.linalg.norm(xarr, ord=exponent)
@@ -760,11 +761,11 @@ def test_const_norm(exponent):
 
 
 def test_const_dist(exponent):
-    rn = CudaFn(5)
+    rn = CudaTensorSpace(5)
     [xarr, yarr], [x, y] = noise_elements(rn, n=2)
 
     constant = 1.5
-    weighting = CudaFnConstWeighting(constant, exponent=exponent)
+    weighting = CudaTensorSpaceConstWeighting(constant, exponent=exponent)
 
     factor = 1 if exponent == float('inf') else constant ** (1 / exponent)
     true_dist = factor * np.linalg.norm(xarr - yarr, ord=exponent)
@@ -778,46 +779,46 @@ def test_const_dist(exponent):
 
 
 def test_vector_init():
-    rn = CudaFn(5)
+    rn = CudaTensorSpace(5)
     weight_vec = _pos_vector(rn)
 
-    CudaFnArrayWeighting(weight_vec)
-    CudaFnArrayWeighting(rn.element(weight_vec))
+    CudaTensorSpaceArrayWeighting(weight_vec)
+    CudaTensorSpaceArrayWeighting(rn.element(weight_vec))
 
 
 def test_vector_is_valid():
-    rn = CudaFn(5)
+    rn = CudaTensorSpace(5)
     weight = _pos_vector(rn)
 
-    weighting = CudaFnArrayWeighting(weight)
+    weighting = CudaTensorSpaceArrayWeighting(weight)
 
     assert weighting.is_valid()
 
     # Invalid
     weight[0] = 0
 
-    weighting = CudaFnArrayWeighting(weight)
+    weighting = CudaTensorSpaceArrayWeighting(weight)
 
     assert not weighting.is_valid()
 
 
 def test_vector_equals():
-    rn = CudaFn(5)
+    rn = CudaTensorSpace(5)
     weight = _pos_vector(rn)
 
-    weighting = CudaFnArrayWeighting(weight)
-    weighting2 = CudaFnArrayWeighting(weight)
+    weighting = CudaTensorSpaceArrayWeighting(weight)
+    weighting2 = CudaTensorSpaceArrayWeighting(weight)
 
     assert weighting == weighting2
 
 
 def test_vector_inner():
-    rn = CudaFn(5)
+    rn = CudaTensorSpace(5)
     [xarr, yarr], [x, y] = noise_elements(rn, 2)
 
-    weight = _pos_vector(CudaFn(5))
+    weight = _pos_vector(CudaTensorSpace(5))
 
-    weighting = CudaFnArrayWeighting(weight)
+    weighting = CudaTensorSpaceArrayWeighting(weight)
 
     true_inner = np.vdot(yarr, xarr * weight.asarray())
 
@@ -825,16 +826,16 @@ def test_vector_inner():
 
     # Exponent != 2 -> no inner product, should raise
     with pytest.raises(NotImplementedError):
-        CudaFnArrayWeighting(weight, exponent=1.0).inner(x, y)
+        CudaTensorSpaceArrayWeighting(weight, exponent=1.0).inner(x, y)
 
 
 def test_vector_norm(exponent):
-    rn = CudaFn(5)
+    rn = CudaTensorSpace(5)
     xarr, x = noise_elements(rn)
 
-    weight = _pos_vector(CudaFn(5))
+    weight = _pos_vector(CudaTensorSpace(5))
 
-    weighting = CudaFnArrayWeighting(weight, exponent=exponent)
+    weighting = CudaTensorSpaceArrayWeighting(weight, exponent=exponent)
 
     if exponent in (1.0, float('inf')):
         true_norm = np.linalg.norm(weight.asarray() * xarr, ord=exponent)
@@ -851,12 +852,12 @@ def test_vector_norm(exponent):
 
 
 def test_vector_dist(exponent):
-    rn = CudaFn(5)
+    rn = CudaTensorSpace(5)
     [xarr, yarr], [x, y] = noise_elements(rn, n=2)
 
-    weight = _pos_vector(CudaFn(5))
+    weight = _pos_vector(CudaTensorSpace(5))
 
-    weighting = CudaFnArrayWeighting(weight, exponent=exponent)
+    weighting = CudaTensorSpaceArrayWeighting(weight, exponent=exponent)
 
     if exponent in (1.0, float('inf')):
         true_dist = np.linalg.norm(weight.asarray() * (xarr - yarr),
@@ -879,9 +880,9 @@ def test_custom_inner(fn):
     def inner(x, y):
         return np.vdot(y, x)
 
-    w = CudaFnCustomInner(inner)
-    w_same = CudaFnCustomInner(inner)
-    w_other = CudaFnCustomInner(np.dot)
+    w = CudaTensorSpaceCustomInner(inner)
+    w_same = CudaTensorSpaceCustomInner(inner)
+    w_other = CudaTensorSpaceCustomInner(np.dot)
 
     assert w == w
     assert w == w_same
@@ -899,7 +900,7 @@ def test_custom_inner(fn):
     assert almost_equal(w.dist(x, y), true_dist, places=3)
 
     with pytest.raises(TypeError):
-        CudaFnCustomInner(1)
+        CudaTensorSpaceCustomInner(1)
 
 
 def test_custom_norm(fn):
@@ -910,9 +911,9 @@ def test_custom_norm(fn):
     def other_norm(x):
         return np.linalg.norm(x, ord=1)
 
-    w = CudaFnCustomNorm(norm)
-    w_same = CudaFnCustomNorm(norm)
-    w_other = CudaFnCustomNorm(other_norm)
+    w = CudaTensorSpaceCustomNorm(norm)
+    w_same = CudaTensorSpaceCustomNorm(norm)
+    w_other = CudaTensorSpaceCustomNorm(other_norm)
 
     assert w == w
     assert w == w_same
@@ -928,7 +929,7 @@ def test_custom_norm(fn):
     assert almost_equal(w.dist(x, y), true_dist)
 
     with pytest.raises(TypeError):
-        CudaFnCustomNorm(1)
+        CudaTensorSpaceCustomNorm(1)
 
 
 def test_custom_dist(fn):
@@ -940,9 +941,9 @@ def test_custom_dist(fn):
     def other_dist(x, y):
         return np.linalg.norm(x - y, ord=1)
 
-    w = CudaFnCustomDist(dist)
-    w_same = CudaFnCustomDist(dist)
-    w_other = CudaFnCustomDist(other_dist)
+    w = CudaTensorSpaceCustomDist(dist)
+    w_same = CudaTensorSpaceCustomDist(dist)
+    w_other = CudaTensorSpaceCustomDist(other_dist)
 
     assert w == w
     assert w == w_same
@@ -958,36 +959,37 @@ def test_custom_dist(fn):
     assert almost_equal(w.dist(x, y), true_dist)
 
     with pytest.raises(TypeError):
-        CudaFnCustomDist(1)
+        CudaTensorSpaceCustomDist(1)
 
 
 def test_ufuncs(fn, ufunc):
-    name, n_args, n_out, _ = ufunc
     if (np.issubsctype(fn.dtype, np.floating) and
-            name in ['bitwise_and',
-                     'bitwise_or',
-                     'bitwise_xor',
-                     'invert',
-                     'left_shift',
-                     'right_shift']):
+            ufunc in ['bitwise_and',
+                      'bitwise_or',
+                      'bitwise_xor',
+                      'invert',
+                      'left_shift',
+                      'right_shift']):
         # Skip integer only methods if floating point type
         return
 
-    # Get the ufunc from numpy as reference
-    ufunc = getattr(np, name)
+    # Get the ufunc from numpy as reference    
+    func = getattr(np, ufunc)
+    n_in = func.nin
+    n_out = func.nout
 
     # Create some data
-    arrays, vectors = noise_elements(fn, n_args + n_out)
-    in_arrays = arrays[:n_args]
-    out_arrays = arrays[n_args:]
+    arrays, vectors = noise_elements(fn, n_in + n_out)
+    in_arrays = arrays[:n_in]
+    out_arrays = arrays[n_in:]
     data_vector = vectors[0]
-    in_vectors = vectors[1:n_args]
-    out_vectors = vectors[n_args:]
+    in_vectors = vectors[1:n_in]
+    out_vectors = vectors[n_in:]
 
     # Out of place:
     with np.errstate(all='ignore'):  # avoid pytest warnings
-        npy_result = ufunc(*in_arrays)
-        vec_fun = getattr(data_vector.ufuncs, name)
+        npy_result = func(*in_arrays)
+        vec_fun = getattr(data_vector.ufuncs, ufunc)
         odl_result = vec_fun(*in_vectors)
     assert all_almost_equal(odl_result, npy_result)
 
@@ -1000,8 +1002,8 @@ def test_ufuncs(fn, ufunc):
 
     # In place:
     with np.errstate(all='ignore'):  # avoid pytest warnings
-        npy_result = ufunc(*(in_arrays + out_arrays))
-        vec_fun = getattr(data_vector.ufuncs, name)
+        npy_result = func(*(in_arrays + out_arrays))
+        vec_fun = getattr(data_vector.ufuncs, ufunc)
         odl_result = vec_fun(*(in_vectors + out_vectors))
     assert all_almost_equal(odl_result, npy_result)
 
@@ -1014,16 +1016,14 @@ def test_ufuncs(fn, ufunc):
 
 
 def test_reductions(fn, reduction):
-    name, _ = reduction
-
-    reduction = getattr(np, name)
+    func = getattr(np, reduction)
 
     # Create some data
     x_arr, x = noise_elements(fn, 1)
 
     with np.errstate(all='ignore'):  # avoid pytest warnings
-        npy_result = reduction(x_arr)
-        odl_result = getattr(x.ufuncs, name)()
+        npy_result = func(x_arr)
+        odl_result = getattr(x.ufuncs, reduction)()
     assert almost_equal(odl_result, npy_result)
 
 
