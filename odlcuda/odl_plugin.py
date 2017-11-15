@@ -3,9 +3,9 @@
 from odlcuda import cu_ntuples
 
 
-def fn_impls():
-    return {'cuda': cu_ntuples.CudaFn}
+def tensor_space_impls():
+    return {'odlcuda': cu_ntuples.CudaTensorSpace}
 
 
-def fn_impl_names():
-    return tuple(fn_impls().keys())
+def tensor_space_impl_names():
+    return tuple(tensor_space_impls().keys())
