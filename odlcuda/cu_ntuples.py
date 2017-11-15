@@ -233,6 +233,16 @@ class CudaTensorSpace(TensorSpace):
                     1.0, exponent=exponent)
 
     @property
+    def impl(self):
+        """Name of the implementation back-end: ``'odlcuda'``."""
+        return 'odlcuda'
+
+    @property
+    def default_order(self):
+        """Default storage order for new elements in this space: ``'F'``."""
+        return 'F'
+
+    @property
     def exponent(self):
         """Exponent of the norm and distance."""
         return self.weighting.exponent
